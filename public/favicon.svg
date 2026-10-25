@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="160 160 704 704" width="64" height="64">
+  <!-- Haunt's mark (docs/logo/haunt-mark.svg): a ghost. Dark on a light tab, light on a dark tab. -->
+  <style>
+    .ghost { fill: #15171c }
+    @media (prefers-color-scheme: dark) { .ghost { fill: #eef1f6 } }
+  </style>
+  <path class="ghost" fill-rule="evenodd" d="M272 440 A240 240 0 0 1 752 440 V800 Q712 860 672 800 T592 800 T512 800 T432 800 T352 800 T272 800 Z M386 450 a44 60 0 1 0 88 0 a44 60 0 1 0 -88 0 Z M550 450 a44 60 0 1 0 88 0 a44 60 0 1 0 -88 0 Z"/>
+</svg>

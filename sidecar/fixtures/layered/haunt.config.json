@@ -1,0 +1,13 @@
+{
+  "layers": [
+    { "id": "app", "label": "Application" },
+    { "id": "domain", "note": "the business rules" },
+    { "id": "infra" }
+  ],
+  "parts": [
+    { "match": "src/app", "layer": "app" },
+    { "match": "src/domain/*", "name": "domain/$1", "layer": "domain", "uses": ["domain/shared"] },
+    { "match": "src/infra/*", "layer": "infra", "role": "storage" }
+  ],
+  "entries": ["index.ts"]
+}

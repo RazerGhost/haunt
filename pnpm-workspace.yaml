@@ -1,0 +1,10 @@
+# Haunt is one package; this file only holds pnpm's settings.
+onlyBuiltDependencies:
+  - esbuild
+  - vue-demi
+  - '@parcel/watcher'
+  - '@tailwindcss/oxide'
+
+# Its install script builds a native module; Haunt loads the grammar's .wasm instead.
+ignoredBuiltDependencies:
+  - '@tree-sitter-grammars/tree-sitter-lua'

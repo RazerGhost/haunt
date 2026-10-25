@@ -1,0 +1,79 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/* The admin's look (Nuxt UI's Mono preset), with system fonts: nothing is fetched from elsewhere. */
+@theme static {
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+  /* Two sizes for the app's chrome: rows (the sidebar, lists) and the small labels beside them (headings,
+     counts, badges). Nothing is smaller than a label. */
+  --text-ui: 0.8125rem;
+  --text-ui--line-height: 1.25rem;
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1rem;
+}
+
+/* One colour per band of the layer map, readable on both backgrounds. */
+:root {
+  --ui-radius: 0.5rem;
+  --layer-api: #57606f;
+  --layer-packages: #7a5c2e;
+  --layer-entry: #6d7a12;
+  --layer-management: #2877b8;
+  --layer-publishing: #c23b5a;
+  --layer-content: #c26a12;
+  --layer-foundation: #1f8a70;
+  --layer-kernel: #6b5bd6;
+  --layer-unmapped: #8a8f98;
+  --rule-new: #d92d20;
+  --rule-known: #c27a00;
+}
+
+.dark {
+  --layer-api: #a3acbb;
+  --layer-packages: #d2ad72;
+  --layer-entry: #c2d24f;
+  --layer-management: #6db6f2;
+  --layer-publishing: #ff7d99;
+  --layer-content: #f0a04b;
+  --layer-foundation: #4cc7a5;
+  --layer-kernel: #a397ff;
+  --layer-unmapped: #8a8f98;
+  --rule-new: #ff6b5e;
+  --rule-known: #f2b544;
+}
+
+/* Thin, quiet scrollbars that darken on hover, in both themes; the track stays clear. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--ui-text-dimmed) 45%, transparent) transparent;
+}
+*:hover {
+  scrollbar-color: color-mix(in srgb, var(--ui-text-muted) 70%, transparent) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ui-text-dimmed) 45%, transparent) padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--ui-text-muted) 80%, transparent) padding-box;
+}
+
+/* Syntax colours (Shiki): each token carries both themes' colours; the page's theme picks one. */
+.code-token {
+  color: var(--shiki-light, inherit);
+  font-style: var(--shiki-light-font-style, inherit);
+}
+.dark .code-token {
+  color: var(--shiki-dark, inherit);
+  font-style: var(--shiki-dark-font-style, inherit);
+}

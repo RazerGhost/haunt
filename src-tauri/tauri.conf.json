@@ -1,0 +1,41 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Haunt",
+  "mainBinaryName": "haunt",
+  "version": "../package.json",
+  "identifier": "dev.razerghost.haunt",
+  "build": {
+    "devUrl": "http://127.0.0.1:4777",
+    "beforeDevCommand": "pnpm dev",
+    "beforeBuildCommand": "pnpm build && node scripts/bundle-typescript.mjs",
+    "frontendDist": "../.output/public"
+  },
+  "app": {
+    "windows": [],
+    "security": {
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline' https://api.fonts.coollabs.io; font-src 'self' https://cdn.fonts.coollabs.io; connect-src 'self' ipc: http://ipc.localhost https://api.iconify.design https://api.github.com; script-src 'self' 'unsafe-inline'; img-src 'self' data:"
+    },
+    "withGlobalTauri": true
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "DeveloperTool",
+    "shortDescription": "A git client that maps the code",
+    "longDescription": "A git client that also maps the code: every function, where it is written, what it calls and what calls it, the imports between its parts, and what a change touches and could break. Runs on the Node you already use for your projects.",
+    "license": "Apache-2.0",
+    "copyright": "Copyright 2026 RG Digital",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "../sidecar/": "sidecar/",
+      "../shared/": "shared/",
+      "bundled/node_modules/": "node_modules/"
+    }
+  }
+}

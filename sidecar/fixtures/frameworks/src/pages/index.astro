@@ -1,0 +1,16 @@
+---
+import Card from '../components/Card.vue'
+import { format } from '../lib/format'
+
+const label = () => format(2)
+---
+
+<h1>{label()}</h1>
+<Card n={1} />
+
+<script>
+  function onLoad() {
+    document.title = 'Loaded'
+  }
+  onLoad()
+</script>

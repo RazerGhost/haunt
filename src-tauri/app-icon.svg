@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Haunt's icon: a ghost drifting up from a commit trail (purple) that runs from its hem. The app icons are made from
+       it with `pnpm tauri icon`; at 32 px and below they come from haunt-icon-small.svg, and the favicon is
+       haunt-mark.svg. -->
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="#15171c"/>
+  <!-- The trail: a branch line with its commits, left behind as the ghost rises -->
+  <path d="M420 720 C410 800 330 838 232 836" fill="none" stroke="#8f80ff" stroke-width="34" stroke-linecap="round"/>
+  <circle cx="352" cy="812" r="28" fill="#8f80ff"/>
+  <circle cx="212" cy="836" r="38" fill="#15171c" stroke="#8f80ff" stroke-width="24"/>
+  <!-- The ghost, its eyes cut out, with a teal glint in each -->
+  <g transform="translate(560 470) scale(0.86) translate(-512 -500)">
+    <path fill="#eef1f6" fill-rule="evenodd" d="M272 440 A240 240 0 0 1 752 440 V800 Q712 860 672 800 T592 800 T512 800 T432 800 T352 800 T272 800 Z M386 450 a44 60 0 1 0 88 0 a44 60 0 1 0 -88 0 Z M550 450 a44 60 0 1 0 88 0 a44 60 0 1 0 -88 0 Z"/>
+    <circle cx="442" cy="428" r="14" fill="#3fc4a0"/>
+    <circle cx="606" cy="428" r="14" fill="#3fc4a0"/>
+  </g>
+</svg>
