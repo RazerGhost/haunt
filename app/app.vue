@@ -48,7 +48,7 @@ useHead({ title: 'Haunt', htmlAttrs: { lang: language }, link: [{ rel: 'icon', t
       <div class="flex min-h-0 flex-1">
         <AppSidebar v-if="!choosing" />
         <main class="min-w-0 flex-1 overflow-auto">
-          <RootPicker v-if="choosing" />
+          <RepositoryManager v-if="choosing" />
           <NuxtPage v-else />
         </main>
         <aside v-if="selected && isWide && !choosing" class="w-96 shrink-0 overflow-auto border-l border-default">

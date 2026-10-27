@@ -26,7 +26,10 @@ and attaches the installers to a draft release.
     (`objects.rs`), and the log, refs, blame and `log -L` through the `git` program with every command of the
     repository's config switched off (`cli.rs`).
   - `git/write/` is the only place that writes: a fixed list of operations, one at a time per repository, as the
-    folder's trust allows, with discards saved first. `askpass.rs` passes git's questions to the window.
+    folder's trust allows, with discards saved first; a clone or `git init` (`create.rs`) is the one write in a folder
+    that is no tab yet. `askpass.rs` passes git's questions to the window.
+  - `git/overview.rs` reads any repository by its path, open or not, for the repository manager, and `folders.rs`
+    finds the repositories in the folders you add.
   - `code/` reads PHP, Rust, Lua, Python and Go with tree-sitter (`read.rs`, calls matched by name in `guess.rs`),
     which the scanner asks for while it scans (`others.rs`), maps a change onto the functions of both versions of each
     file (`changes.rs`), and reads WordPress routes (`routes.rs`). Without a JavaScript runtime, `scan.rs` scans

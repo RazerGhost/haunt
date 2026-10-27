@@ -16,12 +16,14 @@
 
 mod bisect;
 mod conflicts;
+mod create;
 mod last;
 mod network;
 mod patch;
 mod patches;
 pub(super) mod rebase;
 mod refs;
+mod remotes;
 mod undo;
 mod worktrees;
 
@@ -37,6 +39,7 @@ use specta::Type;
 
 pub use bisect::{bisect_state, BisectMark, BisectState};
 pub use conflicts::{ConflictFile, Operation, Side};
+pub use create::{clone, init};
 pub use last::{forget_last, LastAction, Snapshot, Undo};
 pub use network::{cancel, PullFetch, PullMode, PullResult, PushResult};
 pub use patch::LineRef;
@@ -176,11 +179,13 @@ pub struct Writer<'a> {
     trusted: bool,
     /// Run without asking anything (a background fetch): git gets no askpass, and Git Credential Manager no window.
     quiet: bool,
+    /// Not a repository of a tab (the folder a clone goes into): git's questions are not tied to a tab.
+    tabless: bool,
 }
 
 impl<'a> Writer<'a> {
     pub fn new(root: &'a str, trusted: bool) -> Writer<'a> {
-        Writer { root, trusted, quiet: false }
+        Writer { root, trusted, quiet: false, tabless: false }
     }
 
     fn config(&self) -> Vec<String> {

@@ -2,15 +2,19 @@
 /*
  * The sidebar. In Git: the local changes and the commits, the repository's branches, its worktrees
  * (WorktreeList), remotes, tags and stashes. Click a branch, remote branch or tag to list its commits, a stash to see what it saved; a right click acts on
- * it (useRefActions). In Code, the views of the code and the project's parts instead (CodeSidebar); one width for both.
+ * it (useRefActions). Remotes always show, with a + to add one; a right click on one copies or changes its URL, renames
+ * or removes it (useRemotes). In Code, the views of the code and the project's parts instead (CodeSidebar); one width for both.
  */
 const route = useRoute()
 const { refs, localChanges, notRepository } = useRefs()
 const actions = useRefActions()
+const remotes = useRemotes()
 const network = useNetwork()
 const { repo, gitChanged } = useRepositories()
 // The dropped stashes that can come back, read with the stashes.
 watch([repo, gitChanged('stash')], () => void actions.loadDropped(), { immediate: true })
+// The remotes with their URLs, for the ones with no remote branches yet.
+watch(repo, () => void remotes.load(), { immediate: true })
 const when = (seconds: number) => new Date(seconds * 1000).toLocaleString()
 
 const shut = usePersisted<Record<string, boolean>>('sidebar-shut', {}, value => !!value && typeof value === 'object' && !Array.isArray(value))
@@ -37,6 +41,25 @@ const refCount = computed(() => {
   const all = refs.value
   return all ? all.branches.length + all.tags.length + all.stashes.length + all.remotes.reduce((sum, remote) => sum + remote.branches.length, 0) : 0
 })
+/** The remotes listed: those with remote branches, and (when not filtering) those with none fetched yet. */
+const remoteList = computed(() => {
+  const listed = shown.value?.remotes ?? []
+  if (filter.value.trim()) return listed
+  const known = new Set(listed.map(remote => remote.name))
+  return [...listed, ...remotes.list.value.filter(remote => !known.has(remote.name)).map(remote => ({ name: remote.name, branches: [] }))]
+})
+const urlOf = (name: string) => remotes.list.value.find(remote => remote.name === name)?.url
+function remoteMenu(name: string) {
+  return [
+    [
+      { label: t('AppSidebar.copyUrl'), icon: 'i-lucide-copy', onSelect: () => remotes.copyUrl(name) },
+      { label: t('AppSidebar.changeUrl'), icon: 'i-lucide-link', onSelect: () => remotes.changeUrl(name) },
+      { label: t('AppSidebar.renameRemote'), icon: 'i-lucide-pencil', onSelect: () => remotes.rename(name) }
+    ],
+    [{ label: t('AppSidebar.removeRemote'), icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: () => remotes.remove(name) }]
+  ]
+}
+
 const shown = computed(() => {
   const all = refs.value
   const text = filter.value.trim().toLowerCase()
@@ -124,17 +147,24 @@ const active = (path: string) => route.path === path ? 'bg-elevated font-medium 
       <WorktreeList :shut="!!shut.worktrees" @toggle="toggle('worktrees')" />
       <SubmoduleList :shut="!!shut.submodules" @toggle="toggle('submodules')" />
 
-      <section v-if="shown.remotes.length" class="grid grid-cols-[minmax(0,1fr)] gap-0.5">
+      <section class="grid grid-cols-[minmax(0,1fr)] gap-0.5">
         <button type="button" class="flex items-center gap-1 px-2 text-label font-semibold tracking-wider text-muted uppercase hover:text-default" :aria-expanded="!shut.remotes" @click="toggle('remotes')">
           <UIcon name="i-lucide-chevron-right" class="size-3 transition" :class="{ 'rotate-90': !shut.remotes }" />
           {{ t('AppSidebar.remotes') }} <span class="ml-auto font-normal tabular-nums">{{ remoteBranches }}</span>
+          <UTooltip :text="t('AppSidebar.newRemoteHelp')">
+            <span role="button" tabindex="0" class="-mr-1 grid size-5 place-items-center rounded normal-case hover:bg-elevated hover:text-highlighted" :aria-label="t('AppSidebar.newRemote')" @click.stop="remotes.add()" @keydown.enter.stop="remotes.add()">
+              <UIcon name="i-lucide-plus" class="size-3.5" />
+            </span>
+          </UTooltip>
         </button>
         <template v-if="!shut.remotes">
-          <div v-for="remote in shown.remotes" :key="remote.name" class="grid grid-cols-[minmax(0,1fr)]">
-            <div class="flex items-center gap-1.5 px-2 py-1 text-ui text-muted">
-              <UIcon name="i-lucide-cloud" class="size-3.5" />{{ remote.name }}
-            </div>
-            <RefTree :refs="remote.branches" :storage-key="`remote:${remote.name}`" :prefix="`${remote.name}/`" :depth="1" :expand="!!filter" />
+          <div v-for="remote in remoteList" :key="remote.name" class="grid grid-cols-[minmax(0,1fr)]">
+            <UContextMenu :items="remoteMenu(remote.name)">
+              <div class="flex items-center gap-1.5 px-2 py-1 text-ui text-muted" :title="t('AppSidebar.remoteTitle', { url: urlOf(remote.name) ?? remote.name })">
+                <UIcon name="i-lucide-cloud" class="size-3.5 shrink-0" /><span class="min-w-0 truncate">{{ remote.name }}</span>
+              </div>
+            </UContextMenu>
+            <RefTree v-if="remote.branches.length" :refs="remote.branches" :storage-key="`remote:${remote.name}`" :prefix="`${remote.name}/`" :depth="1" :expand="!!filter" />
           </div>
         </template>
       </section>

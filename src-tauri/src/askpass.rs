@@ -184,7 +184,8 @@ pub fn main() -> Option<i32> {
     if args.next().is_some() {
         return None;
     }
-    let repo = std::env::var("HAUNT_ASKPASS_REPO").ok();
+    // Empty for git run where no tab is (a clone): the window asks whatever it shows.
+    let repo = std::env::var("HAUNT_ASKPASS_REPO").ok().filter(|repo| !repo.is_empty());
     Some(match ask(&address, repo.as_deref(), &prompt) {
         Some(answer) => {
             println!("{answer}");

@@ -517,6 +517,11 @@ impl Repos {
         self.events.send(Some(repo), news);
     }
 
+    /// News that is about no tab (a clone's progress): the window hears it whatever it shows.
+    pub fn news_for_all(&self, news: serde_json::Value) {
+        self.events.send(None, news);
+    }
+
     /// Tells the window something it could not do outside a repository's work (a dropped folder it cannot open).
     pub fn notice(&self, message: &str) {
         self.events.send(None, json!({ "type": "notice", "message": message }));
@@ -575,14 +580,16 @@ impl Repos {
     /// An open tab's folder, or a recent one's, for the file manager; any other path is refused.
     pub fn tab_folder(&self, path: &str) -> Result<PathBuf, String> {
         let inner = self.inner.lock().unwrap();
-        inner
-            .settings
-            .tabs
-            .iter()
-            .chain(inner.settings.recent.iter())
-            .find(|tab| *tab == path)
-            .map(PathBuf::from)
-            .ok_or_else(|| "That is not an open tab or a recent repository.".into())
+        let known = inner.settings.tabs.iter().chain(inner.settings.recent.iter()).find(|tab| *tab == path);
+        if let Some(known) = known {
+            return Ok(PathBuf::from(known));
+        }
+        // A repository in one of the repository manager's folders.
+        let root = paths::canonical(path).filter(|root| {
+            inner.settings.repository_folders.iter().any(|folder| Path::new(root).starts_with(folder))
+                && Path::new(root).join(".git").exists()
+        });
+        root.map(PathBuf::from).ok_or_else(|| "That is not an open tab or a repository Haunt lists.".into())
     }
 
     /// The recent repositories of the profile in use, with what the open screen shows of each (only these folders are
@@ -598,6 +605,37 @@ impl Repos {
                 .map(|(read, path)| read.join().unwrap_or_else(|_| RecentRepo::read(path)))
                 .collect()
         })
+    }
+
+    /// The repository folders, each with the repositories found in it, looked through side by side.
+    pub fn repository_folders(&self) -> Vec<crate::folders::RepoFolder> {
+        let folders = self.inner.lock().unwrap().settings.repository_folders.clone();
+        std::thread::scope(|scope| {
+            let reading: Vec<_> = folders.iter().map(|path| scope.spawn(move || crate::folders::read(path))).collect();
+            reading
+                .into_iter()
+                .zip(&folders)
+                .map(|(read, path)| read.join().unwrap_or_else(|_| crate::folders::read(path)))
+                .collect()
+        })
+    }
+
+    pub fn add_repository_folder(&self, path: &str) -> Result<Vec<crate::folders::RepoFolder>, String> {
+        {
+            let mut inner = self.inner.lock().unwrap();
+            inner.settings.add_repository_folder(path)?;
+            inner.settings.save(&self.context.settings);
+        }
+        Ok(self.repository_folders())
+    }
+
+    pub fn remove_repository_folder(&self, path: &str) -> Vec<crate::folders::RepoFolder> {
+        {
+            let mut inner = self.inner.lock().unwrap();
+            inner.settings.remove_repository_folder(path);
+            inner.settings.save(&self.context.settings);
+        }
+        self.repository_folders()
     }
 
     /// Takes a folder off the recent list.

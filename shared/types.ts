@@ -127,6 +127,8 @@ export type ScanEvent =
   | { type: 'git', parts: GitPart[] }
   /** A fetch, pull or push: git's latest progress line, then done. */
   | { type: 'network', op: 'fetch' | 'pull' | 'push', text?: string, done?: boolean }
+  /** A clone into a new folder (the repository manager): git's latest progress line, then done. */
+  | { type: 'clone', text?: string, done?: boolean }
   /** git asks something during a fetch, pull or push (askpass.rs): a secret is typed as dots. */
   | { type: 'ask', id: number, prompt: string, secret: boolean, yesNo: boolean }
   /** git stopped waiting for that answer. */

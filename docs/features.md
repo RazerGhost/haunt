@@ -20,17 +20,25 @@ Everything Haunt does, by part of the window. The [README](../README.md) has the
   close it, the others or those to its right, to show its folder, to open a terminal there (`HAUNT_TERMINAL` picks
   which), or to move it to another profile. The tabs, the screen each one was on and the window's size are kept between launches. A tab in the
   background does not scan; going back to it shows its last scan at once while it scans again.
-- **Opening a repository**: the open screen lists the recent repositories with each one's branch, uncommitted files
-  and last commit; typing filters them (↑ ↓ to pick, Enter to open), and a typed path says whether it is a project or a
-  git repository before it opens. `haunt <folder>` opens a folder, in the window that is already running if there is
-  one, and a folder dropped on the window opens in its tab.
+- **The repository manager**, shown when no repository is open and from the + beside the tabs. On the left, the
+  recent repositories with each one's branch, uncommitted files and last commit, and the repositories in the folders
+  you add (looked through four levels deep) as a tree of their folders; typing filters both (↑ ↓ to pick, Enter or a
+  double click to open), and a typed path says whether it is a project or a git repository before it opens. On the
+  right, the one picked, open in a tab or not: its uncommitted files, commit count, first and last commit, its remotes
+  with their project, issues and pull request pages, its branches, tags and latest commits; Statistics (commits per
+  month over the last year, who committed most, the files by extension); and its README, drawn by Haunt itself
+  (no HTML of the file's own, no images, and only the remotes' pages open from its links). **Clone** a URL into a
+  new folder (git's progress as it comes, a way to stop it, its questions asked as for a fetch; no hooks or
+  submodules run) or make a **New** empty repository (`git init`); either opens when done. `haunt <folder>` opens a
+  folder, in the window that is already running if there is one, and a folder dropped on the window opens in its tab.
 - **Git and Code**, the two halves of the window (Ctrl 1 and Ctrl 2). The toolbar has Fetch, Pull and Push (with the
   commits to pull and push, and git's progress with a way to stop it), Branch and Stash, the function search, and the
   scan, trust and settings icons.
 - **The sidebar**: in Git, Local changes, All commits, Pull requests and a More menu (Bisect, Release notes, Apply
   patches, Health), then the branches as folders split on `/` with what each is ahead and behind, worktrees,
   submodules, remotes, tags and stashes. A filter narrows long lists, and the eraser beside Branches cleans up merged
-  branches and those whose remote branch is gone. In Code, the code views and the project's parts by layer.
+  branches and those whose remote branch is gone. The + beside Remotes adds a remote; right-click one to copy or
+  change its URL, rename it or remove it (with its remote branches; nothing changes on the remote itself). In Code, the code views and the project's parts by layer.
 - **The command palette** (Ctrl K): one search over the actions, the screens, the branches, the open repositories and
   the functions by name. A sha typed there goes to its commit.
 - **The function panel**: a function's code, where it is written, what it calls and what calls it, and its history.

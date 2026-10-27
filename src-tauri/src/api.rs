@@ -376,6 +376,31 @@ commands! {
     fn recent_details(api) -> Vec<crate::repos::RecentRepo> { Ok(api.repos.recent_details()) }
     /// Takes a folder off the recent list.
     fn forget_recent(api, path: String) -> RootInfo { Ok(api.repos.forget_recent(&path)) }
+    /// The folders the repository manager looks through, each with the repositories in it.
+    fn repository_folders(api) -> Vec<crate::folders::RepoFolder> { Ok(api.repos.repository_folders()) }
+    fn add_repository_folder(api, path: String) -> Vec<crate::folders::RepoFolder> { api.repos.add_repository_folder(&path) }
+    fn remove_repository_folder(api, path: String) -> Vec<crate::folders::RepoFolder> { Ok(api.repos.remove_repository_folder(&path)) }
+    /// A repository at a glance, open in a tab or not: read only, nothing of its own runs.
+    fn repository_overview(api, path: String) -> crate::git::overview::Overview { let _ = api; crate::git::overview::overview(&path) }
+    /// Opens a page of one of a repository's remotes; any other address is refused.
+    fn open_repository_page(api, path: String, remote: String, url: String) -> () { let _ = api; crate::git::overview::open_remote_page(&path, &remote, &url) }
+    /// Who committed how much and when, and what the repository holds.
+    fn repository_statistics(api, path: String) -> crate::git::overview::Statistics { let _ = api; crate::git::overview::statistics(&path) }
+    /// Clones `url` into `parent`/`name`; the window hears git's progress as "clone" news. The new folder.
+    fn clone_repository(api, url: String, parent: String, name: String) -> String {
+        api.repos.news_for_all(serde_json::json!({ "type": "clone", "text": "" }));
+        let progress = |text: &str| api.repos.news_for_all(serde_json::json!({ "type": "clone", "text": text }));
+        let result = crate::git::write::clone(&url, &parent, &name, &progress);
+        api.repos.news_for_all(serde_json::json!({ "type": "clone", "done": true }));
+        result
+    }
+    /// Stops the clone going into `parent`.
+    fn stop_clone(api, parent: String) -> bool {
+        let _ = api;
+        Ok(crate::git::write::cancel(&crate::paths::canonical(&parent).unwrap_or(parent)))
+    }
+    /// An empty repository in `parent`/`name`; its folder.
+    fn init_repository(api, parent: String, name: String) -> String { let _ = api; crate::git::write::init(&parent, &name) }
     /// What a typed path is, before it is opened.
     fn check_folder(api, path: String) -> crate::repos::FolderCheck { let _ = api; Ok(crate::repos::check_folder(&path)) }
     /// Switches to another profile: its tabs, and the one it showed.
@@ -733,6 +758,12 @@ commands! {
         api.network(&repo, "push", &["refs"], |writer, progress| writer.push_tag(&name, remote.as_deref(), progress))
     }
     /// Stops the fetch, pull or push running in `repo`.
+    fn add_remote(api, repo: String, name: String, url: String) -> () { api.write(&repo, &["refs"], |writer| writer.add_remote(&name, &url)) }
+    /// Renames a remote, with its remote branches.
+    fn rename_remote(api, repo: String, from: String, to: String) -> () { api.write(&repo, &["refs"], |writer| writer.rename_remote(&from, &to)) }
+    /// Removes a remote and its remote branches.
+    fn remove_remote(api, repo: String, name: String) -> () { api.write(&repo, &["refs"], |writer| writer.remove_remote(&name)) }
+    fn set_remote_url(api, repo: String, name: String, url: String) -> () { api.write(&repo, &["refs"], |writer| writer.set_remote_url(&name, &url)) }
     fn stop_network(api, repo: String) -> bool { api.repos.require(&repo)?; Ok(crate::git::write::cancel(&repo)) }
     /* Undoing, merging and conflicts (git/write/undo.rs, git/write/conflicts.rs) */
 

@@ -33,6 +33,18 @@ export function branchLink(web: Web, branch: string): string {
   return `${web.base}/tree/${name}`
 }
 
+/** The project's issues. */
+export function issuesLink(web: Web): string {
+  return web.kind === 'gitlab' ? `${web.base}/-/issues` : `${web.base}/issues`
+}
+
+/** The project's pull requests (merge requests on GitLab). */
+export function pullsLink(web: Web): string {
+  if (web.kind === 'gitlab') return `${web.base}/-/merge_requests`
+  if (web.kind === 'bitbucket') return `${web.base}/pull-requests`
+  return `${web.base}/pulls`
+}
+
 /** "GitHub", "GitLab"… for the menus. */
 export function hostName(kind: WebKind): string {
   return { github: 'GitHub', gitlab: 'GitLab', bitbucket: 'Bitbucket', gitea: 'Gitea' }[kind]

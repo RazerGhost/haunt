@@ -1,0 +1,25 @@
+{
+  "newRemote": "New remote",
+  "name": "Name",
+  "next": "Next",
+  "urlFor": "Where {name} is.",
+  "url": "URL",
+  "addRemote": "Add remote",
+  "notAdded": "The remote was not added",
+  "renameTitle": "Rename {name}",
+  "renameHelp": "Its remote branches move along, and branches that track them keep tracking them.",
+  "newName": "New name",
+  "rename": "Rename",
+  "notRenamed": "The remote was not renamed",
+  "changeUrlTitle": "Change the URL of {name}",
+  "changeUrl": "Change URL",
+  "urlNotChanged": "The URL was not changed",
+  "removeTitle": "Remove {name}?",
+  "removeHelp": {
+    "one": "Its remote branch goes too, and branches that track it track nothing after. Nothing changes on the remote itself.",
+    "other": "Its {count} remote branches go too, and branches that track them track nothing after. Nothing changes on the remote itself."
+  },
+  "removeHelpNone": "Only here: nothing changes on the remote itself.",
+  "removeRemote": "Remove remote",
+  "notRemoved": "The remote was not removed"
+}

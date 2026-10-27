@@ -1,0 +1,25 @@
+{
+  "newRemote": "Nieuwe remote",
+  "name": "Naam",
+  "next": "Volgende",
+  "urlFor": "Waar {name} staat.",
+  "url": "URL",
+  "addRemote": "Remote toevoegen",
+  "notAdded": "De remote is niet toegevoegd",
+  "renameTitle": "{name} hernoemen",
+  "renameHelp": "De remote branches gaan mee, en branches die ze volgen blijven ze volgen.",
+  "newName": "Nieuwe naam",
+  "rename": "Hernoemen",
+  "notRenamed": "De remote is niet hernoemd",
+  "changeUrlTitle": "URL van {name} wijzigen",
+  "changeUrl": "URL wijzigen",
+  "urlNotChanged": "De URL is niet gewijzigd",
+  "removeTitle": "{name} verwijderen?",
+  "removeHelp": {
+    "one": "De remote branch gaat ook weg, en branches die hem volgen volgen daarna niets meer. Op de remote zelf verandert niets.",
+    "other": "De {count} remote branches gaan ook weg, en branches die ze volgen volgen daarna niets meer. Op de remote zelf verandert niets."
+  },
+  "removeHelpNone": "Alleen hier: op de remote zelf verandert niets.",
+  "removeRemote": "Remote verwijderen",
+  "notRemoved": "De remote is niet verwijderd"
+}

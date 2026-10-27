@@ -25,15 +25,11 @@ The window's texts are in app/locales (English and Dutch), looked up by `t()` in
 
 ## 3. Repository manager
 
-One chain: each item builds on the one before.
+Done: the repository manager (app/components/RepositoryManager.vue), clone and `git init`, and managing remotes from
+the sidebar. What is left:
 
-- **A repository manager** in place of today's open screen, like Fork's. On the left, the recent repositories and all
-  repositories grouped by folder, as a tree. On the right, the one picked: uncommitted files, commit count, first and
-  last commit, its remotes with links (the host, issues, pull requests), its branches, tags and latest commits with
-  author and age, a statistics tab, and its README.
-- **Clone and create.** Clone from a URL, and make a new repository (`git init`); Haunt only opens folders that exist.
-  These belong on the repository manager.
-- **Manage remotes:** add, rename, remove, and change a remote's URL. The manager already shows the remotes.
+- **Remotes in the manager itself**: the manager shows them, but adding, renaming and removing happen in the sidebar
+  of an open tab, where writes have the tab's trust.
 
 ## 4. Reflog
 

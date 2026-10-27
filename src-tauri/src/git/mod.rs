@@ -10,6 +10,7 @@ pub mod knowledge;
 pub mod local;
 mod log;
 pub(crate) mod objects;
+pub mod overview;
 mod pulls;
 mod refs;
 mod release;

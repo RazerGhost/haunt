@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { branchLink, commitLink, fileLink, type Web } from './weblinks.ts'
+import { branchLink, commitLink, fileLink, issuesLink, pullsLink, type Web } from './weblinks.ts'
 
 /* Links to a commit, a file and a branch, as each host shapes them. */
 
@@ -22,4 +22,13 @@ test('builds GitLab, Bitbucket and Gitea links, with the folder opened inside th
   assert.equal(fileLink({ base: 'https://bitbucket.org/t/r', kind: 'bitbucket', prefix: '' }, 'abc', 'a.ts', 3, 9), 'https://bitbucket.org/t/r/src/abc/a.ts#lines-3:9')
   assert.equal(fileLink(gitlab, 'abc', 'a.ts', 3, 9), 'https://gitlab.com/g/r/-/blob/abc/packages/app/a.ts#L3-9')
   assert.equal(branchLink({ base: 'https://codeberg.org/m/r', kind: 'gitea', prefix: '' }, 'main'), 'https://codeberg.org/m/r/src/branch/main')
+})
+
+test('builds the issues and pull requests pages', () => {
+  assert.equal(issuesLink(github), 'https://github.com/o/r/issues')
+  assert.equal(pullsLink(github), 'https://github.com/o/r/pulls')
+  assert.equal(issuesLink(gitlab), 'https://gitlab.com/g/r/-/issues')
+  assert.equal(pullsLink(gitlab), 'https://gitlab.com/g/r/-/merge_requests')
+  assert.equal(pullsLink({ base: 'https://bitbucket.org/t/r', kind: 'bitbucket', prefix: '' }), 'https://bitbucket.org/t/r/pull-requests')
+  assert.equal(pullsLink({ base: 'https://codeberg.org/m/r', kind: 'gitea', prefix: '' }), 'https://codeberg.org/m/r/pulls')
 })

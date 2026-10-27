@@ -1,0 +1,16 @@
+{
+  "cloneTitle": "Een repository clonen",
+  "newTitle": "Nieuwe repository",
+  "url": "URL",
+  "urlHelp": "HTTPS of SSH, zoals de host hem toont.",
+  "parent": "In de map",
+  "parentTitle": "Kies de map waar hij in komt",
+  "name": "Naam van de map",
+  "goesTo": "Komt in {path}",
+  "cloneNote": "Zijn submodules blijven weg, en geen van zijn hooks draait. Open hem en vertrouw hem om zijn eigen code te laten draaien.",
+  "starting": "Bezig met starten…",
+  "clone": "Clonen",
+  "create": "Maken",
+  "notCloned": "Niet gecloned",
+  "notMade": "Niet gemaakt"
+}

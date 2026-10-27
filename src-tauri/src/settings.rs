@@ -190,6 +190,8 @@ pub struct Settings {
     pub update_check: bool,
     /// Pinned and coloured tabs, by folder.
     pub tab_looks: HashMap<String, TabLook>,
+    /// The folders the repository manager looks through for repositories, for every profile.
+    pub repository_folders: Vec<String>,
 }
 
 impl Settings {
@@ -216,6 +218,13 @@ impl Settings {
         }
         // Trusted folders are kept even while they are missing (an unplugged drive), in their one form where possible.
         let trusted = read.trusted.iter().map(|path| canonical(path).unwrap_or_else(|| path.clone())).collect();
+        // The same for the repository folders.
+        let mut repository_folders: Vec<String> = Vec::new();
+        for path in read.repository_folders.iter().map(|path| canonical(path).unwrap_or_else(|| path.clone())) {
+            if !repository_folders.contains(&path) {
+                repository_folders.push(path);
+            }
+        }
         let fetch_every = if FETCH_EVERY.contains(&read.fetch_every) { read.fetch_every } else { 0 };
         let profile = if read.profile.trim().is_empty() { FIRST_PROFILE.to_owned() } else { read.profile };
         let mut profiles: Vec<Profile> = Vec::new();
@@ -251,6 +260,7 @@ impl Settings {
             host_tools: read.host_tools,
             update_check: read.update_check,
             tab_looks,
+            repository_folders,
         };
         settings.pinned_first();
         settings
@@ -342,6 +352,19 @@ impl Settings {
     /// Takes `root` off the recent list (its folder stays where it is).
     pub fn forget_recent(&mut self, root: &str) {
         self.recent.retain(|recent| recent != root);
+    }
+
+    /// Adds a folder for the repository manager to look through; an existing folder only, once.
+    pub fn add_repository_folder(&mut self, path: &str) -> Result<(), String> {
+        let folder = canonical(path).ok_or("That folder is not there.")?;
+        if !self.repository_folders.contains(&folder) {
+            self.repository_folders.push(folder);
+        }
+        Ok(())
+    }
+
+    pub fn remove_repository_folder(&mut self, path: &str) {
+        self.repository_folders.retain(|known| known != path);
     }
 
     /// Switches to the profile `name`, putting the one in use away with its tabs.

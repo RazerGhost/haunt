@@ -1,0 +1,16 @@
+{
+  "cloneTitle": "Clone a repository",
+  "newTitle": "New repository",
+  "url": "URL",
+  "urlHelp": "HTTPS or SSH, as the host shows it.",
+  "parent": "In the folder",
+  "parentTitle": "Choose the folder to put it in",
+  "name": "Folder name",
+  "goesTo": "Goes in {path}",
+  "cloneNote": "Its submodules are left out, and none of its hooks run. Open it and trust it to let its own code run.",
+  "starting": "Starting…",
+  "clone": "Clone",
+  "create": "Create",
+  "notCloned": "Not cloned",
+  "notMade": "Not made"
+}

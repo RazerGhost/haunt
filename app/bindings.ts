@@ -15,6 +15,22 @@ export const commands = {
 	recentDetails: () => __TAURI_INVOKE<RecentRepo[]>("recent_details"),
 	/**  Takes a folder off the recent list. */
 	forgetRecent: (path: string) => __TAURI_INVOKE<RootInfo>("forget_recent", { path }),
+	/**  The folders the repository manager looks through, each with the repositories in it. */
+	repositoryFolders: () => __TAURI_INVOKE<RepoFolder[]>("repository_folders"),
+	addRepositoryFolder: (path: string) => __TAURI_INVOKE<RepoFolder[]>("add_repository_folder", { path }),
+	removeRepositoryFolder: (path: string) => __TAURI_INVOKE<RepoFolder[]>("remove_repository_folder", { path }),
+	/**  A repository at a glance, open in a tab or not: read only, nothing of its own runs. */
+	repositoryOverview: (path: string) => __TAURI_INVOKE<Overview>("repository_overview", { path }),
+	/**  Opens a page of one of a repository's remotes; any other address is refused. */
+	openRepositoryPage: (path: string, remote: string, url: string) => __TAURI_INVOKE<null>("open_repository_page", { path, remote, url }),
+	/**  Who committed how much and when, and what the repository holds. */
+	repositoryStatistics: (path: string) => __TAURI_INVOKE<Statistics>("repository_statistics", { path }),
+	/**  Clones `url` into `parent`/`name`; the window hears git's progress as "clone" news. The new folder. */
+	cloneRepository: (url: string, parent: string, name: string) => __TAURI_INVOKE<string>("clone_repository", { url, parent, name }),
+	/**  Stops the clone going into `parent`. */
+	stopClone: (parent: string) => __TAURI_INVOKE<boolean>("stop_clone", { parent }),
+	/**  An empty repository in `parent`/`name`; its folder. */
+	initRepository: (parent: string, name: string) => __TAURI_INVOKE<string>("init_repository", { parent, name }),
 	/**  What a typed path is, before it is opened. */
 	checkFolder: (path: string) => __TAURI_INVOKE<FolderCheck>("check_folder", { path }),
 	/**  Switches to another profile: its tabs, and the one it showed. */
@@ -202,6 +218,12 @@ export const commands = {
 	push: (repo: string, remote: string | null, force: boolean) => __TAURI_INVOKE<PushResult>("push", { repo, remote, force }),
 	pushTag: (repo: string, name: string, remote: string | null) => __TAURI_INVOKE<PushResult>("push_tag", { repo, name, remote }),
 	/**  Stops the fetch, pull or push running in `repo`. */
+	addRemote: (repo: string, name: string, url: string) => __TAURI_INVOKE<null>("add_remote", { repo, name, url }),
+	/**  Renames a remote, with its remote branches. */
+	renameRemote: (repo: string, from: string, to: string) => __TAURI_INVOKE<null>("rename_remote", { repo, from, to }),
+	/**  Removes a remote and its remote branches. */
+	removeRemote: (repo: string, name: string) => __TAURI_INVOKE<null>("remove_remote", { repo, name }),
+	setRemoteUrl: (repo: string, name: string, url: string) => __TAURI_INVOKE<null>("set_remote_url", { repo, name, url }),
 	stopNetwork: (repo: string) => __TAURI_INVOKE<boolean>("stop_network", { repo }),
 	/**  A new commit that takes `at`'s changes back. */
 	revert: (repo: string, at: string) => __TAURI_INVOKE<Outcome>("revert", { repo, at }),
@@ -323,6 +345,12 @@ export type ArchitectureHistory = {
 	judged: boolean,
 	/**  Newest first, along the first parents of HEAD. */
 	commits: CommitArchitecture[],
+};
+
+export type AuthorCount = {
+	name: string,
+	email: string,
+	commits: number,
 };
 
 export type AuthorLines = {
@@ -571,6 +599,11 @@ export type DroppedStash = {
 	/**  Seconds since 1970. */
 	at: number,
 	message: string,
+};
+
+export type ExtensionCount = {
+	extension: string,
+	files: number,
 };
 
 /**  One author's changes to one file in the period. */
@@ -900,6 +933,12 @@ export type MergeFilter =
 /**  No merge commits. */
 "none";
 
+export type MonthCount = {
+	/**  "2026-10". */
+	month: string,
+	commits: number,
+};
+
 /**  Where a moved function was before. */
 export type MovedFrom = {
 	path: string,
@@ -930,6 +969,26 @@ export type Outcome = "done" |
 "upToDate" | 
 /**  Stopped on conflicts: resolve them in the conflict view, then continue (or abort). */
 "conflicts";
+
+export type Overview = {
+	path: string,
+	name: string,
+	/**  None when HEAD is detached. */
+	branch: string | null,
+	status: LocalStatus,
+	/**  Commits reachable from HEAD. */
+	commits: number,
+	first: CommitInfo | null,
+	last: CommitInfo | null,
+	remotes: RemoteInfo[],
+	branches: BranchRef[],
+	/**  The newest tags first, at most `TAGS`; `tag_count` has them all. */
+	tags: TagRef[],
+	tagCount: number,
+	/**  The latest commits on HEAD, newest first. */
+	latest: CommitInfo[],
+	readme: Readme | null,
+};
 
 export type PackageRun = {
 	/**  The package's folder, relative to the repository ("" for its root). */
@@ -1030,6 +1089,14 @@ export type RangeChanges = {
 /**  JSON from the sidecar, passed to the window as it is (the window knows it as the scan's types in shared/). */
 export type Raw = unknown;
 
+export type Readme = {
+	/**  Its file name, as the folder has it. */
+	name: string,
+	text: string,
+	/**  Longer than Haunt shows: the start only. */
+	cut: boolean,
+};
+
 /**  What happens to one commit. */
 export type RebaseAction = "pick" | "reword" | "squash" | "fixup" | "drop";
 
@@ -1081,6 +1148,23 @@ export type RemoteBranchRef = {
 	sha: string,
 	subject: string,
 	time: number,
+};
+
+export type RemoteInfo = {
+	name: string,
+	url: string,
+	/**  Its project page, when the URL is a host's. */
+	web: WebRemote | null,
+};
+
+export type RepoFolder = {
+	path: string,
+	/**  The folder is not there now (an unplugged drive). */
+	missing: boolean,
+	/**  The repositories in it, by their path; sorted. */
+	repos: string[],
+	/**  It holds more than Haunt lists. */
+	cut: boolean,
 };
 
 /**  How far a reset goes. */
@@ -1148,6 +1232,18 @@ export type StashRef = {
 	sha: string,
 	message: string,
 	time: number,
+};
+
+/**  Who committed how much, when, and what the repository holds. */
+export type Statistics = {
+	/**  The authors with the most commits on HEAD, most first. */
+	authors: AuthorCount[],
+	/**  Commits on HEAD per month over the last year, oldest first; a month without any is there with 0. */
+	months: MonthCount[],
+	/**  Files git tracks. */
+	files: number,
+	/**  Tracked files by extension, most first ("" for none). */
+	extensions: ExtensionCount[],
 };
 
 export type Submodule = {

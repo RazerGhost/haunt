@@ -1,0 +1,6 @@
+{
+  "image": "[image: {alt}]",
+  "imageNoAlt": "[image]",
+  "done": "Done",
+  "notDone": "Not done"
+}

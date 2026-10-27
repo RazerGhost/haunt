@@ -1,0 +1,69 @@
+{
+  "notRead": "This repository could not be read.",
+  "notGitHelp": "Haunt can still open it as a project.",
+  "reveal": "Show folder",
+  "open": "Open in a tab",
+  "show": "Go to its tab",
+  "notOpened": "Not opened",
+  "views": "Views",
+  "view": {
+    "overview": "Overview",
+    "statistics": "Statistics",
+    "readme": "README"
+  },
+  "uncommitted": "Not committed",
+  "commits": "Commits",
+  "first": "First commit",
+  "last": "Last commit",
+  "none": "None yet",
+  "status": {
+    "added": "A",
+    "modified": "M",
+    "deleted": "D",
+    "renamed": "R",
+    "copied": "C",
+    "type": "T"
+  },
+  "more": {
+    "one": "and {count} more",
+    "other": "and {count} more"
+  },
+  "remotes": "Remotes",
+  "noRemotes": "No remote: this repository is only here.",
+  "openOn": "Open on {host}",
+  "issues": "Issues",
+  "pulls": "Pull requests",
+  "mergeRequests": "Merge requests",
+  "pageNotOpened": "Could not open the page",
+  "branches": "Branches",
+  "latest": "Latest commits",
+  "noCommits": "No commits yet.",
+  "tags": "Tags",
+  "noTags": "No tags.",
+  "minutes": {
+    "one": "{count} min",
+    "other": "{count} min"
+  },
+  "hours": {
+    "one": "{count} h",
+    "other": "{count} h"
+  },
+  "days": {
+    "one": "{count} d",
+    "other": "{count} d"
+  },
+  "perMonth": "Commits per month",
+  "commitsIn": {
+    "one": "{count} commit in {month}",
+    "other": "{count} commits in {month}"
+  },
+  "authors": "Most commits",
+  "files": {
+    "one": "{count} file",
+    "other": "{count} files"
+  },
+  "noExtension": "(no extension)",
+  "readmeCut": "The README is longer than this; the rest is in the file.",
+  "linkCopied": "Link copied",
+  "linkNotCopied": "Could not copy the link"
+}

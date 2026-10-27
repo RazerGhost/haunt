@@ -61,11 +61,11 @@ pub enum PushResult {
 }
 
 /// What a network run of git said.
-struct Ran {
-    ok: bool,
-    stdout: String,
-    stderr: String,
-    cancelled: bool,
+pub(super) struct Ran {
+    pub(super) ok: bool,
+    pub(super) stdout: String,
+    pub(super) stderr: String,
+    pub(super) cancelled: bool,
 }
 
 /// A fetch's `-c` settings and environment.
@@ -152,7 +152,7 @@ fn is_progress(line: &str) -> bool {
 }
 
 /// What git said, without its progress: the message for the window.
-fn said(stderr: &str) -> String {
+pub(super) fn said(stderr: &str) -> String {
     let lines: Vec<&str> = stderr.lines().filter(|line| !is_progress(line)).collect();
     let text = lines.join("\n").trim().to_owned();
     if text.is_empty() {
@@ -230,7 +230,7 @@ pub(super) fn untrusted_fetch(all: &[Setting]) -> (Vec<String>, Vec<(String, Str
 
 impl Writer<'_> {
     /// Runs a network git command: git's questions go to the window, its progress to `progress`, and it can be stopped.
-    fn network(
+    pub(super) fn network(
         &self,
         args: &[&str],
         extra: &[String],
@@ -247,7 +247,7 @@ impl Writer<'_> {
             .env("GIT_EDITOR", ":")
             .env("GIT_SEQUENCE_EDITOR", ":")
             .env("LC_ALL", "C")
-            .envs(if self.quiet { Vec::new() } else { crate::askpass::env(self.root) })
+            .envs(if self.quiet { Vec::new() } else { crate::askpass::env(if self.tabless { "" } else { self.root }) })
             .envs(self.quiet.then_some(("GCM_INTERACTIVE", "never")))
             .envs(env.iter().map(|(name, value)| (name.as_str(), value.as_str())))
             .stdin(Stdio::null())

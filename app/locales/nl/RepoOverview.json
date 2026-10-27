@@ -1,0 +1,69 @@
+{
+  "notRead": "Deze repository kon niet gelezen worden.",
+  "notGitHelp": "Haunt kan hem nog wel als project openen.",
+  "reveal": "Map tonen",
+  "open": "In een tab openen",
+  "show": "Naar zijn tab",
+  "notOpened": "Niet geopend",
+  "views": "Weergaven",
+  "view": {
+    "overview": "Overzicht",
+    "statistics": "Statistieken",
+    "readme": "README"
+  },
+  "uncommitted": "Niet gecommit",
+  "commits": "Commits",
+  "first": "Eerste commit",
+  "last": "Laatste commit",
+  "none": "Nog geen",
+  "status": {
+    "added": "A",
+    "modified": "M",
+    "deleted": "D",
+    "renamed": "R",
+    "copied": "C",
+    "type": "T"
+  },
+  "more": {
+    "one": "en nog {count}",
+    "other": "en nog {count}"
+  },
+  "remotes": "Remotes",
+  "noRemotes": "Geen remote: deze repository staat alleen hier.",
+  "openOn": "Openen op {host}",
+  "issues": "Issues",
+  "pulls": "Pull requests",
+  "mergeRequests": "Merge requests",
+  "pageNotOpened": "De pagina kon niet geopend worden",
+  "branches": "Branches",
+  "latest": "Laatste commits",
+  "noCommits": "Nog geen commits.",
+  "tags": "Tags",
+  "noTags": "Geen tags.",
+  "minutes": {
+    "one": "{count} min",
+    "other": "{count} min"
+  },
+  "hours": {
+    "one": "{count} u",
+    "other": "{count} u"
+  },
+  "days": {
+    "one": "{count} d",
+    "other": "{count} d"
+  },
+  "perMonth": "Commits per maand",
+  "commitsIn": {
+    "one": "{count} commit in {month}",
+    "other": "{count} commits in {month}"
+  },
+  "authors": "Meeste commits",
+  "files": {
+    "one": "{count} bestand",
+    "other": "{count} bestanden"
+  },
+  "noExtension": "(geen extensie)",
+  "readmeCut": "De README is langer dan dit; de rest staat in het bestand.",
+  "linkCopied": "Link gekopieerd",
+  "linkNotCopied": "De link kon niet gekopieerd worden"
+}
