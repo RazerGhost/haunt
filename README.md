@@ -28,7 +28,7 @@ code until you trust its folder.
 - **Made for your own setup.** Tabs and profiles, themes from Nuxt UI, your editor one click away, and a command
   palette for everything.
 
-All of it is described in [docs/features.md](docs/features.md).
+All of it is described in [docs/features.md](docs/features.md); what comes next is in [docs/roadmap.md](docs/roadmap.md).
 
 ## Languages
 
