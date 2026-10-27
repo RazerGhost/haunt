@@ -28,6 +28,10 @@ and attaches the installers to a draft release.
   - `git/write/` is the only place that writes: a fixed list of operations, one at a time per repository, as the
     folder's trust allows, with discards saved first; a clone or `git init` (`create.rs`) is the one write in a folder
     that is no tab yet. `askpass.rs` passes git's questions to the window.
+  - `git/command.rs` is the one way git is started (reads, writes, network runs), with the safety rules of each in
+    one place; `process.rs` runs programs with a time limit and stops them with everything they started (a job
+    object on Windows, a process group on Unix).
+  - `code/read/` has one file per language behind the `Grammar` trait; adding a language is one file and one line.
   - `git/overview.rs` reads any repository by its path, open or not, for the repository manager, and `folders.rs`
     finds the repositories in the folders you add.
   - `code/` reads PHP, Rust, Lua, Python, Go, Java, C#, Ruby, C and C++ with tree-sitter (`read.rs`, calls matched

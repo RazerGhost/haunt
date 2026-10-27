@@ -139,6 +139,8 @@ export type ScanEvent =
   | { type: 'notice', message: string }
   /** A write that moved history went through: what it did, and what Undo would do (git/write/last.rs). */
   | { type: 'done', title: string, undo: string }
+  /** A background search found a different list of repositories in a repository folder (folders.rs). */
+  | { type: 'folders' }
 
 /** A part of git; each view reads again only for the parts it shows. */
 export type GitPart = 'head' | 'refs' | 'index' | 'stash'

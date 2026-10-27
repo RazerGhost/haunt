@@ -128,10 +128,7 @@ export const commands = {
 	bisectMark: (repo: string, mark: BisectMark) => __TAURI_INVOKE<null>("bisect_mark", { repo, mark }),
 	/**  Tests another commit still in play instead. */
 	bisectJump: (repo: string, sha: string) => __TAURI_INVOKE<null>("bisect_jump", { repo, sha }),
-	/**
-	 *  Stops bisecting: back to the branch it started from.
-	 *  Saves `to` (with `from`: the commits after `from` up to `to`) as patch files in `folder`; returns their paths.
-	 */
+	/**  Saves `to` (with `from`: the commits after `from` up to `to`) as patch files in `folder`; returns their paths. */
 	savePatches: (repo: string, from: string | null, to: string, folder: string) => __TAURI_INVOKE<string[]>("save_patches", { repo, from, to, folder }),
 	/**  The patch files, and a commit on no branch with them applied to the last one, to see what they change. */
 	previewPatches: (repo: string, files: string[]) => __TAURI_INVOKE<PatchPreview>("preview_patches", { repo, files }),
@@ -172,6 +169,7 @@ export const commands = {
 	createPullRequest: (repo: string, pull: NewPull) => __TAURI_INVOKE<CreatedPull>("create_pull_request", { repo, pull }),
 	/**  Opens a release page of Haunt itself in the browser (the update check's See it); nothing else. */
 	openRelease: (url: string) => __TAURI_INVOKE<null>("open_release", { url }),
+	/**  Stops bisecting: back to the branch it started from. */
 	bisectStop: (repo: string) => __TAURI_INVOKE<null>("bisect_stop", { repo }),
 	/**  The repository's worktrees, its own folder first. */
 	worktrees: (repo: string) => __TAURI_INVOKE<Worktree[]>("worktrees", { repo }),
@@ -200,10 +198,7 @@ export const commands = {
 	deleteTag: (repo: string, name: string) => __TAURI_INVOKE<null>("delete_tag", { repo, name }),
 	/**  Fetches every remote, pruning remote branches that are gone. */
 	fetch: (repo: string) => __TAURI_INVOKE<null>("fetch", { repo }),
-	/**
-	 *  When the repository was last fetched (by you or in the background), and how it went; null before the first.
-	 *  Runs `tests` with the project's own test runner (testrun.rs); only in a trusted folder.
-	 */
+	/**  Runs `tests` with the project's own test runner (testrun.rs); only in a trusted folder. */
 	runTests: (repo: string, tests: TestToRun[]) => __TAURI_INVOKE<TestRun>("run_tests", { repo, tests }),
 	/**  The icon sets downloaded so far (icons.rs); Lucide is bundled. */
 	iconSets: () => __TAURI_INVOKE<string[]>("icon_sets"),
@@ -216,6 +211,7 @@ export const commands = {
 	notify: (title: string, body: string) => __TAURI_INVOKE<null>("notify", { title, body }),
 	/**  Stops the tests running now. */
 	stopTests: () => __TAURI_INVOKE<null>("stop_tests"),
+	/**  When the repository was last fetched (by you or in the background), and how it went; null before the first. */
 	lastFetch: (repo: string) => __TAURI_INVOKE<LastFetch | null>("last_fetch", { repo }),
 	/**
 	 *  What a pull of the current branch would bring in; null when it tracks nothing.

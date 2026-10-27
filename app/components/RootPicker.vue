@@ -11,7 +11,7 @@ import { repoTree, type RepoTree } from '~~/shared/repositories'
  */
 const picked = defineModel<string | null>('picked', { required: true })
 const { scan } = useCode()
-const { info: known, picking, chooseRoot } = useRepositories()
+const { info: known, picking, chooseRoot, onNews } = useRepositories()
 const { times } = usePreferences()
 const toast = useToast()
 const info = computed(() => ({ root: known.value?.root ?? null, tabs: known.value?.tabs ?? [], recent: known.value?.recent ?? [] }))
@@ -90,6 +90,8 @@ async function loadFolders(change?: Promise<RepoFolder[]>) {
   }
 }
 onMounted(() => void loadFolders())
+// A background search found a different list of repositories in a folder.
+onBeforeUnmount(onNews((news) => { if (news.type === 'folders') void loadFolders() }))
 async function addFolder() {
   const chosen = inApp ? await chooseFolder(t('RootPicker.addFolder')) : path.value.trim()
   if (chosen) await loadFolders(haunt.addRepositoryFolder(chosen))
