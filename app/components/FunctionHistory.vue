@@ -41,43 +41,45 @@ const moveAt = computed(() => new Map((history.value?.moves ?? []).map(move => [
 function moveText(sha: string): string {
   const move = moveAt.value.get(sha)!
   const renamed = move.fromName !== move.toName
-  return `Moved here from ${tailOf(move.fromPath)}${renamed ? `, where it was ${move.fromName}` : ''}. Before this, its history there:`
+  return renamed
+    ? t('FunctionHistory.movedRenamed', { file: tailOf(move.fromPath), name: move.fromName })
+    : t('FunctionHistory.moved', { file: tailOf(move.fromPath) })
 }
 
 function ago(seconds: number): string {
   const days = Math.floor((Date.now() / 1000 - seconds) / 86400)
-  if (days < 1) return 'today'
-  if (days < 2) return 'yesterday'
-  if (days < 60) return `${days} days ago`
-  if (days < 730) return `${Math.round(days / 30)} months ago`
-  return `${Math.round(days / 365)} years ago`
+  if (days < 1) return t('FunctionHistory.today')
+  if (days < 2) return t('FunctionHistory.yesterday')
+  if (days < 60) return t('FunctionHistory.daysAgo', { count: days })
+  if (days < 730) return t('FunctionHistory.monthsAgo', { count: Math.round(days / 30) })
+  return t('FunctionHistory.yearsAgo', { count: Math.round(days / 365) })
 }
 </script>
 
 <template>
   <section class="grid gap-1.5">
     <h3 class="flex items-center gap-2 text-xs font-semibold tracking-wider text-muted uppercase">
-      History
+      {{ t('FunctionHistory.history') }}
       <UIcon v-if="loading" name="i-lucide-loader-circle" class="size-3 animate-spin" />
     </h3>
-    <p v-if="history && !history.commits.length && !history.authors.length" class="text-xs text-muted">No history: the file is not in git.</p>
+    <p v-if="history && !history.commits.length && !history.authors.length" class="text-xs text-muted">{{ t('FunctionHistory.noHistory') }}</p>
     <template v-else-if="history">
       <p v-if="history.latest" class="text-xs text-muted">
-        Last changed {{ ago(history.latest.time) }} by <b class="text-highlighted">{{ history.latest.author }}</b>
+        {{ t('FunctionHistory.lastChanged', { ago: ago(history.latest.time) }) }} <b class="text-highlighted">{{ history.latest.author }}</b>
       </p>
       <dl v-if="born || behaviour" class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-xs">
         <template v-if="behaviour">
-          <dt class="text-muted">Last changed how it works</dt>
+          <dt class="text-muted">{{ t('FunctionHistory.behaviour') }}</dt>
           <dd class="min-w-0"><NuxtLink :to="{ path: '/commits', query: { commit: behaviour.sha } }" class="block truncate hover:underline" :title="`${behaviour.subject} · ${behaviour.author}`">{{ behaviour.subject }}</NuxtLink></dd>
         </template>
         <template v-if="born">
-          <dt class="text-muted">Born in</dt>
+          <dt class="text-muted">{{ t('FunctionHistory.born') }}</dt>
           <dd class="min-w-0"><NuxtLink :to="{ path: '/commits', query: { commit: born.sha } }" class="block truncate hover:underline" :title="`${born.subject} · ${born.author} · ${ago(born.time)}`">{{ born.subject }} <span class="text-muted">· {{ ago(born.time) }}</span></NuxtLink></dd>
         </template>
       </dl>
       <div v-if="total" class="grid gap-1">
         <div class="flex h-1.5 overflow-hidden rounded-full bg-elevated">
-          <i v-for="(author, n) in history.authors" :key="author.name" class="block h-full" :style="{ width: `${author.lines / total * 100}%`, background: `color-mix(in srgb, var(--c) ${100 - n * 22}%, var(--ui-bg-elevated))` }" :title="`${author.name}: ${author.lines} lines`" />
+          <i v-for="(author, n) in history.authors" :key="author.name" class="block h-full" :style="{ width: `${author.lines / total * 100}%`, background: `color-mix(in srgb, var(--c) ${100 - n * 22}%, var(--ui-bg-elevated))` }" :title="t('FunctionHistory.authorLines', { name: author.name, count: author.lines })" />
         </div>
         <p class="text-label text-muted">
           <template v-for="(author, n) in history.authors.slice(0, 4)" :key="author.name">{{ n ? ' · ' : '' }}{{ author.name }} {{ Math.round(author.lines / total * 100) }}%</template>
@@ -85,9 +87,9 @@ function ago(seconds: number): string {
       </div>
       <ul v-if="shown.length" class="grid gap-1">
         <li v-for="commit in shown" :key="commit.sha">
-          <NuxtLink :to="{ path: '/commits', query: { commit: commit.sha } }" class="grid rounded px-2 py-1 hover:bg-elevated" title="See it in the commit list">
+          <NuxtLink :to="{ path: '/commits', query: { commit: commit.sha } }" class="grid rounded px-2 py-1 hover:bg-elevated" :title="t('FunctionHistory.seeCommit')">
             <span class="truncate text-xs text-highlighted" :title="commit.subject">{{ commit.subject }}</span>
-            <span class="truncate font-mono text-label text-muted">{{ commit.sha.slice(0, 7) }} · {{ commit.author }} · {{ ago(commit.time) }}<template v-if="cosmetic.has(commit.sha)"> · spacing or comments only</template></span>
+            <span class="truncate font-mono text-label text-muted">{{ commit.sha.slice(0, 7) }} · {{ commit.author }} · {{ ago(commit.time) }}<template v-if="cosmetic.has(commit.sha)"> · {{ t('FunctionHistory.cosmetic') }}</template></span>
           </NuxtLink>
           <p v-if="moveAt.has(commit.sha)" class="flex items-start gap-1 px-2 py-1 text-label text-info" :title="moveAt.get(commit.sha)!.fromPath">
             <UIcon name="i-lucide-move-right" class="mt-0.5 size-3 shrink-0" />{{ moveText(commit.sha) }}
@@ -95,8 +97,8 @@ function ago(seconds: number): string {
         </li>
       </ul>
       <div class="flex flex-wrap items-center gap-1">
-        <UButton v-if="!all && history.commits.length > 5" :label="`All ${history.commits.length} commits`" size="xs" color="neutral" variant="ghost" @click="all = true" />
-        <UButton v-if="props.name" :label="`Commits mentioning ${props.name}`" icon="i-lucide-text-search" size="xs" color="neutral" variant="ghost" :to="{ path: '/commits', query: { changed: props.name } }" title="Commits that added or removed this name" />
+        <UButton v-if="!all && history.commits.length > 5" :label="t('FunctionHistory.all', { count: history.commits.length })" size="xs" color="neutral" variant="ghost" @click="all = true" />
+        <UButton v-if="props.name" :label="t('FunctionHistory.mentioning', { name: props.name })" icon="i-lucide-text-search" size="xs" color="neutral" variant="ghost" :to="{ path: '/commits', query: { changed: props.name } }" :title="t('FunctionHistory.mentioningHelp')" />
       </div>
     </template>
   </section>

@@ -1,0 +1,28 @@
+{
+  "noAnswer": "No answer",
+  "sendFailed": "The request could not be sent.",
+  "saved": "Request saved",
+  "saveFailed": "The file could not be written.",
+  "titleRoute": "Try {route}",
+  "title": "Try it",
+  "description": "A request to your dev server on this machine; nothing leaves it.",
+  "method": "Method",
+  "address": "Dev server address",
+  "addressHelp": "Your dev server's address, kept for this repository",
+  "path": "Path",
+  "headersPlaceholder": "Header: value, one per line",
+  "headers": "Headers",
+  "body": "Body",
+  "send": "Send",
+  "save": "Save in {file}",
+  "saveHelp": "Kept in the repository as a .http file, to commit with the code",
+  "truncated": "Only the first 2 MB are shown.",
+  "headerCount": {
+    "one": "{count} header",
+    "other": "{count} headers"
+  },
+  "noBody": "(no body)",
+  "through": "Goes through",
+  "unknownHandler": "Its handler is not a function the scan knows.",
+  "branchNote": "From the code as written: the path a request takes may branch."
+}

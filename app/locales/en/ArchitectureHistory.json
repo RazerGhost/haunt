@@ -1,0 +1,15 @@
+{
+  "readError": "The history could not be read.",
+  "skipped": "Not read: too many files (or a first commit).",
+  "breaks": "+{added} rule breaks, −{removed}; {after} after it",
+  "imports": {
+    "one": "{count} import added, {removed} removed",
+    "other": "{count} imports added, {removed} removed"
+  },
+  "title": "Rule breaks over time",
+  "summary": "Last {count} commits: {changed} changed the rule breaks. Up: added, down: removed; the line is the running total. Click a bar for its imports.",
+  "intro": "Rule breaks added and removed by each of the last {count} commits. Takes a moment.",
+  "readAgain": "Read again",
+  "count": "Count them",
+  "noRules": "No rules check imports here, so there is nothing to count."
+}

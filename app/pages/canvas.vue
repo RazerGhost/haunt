@@ -19,14 +19,14 @@ const heat = computed(() => {
 <template>
   <div v-if="!scan" class="grid justify-items-center gap-2 py-16 text-muted">
     <UIcon v-if="status !== 'error'" name="i-lucide-loader-circle" class="size-5 animate-spin" />
-    <p>{{ message || 'Scanning' }}</p>
+    <p>{{ message || t('pages.canvas.scanning') }}</p>
   </div>
   <div v-else class="flex h-full flex-col">
     <div class="flex items-center gap-3 border-b border-default px-3 py-1.5 text-xs text-muted">
-      <span class="truncate">Scroll to zoom, drag to move. Click a function to open it, a box to zoom in. Hover for calls.</span>
+      <span class="truncate">{{ t('pages.canvas.hint') }}</span>
       <div class="ml-auto flex shrink-0 items-center gap-3">
-        <USwitch v-model="hotspots" label="Hotspots" size="xs" :title="`Tint files by how often they changed in the last ${days} days`" />
-        <UButton icon="i-lucide-maximize" label="Fit" size="xs" color="neutral" variant="ghost" @click="board?.fit()" />
+        <USwitch v-model="hotspots" :label="t('pages.canvas.hotspots')" size="xs" :title="t('pages.canvas.hotspotsHelp', { count: days })" />
+        <UButton icon="i-lucide-maximize" :label="t('pages.canvas.fit')" size="xs" color="neutral" variant="ghost" @click="board?.fit()" />
       </div>
     </div>
     <div class="px-3 empty:hidden [&:has(*)]:pt-2">

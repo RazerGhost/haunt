@@ -1,0 +1,8 @@
+{
+  "noRelease": "No release has been published yet.",
+  "answered": "GitHub answered {status}.",
+  "unreachable": "GitHub could not be reached.",
+  "newer": "Haunt {version} is out",
+  "newerHelp": "See what is new and download it from its release page.",
+  "seeIt": "See it"
+}

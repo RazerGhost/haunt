@@ -10,35 +10,35 @@ const refActions = useRefActions()
 const network = useNetwork()
 const { mode, switchTo } = useMode()
 
-const branch = computed(() => refs.value ? (refs.value.branch ?? refs.value.sha?.slice(0, 7) ?? 'no commits') : null)
+const branch = computed(() => refs.value ? (refs.value.branch ?? refs.value.sha?.slice(0, 7) ?? t('AppToolbar.noCommits')) : null)
 const branchTip = computed(() => {
   const at = current.value
   if (!refs.value) return ''
-  if (!at) return refs.value.sha ? `Detached at ${refs.value.sha.slice(0, 7)}` : 'No commits yet'
-  if (!at.upstream) return `${at.name} tracks no remote branch`
-  if (at.gone) return `${at.name} tracked ${at.upstream}, which is gone`
-  return `${at.name} · ${at.ahead} to push, ${at.behind} to pull (${at.upstream})`
+  if (!at) return refs.value.sha ? t('AppToolbar.detached', { commit: refs.value.sha.slice(0, 7) }) : t('AppToolbar.noCommitsYet')
+  if (!at.upstream) return t('AppToolbar.tracksNothing', { name: at.name })
+  if (at.gone) return t('AppToolbar.upstreamGone', { name: at.name, upstream: at.upstream })
+  return t('AppToolbar.tracking', { name: at.name, ahead: at.ahead, behind: at.behind, upstream: at.upstream })
 })
 
-// Pull and push run only in a trusted folder (they run its hooks and filters); fetch runs anywhere.
-const untrusted = "Runs only in a trusted folder, since it runs the repository's hooks and filters"
 const actions = computed(() => {
   const at = current.value
   const upstream = at?.upstream
+  // Pull and push run only in a trusted folder (they run its hooks and filters); fetch runs anywhere.
+  const untrusted = t('AppToolbar.untrusted')
   return [
-    { label: 'Fetch', op: 'fetch', icon: 'i-lucide-refresh-cw', count: 0, run: () => network.fetch(), tip: `Fetch every remote: new commits and remote branches; your branches and files stay as they are (F5).${fetchedTip.value}` },
+    { label: t('AppToolbar.fetch'), op: 'fetch', icon: 'i-lucide-refresh-cw', count: 0, run: () => network.fetch(), tip: `${t('AppToolbar.fetchTip')}${fetchedTip.value}` },
     {
-      label: 'Pull', op: 'pull', icon: 'i-lucide-arrow-down-to-line', count: at?.behind ?? 0,
+      label: t('AppToolbar.pull'), op: 'pull', icon: 'i-lucide-arrow-down-to-line', count: at?.behind ?? 0,
       run: network.trusted.value && upstream ? () => network.pull() : null,
-      tip: !network.trusted.value ? untrusted : upstream ? `Pull ${upstream} into ${at!.name} (${mac ? '⌘⇧P' : 'Ctrl+Shift+P'})` : 'This branch tracks no remote branch'
+      tip: !network.trusted.value ? untrusted : upstream ? t('AppToolbar.pullTip', { upstream, name: at!.name, keys: mac ? '⌘⇧P' : 'Ctrl+Shift+P' }) : t('AppToolbar.pullNoUpstream')
     },
     {
-      label: 'Push', op: 'push', icon: 'i-lucide-arrow-up-from-line', count: at?.ahead ?? 0,
+      label: t('AppToolbar.push'), op: 'push', icon: 'i-lucide-arrow-up-from-line', count: at?.ahead ?? 0,
       run: network.trusted.value && at ? () => network.push() : null,
-      tip: !network.trusted.value ? untrusted : !at ? 'You are not on a branch' : `${upstream ? `Push ${at.name} to ${upstream}` : `Push ${at.name} and track it on the remote`} (${mac ? '⌘⇧U' : 'Ctrl+Shift+U'})`
+      tip: !network.trusted.value ? untrusted : !at ? t('AppToolbar.noBranch') : upstream ? t('AppToolbar.pushTip', { name: at.name, upstream, keys: mac ? '⌘⇧U' : 'Ctrl+Shift+U' }) : t('AppToolbar.pushTrackTip', { name: at.name, keys: mac ? '⌘⇧U' : 'Ctrl+Shift+U' })
     },
-    { label: 'Branch', op: null, icon: 'i-lucide-git-branch-plus', count: 0, run: () => refActions.newBranch(), tip: 'A new branch from the commit you are on' },
-    { label: 'Stash', op: null, icon: 'i-lucide-archive', count: 0, run: () => refActions.stash(), tip: 'Stash your local changes' }
+    { label: t('AppToolbar.branch'), op: null, icon: 'i-lucide-git-branch-plus', count: 0, run: () => refActions.newBranch(), tip: t('AppToolbar.branchTip') },
+    { label: t('AppToolbar.stash'), op: null, icon: 'i-lucide-archive', count: 0, run: () => refActions.stash(), tip: t('AppToolbar.stashTip') }
   ]
 })
 const busy = computed(() => refActions.busy.value || !!network.running.value)
@@ -51,8 +51,9 @@ const fetchedTip = computed(() => {
   const last = network.lastFetch.value
   if (!last) return ''
   const minutes = Math.max(0, Math.round((now.value.getTime() / 1000 - last.at) / 60))
-  const ago = minutes < 1 ? 'just now' : minutes < 60 ? `${minutes} min ago` : `${Math.round(minutes / 60)} h ago`
-  return last.ok ? ` Fetched ${ago}${last.background ? ' (in the background)' : ''}.` : ` The last fetch failed ${ago}: ${last.message ?? 'git did not say why'}`
+  const ago = minutes < 1 ? t('AppToolbar.justNow') : minutes < 60 ? t('AppToolbar.minutesAgo', { count: minutes }) : t('AppToolbar.hoursAgo', { count: Math.round(minutes / 60) })
+  if (!last.ok) return ` ${t('AppToolbar.fetchFailed', { ago, message: last.message ?? t('AppToolbar.noReason') })}`
+  return ` ${last.background ? t('AppToolbar.fetchedBackground', { ago }) : t('AppToolbar.fetched', { ago })}`
 })
 const fetchFailed = computed(() => network.lastFetch.value?.ok === false)
 
@@ -75,15 +76,15 @@ defineShortcuts({
 
 <template>
   <div class="flex h-11 shrink-0 items-center gap-1 border-b border-default px-2">
-    <UFieldGroup size="sm" class="mr-1" aria-label="Git or code">
-      <UTooltip :text="`Git: history, branches and changes (${mac ? '⌘1' : 'Ctrl+1'})`">
+    <UFieldGroup size="sm" class="mr-1" :aria-label="t('AppToolbar.gitOrCode')">
+      <UTooltip :text="t('AppToolbar.gitTip', { keys: mac ? '⌘1' : 'Ctrl+1' })">
         <UButton label="Git" icon="i-lucide-git-branch" :color="mode === 'git' ? 'primary' : 'neutral'" :variant="mode === 'git' ? 'solid' : 'outline'" @click="switchTo('git')" />
       </UTooltip>
-      <UTooltip :text="`Code mode (${mac ? '⌘2' : 'Ctrl+2'})`">
-        <UButton label="Code" icon="i-lucide-braces" :color="mode === 'code' ? 'primary' : 'neutral'" :variant="mode === 'code' ? 'solid' : 'outline'" @click="switchTo('code')" />
+      <UTooltip :text="t('AppToolbar.codeTip', { keys: mac ? '⌘2' : 'Ctrl+2' })">
+        <UButton :label="t('AppToolbar.code')" icon="i-lucide-braces" :color="mode === 'code' ? 'primary' : 'neutral'" :variant="mode === 'code' ? 'solid' : 'outline'" @click="switchTo('code')" />
       </UTooltip>
     </UFieldGroup>
-    <div class="flex items-center gap-0.5" role="toolbar" aria-label="Git">
+    <div class="flex items-center gap-0.5" role="toolbar" :aria-label="t('AppToolbar.git')">
       <UTooltip v-for="action in actions" :key="action.label" :text="action.tip">
         <span>
           <UButton
@@ -98,7 +99,7 @@ defineShortcuts({
             @click="action.run?.()"
           >
             <template v-if="action.op === 'fetch' && fetchFailed" #trailing>
-              <span class="size-2 rounded-full bg-warning" aria-label="The last fetch failed" />
+              <span class="size-2 rounded-full bg-warning" :aria-label="t('AppToolbar.lastFetchFailed')" />
             </template>
             <template v-else-if="action.count" #trailing>
               <span class="rounded-full bg-elevated px-1.5 text-label font-semibold text-highlighted tabular-nums">{{ action.count }}</span>
@@ -108,13 +109,13 @@ defineShortcuts({
       </UTooltip>
     </div>
 
-    <UTooltip v-if="current?.behind && !network.running.value" text="What a pull would change, and where you changed the same">
-      <UButton icon="i-lucide-eye" label="Preview" size="xs" color="neutral" variant="soft" to="/incoming" :ui="{ label: 'hidden xl:inline' }" />
+    <UTooltip v-if="current?.behind && !network.running.value" :text="t('AppToolbar.previewTip')">
+      <UButton icon="i-lucide-eye" :label="t('AppToolbar.preview')" size="xs" color="neutral" variant="soft" to="/incoming" :ui="{ label: 'hidden xl:inline' }" />
     </UTooltip>
     <div v-if="network.running.value" class="flex min-w-0 items-center gap-1 pl-1 text-ui text-muted" role="status">
-      <span class="max-w-72 truncate tabular-nums">{{ network.running.value.text || 'Connecting…' }}</span>
-      <UTooltip text="Stop git">
-        <UButton icon="i-lucide-square" size="xs" color="neutral" variant="ghost" aria-label="Stop" @click="network.stop()" />
+      <span class="max-w-72 truncate tabular-nums">{{ network.running.value.text || t('AppToolbar.connecting') }}</span>
+      <UTooltip :text="t('AppToolbar.stopGit')">
+        <UButton icon="i-lucide-square" size="xs" color="neutral" variant="ghost" :aria-label="t('common.stop')" @click="network.stop()" />
       </UTooltip>
     </div>
 
@@ -131,15 +132,15 @@ defineShortcuts({
       ref="searchInput"
       v-model="search"
       icon="i-lucide-search"
-      placeholder="Find a function"
+      :placeholder="t('AppToolbar.find')"
       size="sm"
       class="w-48 lg:w-64"
       :ui="{ base: 'font-mono', trailing: 'pe-1.5' }"
-      aria-label="Find a function"
+      :aria-label="t('AppToolbar.find')"
     >
       <template #trailing>
         <UKbd v-if="!search" :value="mac ? '⌘F' : 'Ctrl F'" size="sm" />
-        <UButton v-else icon="i-lucide-x" size="xs" color="neutral" variant="link" aria-label="Clear the search" @click="search = ''" />
+        <UButton v-else icon="i-lucide-x" size="xs" color="neutral" variant="link" :aria-label="t('AppToolbar.clearSearch')" @click="search = ''" />
       </template>
     </UInput>
 

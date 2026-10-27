@@ -1,0 +1,24 @@
+{
+  "version": "Version",
+  "license": "License",
+  "updateCheck": "Check for updates",
+  "updateCheckHelp": "Once a day at most, Haunt asks GitHub for its latest release. Nothing else is sent.",
+  "checkNow": "Check for updates",
+  "newer": "Haunt {version} is out.",
+  "latest": "This is the latest version ({version}).",
+  "seeIt": "See it",
+  "cache": "Cache",
+  "noCache": "None here.",
+  "logs": "Logs",
+  "noLogs": "While Haunt is worked on, the scanner writes to the console instead.",
+  "folderNotOpened": "Could not open the folder",
+  "cleared": {
+    "one": "Removed {count} kept call graph",
+    "other": "Removed {count} kept call graphs"
+  },
+  "nothingToClear": "There were no kept call graphs",
+  "clearedHelp": "Each repository works its call graph out again on its next scan.",
+  "notCleared": "Not cleared",
+  "clear": "Clear cached call graphs",
+  "clearHelp": "Call graphs are kept so repositories open at once. Clearing frees space; they are worked out again on the next scan."
+}

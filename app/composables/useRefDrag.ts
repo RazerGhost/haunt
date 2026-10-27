@@ -59,8 +59,8 @@ export function useRefDrag() {
     else if (from.current) void navigateTo({ path: '/rebase', query: { onto: target.name } })
     else {
       toast.add({
-        title: 'Nothing to do with these two',
-        description: `Drop a branch on ${current.value?.name ?? 'the current branch'} to merge, or ${current.value?.name ?? 'the current branch'} on a branch to rebase.`,
+        title: t('composables.useRefDrag.nothing'),
+        description: t('composables.useRefDrag.nothingHelp', { current: current.value?.name ?? t('composables.useRefDrag.currentBranch') }),
         icon: 'i-lucide-info'
       })
     }
@@ -86,8 +86,8 @@ export function useRefDrag() {
   function hint(name: string, isCurrent: boolean): string | null {
     const from = dragged.value
     if (!from || from.name === name) return null
-    if (isCurrent) return `Merge ${from.name} into ${name}`
-    if (from.current) return `Rebase ${from.name} onto ${name}`
+    if (isCurrent) return t('composables.useRefDrag.merge', { from: from.name, into: name })
+    if (from.current) return t('composables.useRefDrag.rebase', { from: from.name, onto: name })
     return null
   }
 

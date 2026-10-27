@@ -45,7 +45,7 @@ const elements = computed<ElementDefinition[]>(() => {
   void colorMode.value
   const color = resolvedColor(layerVar(part.value?.layer ?? 'unmapped'))
   const out: ElementDefinition[] = shown.value.nodes.map((node) => {
-    const label = node.kind === 'folder' ? `${node.label}/\n${node.files} files · ${node.functions} fns` : node.label
+    const label = node.kind === 'folder' ? `${node.label}/\n${t('PartImports.folderSize', { files: t('common.files', { count: node.files }), functions: t('common.fns', { count: node.functions }) })}` : node.label
     return { group: 'nodes', data: { id: node.id, label, color, ...nodeSize(label) }, classes: node.kind }
   })
   const plain = resolvedColor('--ui-text-dimmed')
@@ -89,24 +89,24 @@ const cycles = computed(() => shown.value.edges.filter(edge => edge.cycle).lengt
 <template>
   <div class="flex min-h-0 flex-1 flex-col">
     <div class="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-default px-4 py-2 text-sm">
-      <nav class="flex flex-wrap items-center gap-1 font-mono text-xs" aria-label="Folder">
-        <button type="button" class="text-muted hover:text-highlighted" @click="router.push({ query: {} })">All parts</button>
+      <nav class="flex flex-wrap items-center gap-1 font-mono text-xs" :aria-label="t('PartImports.folder')">
+        <button type="button" class="text-muted hover:text-highlighted" @click="router.push({ query: {} })">{{ t('PartImports.allParts') }}</button>
         <template v-for="(crumb, at) in crumbs" :key="crumb.path">
           <UIcon name="i-lucide-chevron-right" class="size-3.5 text-muted" />
           <button v-if="at < crumbs.length - 1" type="button" class="text-muted hover:text-highlighted" @click="go(crumb.path)">{{ crumb.label }}</button>
           <span v-else class="text-highlighted">{{ crumb.label }}</span>
         </template>
       </nav>
-      <span class="text-muted tabular-nums">{{ shown.edges.reduce((sum, edge) => sum + edge.count, 0) }} imports between {{ shown.nodes.length }} folders and files</span>
-      <span v-if="cycles" class="text-error tabular-nums">{{ cycles }} arrows in a cycle</span>
-      <USwitch v-model="typeOnly" label="Type-only imports (dashed)" size="sm" class="ml-auto" />
+      <span class="text-muted tabular-nums">{{ t('PartImports.summary', { count: shown.edges.reduce((sum, edge) => sum + edge.count, 0), nodes: shown.nodes.length }) }}</span>
+      <span v-if="cycles" class="text-error tabular-nums">{{ t('PartImports.cycles', { count: cycles }) }}</span>
+      <USwitch v-model="typeOnly" :label="t('PartImports.typeOnly')" size="sm" class="ml-auto" />
     </div>
     <div class="flex min-h-0 flex-1">
       <div class="relative min-w-0 flex-1">
         <p v-if="scan && !scan.innerImports" class="absolute inset-0 grid place-items-center px-8 text-center text-sm text-muted">
-          The architecture script lists only imports between parts.
+          {{ t('PartImports.scriptOnly') }}
         </p>
-        <p v-else-if="!shown.nodes.length" class="absolute inset-0 grid place-items-center text-sm text-muted">Nothing in this folder.</p>
+        <p v-else-if="!shown.nodes.length" class="absolute inset-0 grid place-items-center text-sm text-muted">{{ t('PartImports.empty') }}</p>
         <GraphView
           v-else
           :elements="elements"
@@ -121,24 +121,24 @@ const cycles = computed(() => shown.value.edges.filter(edge => edge.cycle).lengt
       </div>
       <aside class="w-96 shrink-0 overflow-auto border-l border-default p-4">
         <template v-if="pickedEdge">
-          <div class="font-mono text-xs tracking-wider text-muted uppercase">Imports</div>
+          <div class="font-mono text-xs tracking-wider text-muted uppercase">{{ t('PartImports.imports') }}</div>
           <h2 class="mb-3 font-mono text-sm font-semibold break-all text-highlighted">{{ labels.get(pickedEdge.edge.from) }} → {{ labels.get(pickedEdge.edge.to) }}</h2>
-          <p v-if="pickedEdge.edge.cycle" class="mb-3 text-xs text-error">In a cycle: these folders import each other at runtime.</p>
+          <p v-if="pickedEdge.edge.cycle" class="mb-3 text-xs text-error">{{ t('PartImports.inCycle') }}</p>
           <ul class="grid gap-2">
             <li v-for="item in pickedEdge.files" :key="`${item.from}->${item.to}`" class="grid gap-1 rounded-md border border-default p-2">
               <button type="button" class="text-left font-mono text-xs break-all hover:underline" @click="open(item.from)">{{ item.from }}</button>
               <span class="font-mono text-xs break-all text-muted">→ {{ item.to }}</span>
-              <UBadge v-if="item.typeOnly" label="types only" size="sm" variant="outline" color="neutral" class="justify-self-start" />
+              <UBadge v-if="item.typeOnly" :label="t('PartImports.typesOnly')" size="sm" variant="outline" color="neutral" class="justify-self-start" />
             </li>
           </ul>
         </template>
         <template v-else-if="pickedNode?.node">
-          <div class="font-mono text-xs tracking-wider text-muted uppercase">{{ pickedNode.node.kind === 'folder' ? 'Folder' : 'File' }}</div>
+          <div class="font-mono text-xs tracking-wider text-muted uppercase">{{ pickedNode.node.kind === 'folder' ? t('PartImports.folder') : t('PartImports.file') }}</div>
           <h2 class="mb-1 font-mono text-sm font-semibold break-all text-highlighted">{{ labels.get(pickedNode.node.id) }}</h2>
-          <p class="mb-3 text-xs text-muted tabular-nums">{{ pickedNode.node.files }} files · {{ pickedNode.node.functions }} functions</p>
-          <UButton v-if="pickedNode.node.kind === 'folder'" label="Inside it" icon="i-lucide-folder-open" size="sm" color="neutral" variant="outline" class="mb-4" @click="go(pickedNode.node.id)" />
+          <p class="mb-3 text-xs text-muted tabular-nums">{{ t('PartImports.nodeSize', { files: t('common.files', { count: pickedNode.node.files }), functions: t('common.functions', { count: pickedNode.node.functions }) }) }}</p>
+          <UButton v-if="pickedNode.node.kind === 'folder'" :label="t('PartImports.inside')" icon="i-lucide-folder-open" size="sm" color="neutral" variant="outline" class="mb-4" @click="go(pickedNode.node.id)" />
           <section v-for="side in (['out', 'in'] as const)" :key="side" class="mb-4 grid gap-1.5">
-            <h3 class="text-xs font-semibold tracking-wider text-muted uppercase">{{ side === 'out' ? 'Imports from' : 'Imported by' }} ({{ pickedNode[side].length }})</h3>
+            <h3 class="text-xs font-semibold tracking-wider text-muted uppercase">{{ t(`PartImports.side.${side}`, { count: pickedNode[side].length }) }}</h3>
             <button
               v-for="edge in pickedNode[side]"
               :key="`${edge.from}->${edge.to}`"
@@ -152,11 +152,9 @@ const cycles = computed(() => shown.value.edges.filter(edge => edge.cycle).lengt
           </section>
         </template>
         <template v-else>
-          <h2 class="mb-2 font-semibold text-highlighted">Inside {{ folder.path ? folder.name : props.part }}</h2>
+          <h2 class="mb-2 font-semibold text-highlighted">{{ t('PartImports.title', { name: folder.path ? folder.name : props.part }) }}</h2>
           <p class="mb-3 text-sm text-muted">
-            Arrows show imports between folders or files, thicker for more. Importers sit higher, cycles are red. Click an
-            arrow for its files, a folder for its imports; double-click to go inside. Imports between parts are in All
-            parts.
+            {{ t('PartImports.help') }}
           </p>
         </template>
       </aside>

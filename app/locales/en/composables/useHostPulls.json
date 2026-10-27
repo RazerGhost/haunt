@@ -1,0 +1,21 @@
+{
+  "untested": "Read through tea for Gitea, which is untested.",
+  "aDraft": "a draft",
+  "checksAre": "checks {checks}",
+  "state": {
+    "open": "open",
+    "draft": "draft",
+    "merged": "merged",
+    "closed": "closed"
+  },
+  "checks": {
+    "passing": "passing",
+    "failing": "failing",
+    "pending": "pending"
+  },
+  "review": {
+    "approved": "approved",
+    "changesRequested": "changes requested",
+    "reviewRequired": "review required"
+  }
+}

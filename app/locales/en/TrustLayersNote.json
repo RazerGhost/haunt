@@ -1,0 +1,5 @@
+{
+  "title": "This project's own layers are not shown",
+  "description": "They are in {path}, which runs only once the folder is trusted. Until then, parts are grouped by workspace and folder.",
+  "trust": "Trust this folder"
+}

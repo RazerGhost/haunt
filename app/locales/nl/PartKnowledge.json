@@ -1,0 +1,30 @@
+{
+  "today": "vandaag",
+  "yesterday": "gisteren",
+  "daysAgo": {
+    "one": "{count} dag geleden",
+    "other": "{count} dagen geleden"
+  },
+  "monthsAgo": {
+    "one": "{count} maand geleden",
+    "other": "{count} maanden geleden"
+  },
+  "title": "Wie het kent",
+  "onlyOne": "schreef er bijna alles van, en niemand anders veranderde het dit jaar: een tweede reviewer of wat notities is de moeite waard.",
+  "wrote": "Schreef de regels die er nu staan",
+  "lines": {
+    "one": "{count} regel",
+    "other": "{count} regels"
+  },
+  "skipped": {
+    "one": "{count} bestand niet geteld (nieuw, of na de eerste 300).",
+    "other": "{count} bestanden niet geteld (nieuw, of na de eerste 300)."
+  },
+  "noLines": "Nog geen gecommitte regels.",
+  "changed": "Veranderde het in het afgelopen jaar",
+  "nobody": "Niemand.",
+  "commits": {
+    "one": "{count} commit",
+    "other": "{count} commits"
+  }
+}

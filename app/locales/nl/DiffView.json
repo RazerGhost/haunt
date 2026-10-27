@@ -1,0 +1,12 @@
+{
+  "readError": "De diff kon niet worden gelezen.",
+  "history": "Geschiedenis",
+  "blame": "Blame",
+  "copyPath": "Kopieer het pad",
+  "wholeFile": "Hele bestand",
+  "unified": "Samengevoegd",
+  "sideBySide": "Naast elkaar",
+  "binary": "Een binair bestand: geen regels om te vergelijken.",
+  "noLines": "Geen regels gewijzigd (het bestand is hernoemd of de modus is gewijzigd).",
+  "openFunction": "Open deze functie in het paneel"
+}

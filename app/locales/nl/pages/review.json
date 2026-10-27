@@ -1,0 +1,25 @@
+{
+  "readError": "De wijzigingen van de branch konden niet worden gelezen.",
+  "title": "Review {branch}",
+  "titleThis": "Review deze branch",
+  "summary": {
+    "one": "Tegen {base}: {count} gewijzigde functie, {seen} bekeken. ← → of J K om erdoorheen te gaan.",
+    "other": "Tegen {base}: {count} gewijzigde functies, {seen} bekeken. ← → of J K om erdoorheen te gaan."
+  },
+  "reading": "De wijzigingen worden gelezen…",
+  "previous": "Vorige functie",
+  "next": "Volgende functie",
+  "seen": "Bekeken",
+  "markSeen": "Markeer als bekeken",
+  "noFunctions": "Deze branch wijzigt geen functies sinds {base}.",
+  "status": {
+    "added": "nieuw",
+    "changed": "gewijzigd",
+    "removed": "verwijderd",
+    "moved": "verplaatst"
+  },
+  "from": "van {name} in {path}",
+  "calledBy": "Aangeroepen door {count}",
+  "noCallers": "Niets in de scan roept het aan.",
+  "fileSince": "Het bestand sinds {base} (gecommit)"
+}

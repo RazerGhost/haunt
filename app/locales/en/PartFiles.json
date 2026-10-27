@@ -1,0 +1,19 @@
+{
+  "alsoUses": "Also uses {parts} from its own layer.",
+  "folder": "Folder",
+  "files": {
+    "one": "{count} file",
+    "other": "{count} files"
+  },
+  "functions": {
+    "one": "{count} function",
+    "other": "{count} functions"
+  },
+  "nested": "{count} nested",
+  "openFiles": "Open files",
+  "lines": {
+    "one": "{count} line",
+    "other": "{count} lines"
+  },
+  "noPart": "No part called {part} in this scan."
+}

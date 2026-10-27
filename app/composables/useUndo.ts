@@ -17,9 +17,9 @@ async function undo(): Promise<void> {
   try {
     const title = await haunt.undoLast(at)
     last.value = null
-    toast?.add({ title: `Undone: ${title}`, icon: 'i-lucide-undo-2' })
+    toast?.add({ title: t('composables.useUndo.undone', { title }), icon: 'i-lucide-undo-2' })
   } catch (error) {
-    toast?.add({ title: 'Not undone', description: errorMessage(error, 'Try again.'), color: 'error', icon: 'i-lucide-circle-alert' })
+    toast?.add({ title: t('composables.useUndo.notUndone'), description: errorMessage(error, t('common.tryAgain')), color: 'error', icon: 'i-lucide-circle-alert' })
   }
 }
 
@@ -32,10 +32,10 @@ export function startUndo(): void {
     toast?.add({
       id: 'undo',
       title: news.title,
-      description: `Undo: ${news.undo}`,
+      description: t('composables.useUndo.undoWhat', { undo: news.undo }),
       duration: 12000,
       icon: 'i-lucide-check',
-      actions: [{ label: 'Undo', color: 'neutral', variant: 'outline', onClick: () => { void undo() } }]
+      actions: [{ label: t('common.undo'), color: 'neutral', variant: 'outline', onClick: () => { void undo() } }]
     })
   })
   // Any other change in git may leave nothing to undo: asked again.

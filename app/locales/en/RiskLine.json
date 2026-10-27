@@ -1,0 +1,28 @@
+{
+  "level": {
+    "low": "low risk",
+    "medium": "medium risk",
+    "high": "high risk"
+  },
+  "callers": {
+    "one": "{count} function calls what changed",
+    "other": "{count} functions call what changed"
+  },
+  "unreached": {
+    "one": "{unreached} of {count} changed function no test reaches",
+    "other": "{unreached} of {count} changed functions no test reaches"
+  },
+  "reached": {
+    "one": "a test reaches the changed function",
+    "other": "tests reach every changed function"
+  },
+  "reachedPartly": "tests reach every changed function Haunt reads tests for",
+  "unread": "tests not read for {count} (PHP, Rust or Lua)",
+  "busy": {
+    "one": "touches a busy file ({name}, {commits} commits in {days} days)",
+    "other": "touches {count} busy files (the busiest {name}, {commits} commits in {days} days)"
+  },
+  "size": "{count} functions changed",
+  "quiet": "nothing calls it, and it touches no busy file",
+  "hint": "{reasons}. Based on callers, tests and the last {days} days of changes: a hint for where to look first."
+}

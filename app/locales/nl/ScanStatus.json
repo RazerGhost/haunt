@@ -1,0 +1,11 @@
+{
+  "loading": "Laden",
+  "scanning": "Scannen",
+  "live": "Live",
+  "problem": "Probleem",
+  "noProject": "Geen project",
+  "scannedAt": "Live: gescand om {at} ({structure} s)",
+  "scannedAtCalls": "Live: gescand om {at} ({structure} s, aanroepen {calls} s)",
+  "tooltip": "{details}. Klik om opnieuw te scannen.",
+  "rescan": "{state}: opnieuw scannen"
+}

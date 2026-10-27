@@ -14,9 +14,9 @@ const prunable = computed(() => worktrees.list.value.some(worktree => worktree.p
 const nameOf = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path
 function menu(worktree: (typeof worktrees.list.value)[number]) {
   return [
-    [{ label: 'Open in its tab', icon: 'i-lucide-folder-git-2', disabled: worktree.prunable, onSelect: () => worktrees.open(worktree.path) }],
+    [{ label: t('WorktreeList.open'), icon: 'i-lucide-folder-git-2', disabled: worktree.prunable, onSelect: () => worktrees.open(worktree.path) }],
     // Not the folder on screen: switch to another tab to remove it.
-    [{ label: worktree.path === repo.value ? 'Remove… (from another tab)' : 'Remove…', icon: 'i-lucide-trash-2', color: 'error' as const, disabled: worktree.main || worktree.path === repo.value, onSelect: () => worktrees.remove(worktree) }]
+    [{ label: worktree.path === repo.value ? t('WorktreeList.removeElsewhere') : t('WorktreeList.remove'), icon: 'i-lucide-trash-2', color: 'error' as const, disabled: worktree.main || worktree.path === repo.value, onSelect: () => worktrees.remove(worktree) }]
   ]
 }
 </script>
@@ -25,9 +25,9 @@ function menu(worktree: (typeof worktrees.list.value)[number]) {
   <section class="grid grid-cols-[minmax(0,1fr)] gap-0.5">
     <button type="button" class="flex items-center gap-1 px-2 text-label font-semibold tracking-wider text-muted uppercase hover:text-default" :aria-expanded="!props.shut" @click="emit('toggle')">
       <UIcon name="i-lucide-chevron-right" class="size-3 transition" :class="{ 'rotate-90': !props.shut }" />
-      Worktrees <span class="ml-auto font-normal tabular-nums">{{ others.length }}</span>
-      <UTooltip text="Check a branch out in a new worktree: a folder of its own">
-        <span role="button" tabindex="0" class="-mr-1 grid size-5 place-items-center rounded normal-case hover:bg-elevated hover:text-highlighted" aria-label="New worktree" @click.stop="worktrees.add()" @keydown.enter.stop="worktrees.add()">
+      {{ t('WorktreeList.title') }} <span class="ml-auto font-normal tabular-nums">{{ others.length }}</span>
+      <UTooltip :text="t('WorktreeList.newHelp')">
+        <span role="button" tabindex="0" class="-mr-1 grid size-5 place-items-center rounded normal-case hover:bg-elevated hover:text-highlighted" :aria-label="t('WorktreeList.new')" @click.stop="worktrees.add()" @keydown.enter.stop="worktrees.add()">
           <UIcon name="i-lucide-plus" class="size-3.5" />
         </span>
       </UTooltip>
@@ -39,18 +39,18 @@ function menu(worktree: (typeof worktrees.list.value)[number]) {
             type="button"
             class="flex w-full items-center gap-1.5 rounded py-1 pr-2 pl-5 text-left text-ui hover:bg-elevated disabled:opacity-60"
             :class="{ 'bg-elevated font-medium text-highlighted': worktree.path === repo }"
-            :title="`${worktree.path}${worktree.prunable ? ' (its folder is gone)' : ''}${worktree.locked !== null ? ' (locked)' : ''}`"
+            :title="`${worktree.path}${worktree.prunable ? ` ${t('WorktreeList.folderGone')}` : ''}${worktree.locked !== null ? ` ${t('WorktreeList.locked')}` : ''}`"
             :disabled="worktree.prunable"
             @click="worktree.path !== repo && worktrees.open(worktree.path)"
           >
             <UIcon :name="worktree.main ? 'i-lucide-folder-git-2' : 'i-lucide-git-fork'" class="size-3.5 shrink-0 text-dimmed" />
-            <span class="min-w-0 flex-1 truncate" :class="{ 'line-through': worktree.prunable }">{{ worktree.branch ?? `${worktree.head.slice(0, 7)} (detached)` }}</span>
-            <span class="min-w-0 truncate text-label text-muted">{{ worktree.path === repo ? 'this folder' : nameOf(worktree.path) }}</span>
+            <span class="min-w-0 flex-1 truncate" :class="{ 'line-through': worktree.prunable }">{{ worktree.branch ?? t('WorktreeList.detached', { commit: worktree.head.slice(0, 7) }) }}</span>
+            <span class="min-w-0 truncate text-label text-muted">{{ worktree.path === repo ? t('WorktreeList.thisFolder') : nameOf(worktree.path) }}</span>
           </button>
         </UContextMenu>
       </li>
       <li v-if="prunable" class="pl-5">
-        <UButton label="Prune missing" size="xs" color="neutral" variant="ghost" @click="worktrees.prune()" />
+        <UButton :label="t('WorktreeList.prune')" size="xs" color="neutral" variant="ghost" @click="worktrees.prune()" />
       </li>
     </ul>
   </section>

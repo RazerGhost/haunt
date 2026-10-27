@@ -1,0 +1,25 @@
+{
+  "noPart": "(bestanden die nu niet in de code staan)",
+  "status": {
+    "added": "nieuw",
+    "changed": "gewijzigd",
+    "removed": "verwijderd",
+    "moved": "verplaatst"
+  },
+  "fileStatus": {
+    "added": "nieuw",
+    "modified": "gewijzigd",
+    "deleted": "verwijderd",
+    "renamed": "hernoemd"
+  },
+  "renamedFrom": "hernoemd van {name}",
+  "movedFrom": "verplaatst van {name}",
+  "fromNameIn": "van {name} in {file}",
+  "fromFile": "van {file}",
+  "openFile": "Open het bestand in de editor",
+  "notInCode": "{name} (staat nu niet in de code)",
+  "openFunction": "Open {name} in de editor",
+  "unread": "De functies konden deze keer niet worden gelezen. Bekijk de diff, of open het opnieuw.",
+  "movedOut": "Functies zijn uit dit bestand verplaatst; ze staan vermeld waar ze nu zijn.",
+  "noFunction": "Geen functie gewijzigd (alleen imports, markup of code op het hoogste niveau)."
+}

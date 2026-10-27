@@ -1,0 +1,44 @@
+{
+  "readError": "De commit kon niet worden gelezen.",
+  "changesError": "De wijzigingen konden niet worden gelezen.",
+  "lens": {
+    "files": "Bestanden",
+    "functions": "Functies",
+    "impact": "Wat kan breken",
+    "map": "Kaart",
+    "calls": "Aanroepen",
+    "architecture": "Architectuur"
+  },
+  "lenses": "Lenzen",
+  "comparing": "Vergelijking",
+  "filesBetween": {
+    "one": "{count} bestand gewijzigd tussen de twee commits.",
+    "other": "{count} bestanden gewijzigd tussen de twee commits."
+  },
+  "compareOther": "Ctrl-klik op een andere commit om daarmee te vergelijken.",
+  "copyId": "Kopieer de volledige commit-id",
+  "committedBy": "gecommit door {name}",
+  "parents": {
+    "one": "ouder",
+    "other": "ouders"
+  },
+  "firstCommit": "de eerste commit",
+  "firstParent": "(vergeleken met de eerste ouder)",
+  "noFiles": "Geen bestanden gewijzigd.",
+  "waitingScan": "Wachten op de eerste scan",
+  "noCode": "Deze wijziging raakt geen code die Haunt leest.",
+  "impactHelp": "Functies die een gewijzigde functie aanroepen, dichtstbijzijnde eerst.",
+  "missing": {
+    "one": "{count} gewijzigde functie staat nu niet meer in de code en heeft hier geen aanroepers.",
+    "other": "{count} gewijzigde functies staan nu niet meer in de code en hebben hier geen aanroepers."
+  },
+  "stepsBefore": "Aanroepers tot",
+  "stepsAfter": "stappen ver",
+  "mapLayersHelp": "Per onderdeel: gewijzigde functies (Δ) en hun aanroepers, op de lagenkaart.",
+  "mapCanvasHelp": "Gewijzigde functies in amber, hun aanroepers omlijnd.",
+  "layers": "Lagen",
+  "canvas": "Canvas",
+  "noneInCode": "Geen van de gewijzigde functies staat nu in de code.",
+  "workingOut": "Bezig met de aanroepgraaf…",
+  "callsHint": "Gewijzigd in het midden, aanroepers links, aangeroepen functies rechts · dubbelklik om te openen in Aanroepen"
+}

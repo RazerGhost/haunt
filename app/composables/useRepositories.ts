@@ -73,7 +73,7 @@ export function useRepositories() {
       void router.push(tabRoutes.value[info.value.root ?? ''] ?? '/commits')
       return null
     } catch (error) {
-      return errorMessage(error, 'That folder could not be opened.')
+      return errorMessage(error, t('composables.useRepositories.notOpened'))
     }
   }
 
@@ -87,7 +87,7 @@ export function useRepositories() {
       tabRoutes.value = rest
       if (shown) void router.push(tabRoutes.value[info.value.root ?? ''] ?? '/commits')
     } catch (error) {
-      toast.add({ title: 'Could not close the tab', description: errorMessage(error, 'Try again.'), color: 'error', icon: 'i-lucide-circle-alert' })
+      toast.add({ title: t('composables.useRepositories.notClosed'), description: errorMessage(error, t('common.tryAgain')), color: 'error', icon: 'i-lucide-circle-alert' })
     }
   }
 
@@ -98,7 +98,7 @@ export function useRepositories() {
       info.value = await haunt.trust(repo.value, trusted)
       return null
     } catch (error) {
-      return errorMessage(error, 'The trust could not be changed.')
+      return errorMessage(error, t('composables.useRepositories.trustNotChanged'))
     }
   }
 

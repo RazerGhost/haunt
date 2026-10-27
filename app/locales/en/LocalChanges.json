@@ -1,0 +1,25 @@
+{
+  "pickedLines": {
+    "one": "{count} picked line of {path}",
+    "other": "{count} picked lines of {path}"
+  },
+  "files": {
+    "one": "{count} file",
+    "other": "{count} files"
+  },
+  "unstaged": "Unstaged",
+  "stageAll": "Stage all",
+  "discardAll": "Discard all",
+  "discard": "Discard",
+  "stage": "Stage",
+  "nothingUnstaged": "Nothing unstaged.",
+  "staged": "Staged",
+  "unstageAll": "Unstage all",
+  "unstage": "Unstage",
+  "nothingStaged": "Nothing staged.",
+  "recentlyDiscarded": "Recently discarded",
+  "noChanges": "No local changes.",
+  "discardTitle": "Discard these changes?",
+  "discardDescription": "{what}. They are kept in Recently discarded for 30 days.",
+  "keep": "Keep them"
+}

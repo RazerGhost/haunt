@@ -1,0 +1,10 @@
+{
+  "conflicts": {
+    "one": "{count} file conflicts",
+    "other": "{count} files conflict"
+  },
+  "noConflicts": "no conflicts left",
+  "resolve": "Resolve conflicts",
+  "continue": "Continue",
+  "abort": "Abort"
+}

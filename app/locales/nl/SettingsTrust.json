@@ -1,0 +1,7 @@
+{
+  "stillTrusted": "Nog steeds vertrouwd",
+  "intro": "Een vertrouwde map mag zijn eigen code draaien: TypeScript en architectuurscripts bij het scannen, git hooks en filters bij het schrijven. Pull en push vragen om vertrouwen.",
+  "none": "Er is geen map vertrouwd.",
+  "notFound": "Niet gevonden",
+  "stop": "Niet meer vertrouwen"
+}

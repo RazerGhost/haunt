@@ -1,0 +1,25 @@
+{
+  "notByFunction": "Niet per functie uitgewerkt",
+  "previewNotRead": "De voorvertoning kon niet gelezen worden.",
+  "title": "Patches toepassen",
+  "introBefore": "Patchbestanden van",
+  "introAfter": "of een gewone diff. Haunt toont hun wijzigingen per functie op een kopie; er verandert niets tot je ze toepast. Om er een te maken: klik met rechts op een commit, Opslaan als patch.",
+  "choose": "Patchbestanden kiezen…",
+  "chooseOther": "Andere bestanden kiezen…",
+  "readAgain": "Opnieuw lezen",
+  "patches": {
+    "one": "{count} patch, in deze volgorde",
+    "other": "{count} patches, in deze volgorde"
+  },
+  "noAuthor": "geen auteur: een gewone diff",
+  "files": {
+    "one": "{count} bestand",
+    "other": "{count} bestanden"
+  },
+  "doesNotApply": "Ze passen niet op de laatste commit, dus er kan nog niets toegepast worden.",
+  "whatChanges": "Wat ze wijzigen",
+  "commit": "Committen",
+  "commitHelp": "git am: elke patch wordt een commit op de huidige branch, met een eigen bericht en auteur",
+  "applyOnly": "Alleen de bestanden wijzigen",
+  "applyOnlyHelp": "git apply: de wijzigingen komen in de working tree, om zelf te bekijken en te committen"
+}

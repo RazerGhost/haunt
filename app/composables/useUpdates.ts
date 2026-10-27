@@ -19,13 +19,13 @@ async function check(current: string): Promise<UpdateResult> {
   try {
     const response = await fetch(RELEASES, { headers: { Accept: 'application/vnd.github+json' } })
     lastCheck.value = Date.now()
-    if (response.status === 404) return (result.value = { latest: null, url: null, newer: false, problem: 'No release has been published yet.' })
-    if (!response.ok) return (result.value = { latest: null, url: null, newer: false, problem: `GitHub answered ${response.status}.` })
+    if (response.status === 404) return (result.value = { latest: null, url: null, newer: false, problem: t('composables.useUpdates.noRelease') })
+    if (!response.ok) return (result.value = { latest: null, url: null, newer: false, problem: t('composables.useUpdates.answered', { status: response.status }) })
     const release = await response.json() as { tag_name?: string, html_url?: string }
     const latest = release.tag_name ?? null
     return (result.value = { latest, url: release.html_url ?? null, newer: !!latest && compareVersions(latest, current) > 0, problem: null })
   } catch {
-    return (result.value = { latest: null, url: null, newer: false, problem: 'GitHub could not be reached.' })
+    return (result.value = { latest: null, url: null, newer: false, problem: t('composables.useUpdates.unreachable') })
   } finally {
     checking.value = false
   }
@@ -41,10 +41,10 @@ export function startUpdates(): void {
 
 function notifyNewer(found: UpdateResult): void {
   useToast().add({
-    title: `Haunt ${found.latest} is out`,
-    description: 'See what is new and download it from its release page.',
+    title: t('composables.useUpdates.newer', { version: found.latest ?? '' }),
+    description: t('composables.useUpdates.newerHelp'),
     icon: 'i-lucide-sparkles',
-    actions: found.url ? [{ label: 'See it', color: 'neutral', variant: 'outline', onClick: () => { void haunt.openRelease(found.url!) } }] : undefined
+    actions: found.url ? [{ label: t('composables.useUpdates.seeIt'), color: 'neutral', variant: 'outline', onClick: () => { void haunt.openRelease(found.url!) } }] : undefined
   })
 }
 

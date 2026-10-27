@@ -1,0 +1,7 @@
+{
+  "files": "Bestanden",
+  "functions": "Functies",
+  "activity": "Activiteit",
+  "noActivity": "Haunt heeft sinds het starten niets naar deze repository geschreven.",
+  "notRepository": "Deze map staat niet in een git-repository."
+}

@@ -1,0 +1,13 @@
+{
+  "trusted": "Vertrouwde map",
+  "untrusted": "Map niet vertrouwd",
+  "nothing": "Niets in deze map zou draaien",
+  "runs": "De eigen code van deze map draait in Haunt",
+  "reads": "Haunt leest deze map alleen",
+  "itRuns": "Hij draait:",
+  "wouldRun": "Vertrouwd zou hij ook draaien:",
+  "its": "Zijn {label}",
+  "see": "Bekijk wat ze uitvoeren…",
+  "stop": "Deze map niet meer vertrouwen",
+  "ask": "Deze map vertrouwen…"
+}

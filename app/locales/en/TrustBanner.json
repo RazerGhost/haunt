@@ -1,0 +1,9 @@
+{
+  "question": "Trust this folder?",
+  "runsBefore": "Haunt would also run its",
+  "and": " and ",
+  "runsAfter": ".",
+  "see": "See what it runs",
+  "trust": "Trust",
+  "notNow": "Not now"
+}

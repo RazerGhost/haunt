@@ -1,0 +1,44 @@
+{
+  "readError": "The commit could not be read.",
+  "changesError": "The changes could not be read.",
+  "lens": {
+    "files": "Files",
+    "functions": "Functions",
+    "impact": "What could break",
+    "map": "Map",
+    "calls": "Calls",
+    "architecture": "Architecture"
+  },
+  "lenses": "Lenses",
+  "comparing": "Comparing",
+  "filesBetween": {
+    "one": "{count} file changed between the two commits.",
+    "other": "{count} files changed between the two commits."
+  },
+  "compareOther": "Ctrl-click another commit to compare with it instead.",
+  "copyId": "Copy the full commit id",
+  "committedBy": "committed by {name}",
+  "parents": {
+    "one": "parent",
+    "other": "parents"
+  },
+  "firstCommit": "the first commit",
+  "firstParent": "(compared with its first parent)",
+  "noFiles": "No files changed.",
+  "waitingScan": "Waiting for the first scan",
+  "noCode": "This change touches no code Haunt reads.",
+  "impactHelp": "Functions that call a changed one, nearest first.",
+  "missing": {
+    "one": "{count} changed function is not in the code now and has no callers here.",
+    "other": "{count} changed functions are not in the code now and have no callers here."
+  },
+  "stepsBefore": "Callers",
+  "stepsAfter": "steps out",
+  "mapLayersHelp": "Per part: functions changed (Δ) and their callers, on the layer map.",
+  "mapCanvasHelp": "Changed functions in amber, their callers outlined.",
+  "layers": "Layers",
+  "canvas": "Canvas",
+  "noneInCode": "None of the changed functions is in the code now.",
+  "workingOut": "Working out the call graph…",
+  "callsHint": "Changed in the middle, callers left, callees right · double-click to open in Calls"
+}

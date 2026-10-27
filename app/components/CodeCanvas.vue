@@ -315,10 +315,10 @@ function onMove(event: PointerEvent): void {
         y: event.clientY - r.top,
         title: found.kind === 'folder' ? found.label : found.label,
         detail: [
-          found.kind === 'function' ? `${found.path}:${found.fn!.line}` : found.kind === 'file' ? found.path! : found.kind,
-          `${found.weight} lines`,
+          found.kind === 'function' ? `${found.path}:${found.fn!.line}` : found.kind === 'file' ? found.path! : t(`CodeCanvas.kind.${found.kind}`),
+          t('CodeCanvas.lines', { count: found.weight }),
           found.kind === 'function' && index.value
-            ? `${index.value.callers.get(found.id)?.length ?? 0} callers, calls ${index.value.callees.get(found.id)?.length ?? 0}`
+            ? t('CodeCanvas.calls', { count: index.value.callers.get(found.id)?.length ?? 0, callees: index.value.callees.get(found.id)?.length ?? 0 })
             : null
         ].filter(Boolean).join(' · ')
       }
@@ -461,7 +461,7 @@ defineExpose({ fit, zoomToIds })
       ref="mapCanvas"
       class="absolute right-2 bottom-2 cursor-crosshair rounded border border-default shadow-sm"
       :style="{ width: `${MAP.w}px`, height: `${MAP.h}px` }"
-      title="Where you are: click or drag to move"
+      :title="t('CodeCanvas.map')"
       @pointerdown="mapTo"
       @pointermove="mapTo"
     />

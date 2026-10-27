@@ -27,7 +27,7 @@ async function use(chosen: string) {
 
 async function browse() {
   const { open } = await import('@tauri-apps/plugin-dialog')
-  const chosen = await open({ directory: true, title: 'Open a repository', defaultPath: info.value.root ?? undefined })
+  const chosen = await open({ directory: true, title: t('RootPicker.title'), defaultPath: info.value.root ?? undefined })
   if (typeof chosen === 'string') {
     path.value = chosen
     await use(chosen)
@@ -51,22 +51,22 @@ async function forget(recent: string) {
   try {
     known.value = await haunt.forgetRecent(recent)
   } catch (error) {
-    toast.add({ title: 'Not removed', description: errorMessage(error, 'Try again.'), color: 'error', icon: 'i-lucide-circle-alert' })
+    toast.add({ title: t('RootPicker.notRemoved'), description: errorMessage(error, t('common.tryAgain')), color: 'error', icon: 'i-lucide-circle-alert' })
   }
 }
 async function reveal(recent: string) {
   try {
     await haunt.revealTab(recent)
   } catch (error) {
-    toast.add({ title: 'Could not open the folder', description: errorMessage(error, 'Try again.'), color: 'error', icon: 'i-lucide-circle-alert' })
+    toast.add({ title: t('RootPicker.folderNotOpened'), description: errorMessage(error, t('common.tryAgain')), color: 'error', icon: 'i-lucide-circle-alert' })
   }
 }
 const ago = (seconds: number) => {
   if (times.value === 'date') return new Date(seconds * 1000).toLocaleDateString()
   const minutes = Math.floor((Date.now() / 1000 - seconds) / 60)
-  if (minutes < 60) return `${Math.max(1, minutes)} min ago`
-  if (minutes < 60 * 24) return `${Math.floor(minutes / 60)} h ago`
-  return `${Math.floor(minutes / 60 / 24)} d ago`
+  if (minutes < 60) return t('RootPicker.minutesAgo', { count: Math.max(1, minutes) })
+  if (minutes < 60 * 24) return t('RootPicker.hoursAgo', { count: Math.floor(minutes / 60) })
+  return t('RootPicker.daysAgo', { count: Math.floor(minutes / 60 / 24) })
 }
 
 /* The typed path, checked a moment after typing stops. */
@@ -87,9 +87,9 @@ watch(path, (now) => {
 const verdict = computed(() => {
   const found = check.value
   if (!found) return null
-  if (!found.exists) return { color: 'text-error', icon: 'i-lucide-circle-x', text: 'No folder there.' }
-  if (!found.openable) return { color: 'text-warning', icon: 'i-lucide-triangle-alert', text: 'A folder, but no project or git repository in it.' }
-  return { color: 'text-success', icon: 'i-lucide-circle-check', text: found.repository ? 'A git repository: Enter opens it.' : 'A project: Enter opens it.' }
+  if (!found.exists) return { color: 'text-error', icon: 'i-lucide-circle-x', text: t('RootPicker.noFolder') }
+  if (!found.openable) return { color: 'text-warning', icon: 'i-lucide-triangle-alert', text: t('RootPicker.notOpenable') }
+  return { color: 'text-success', icon: 'i-lucide-circle-check', text: found.repository ? t('RootPicker.isRepository') : t('RootPicker.isProject') }
 })
 
 /* The keyboard: ↑ ↓ through the recent ones, Enter opens the one picked (else the path), Esc goes back. */
@@ -117,30 +117,29 @@ onMounted(() => nextTick(() => pathBox.value?.inputRef?.focus()))
   <div class="mx-auto grid max-w-2xl gap-6 px-4 py-14" @keydown="onKey">
     <div class="grid gap-2">
       <div class="flex items-center justify-between gap-2">
-        <h1 class="text-xl font-semibold text-highlighted">Open a repository</h1>
+        <h1 class="text-xl font-semibold text-highlighted">{{ t('RootPicker.title') }}</h1>
         <!-- With no repository open there is no toolbar: Settings (and Ctrl+,) are here then, for a new profile too. -->
         <SettingsMenu />
       </div>
       <p class="text-sm text-muted">
-        Pick a project's root: the folder with its <code>package.json</code>, <code>tsconfig.json</code>,
-        <code>composer.json</code> or <code>Cargo.toml</code>. Workspaces are drawn by package. Install dependencies
-        first so imports resolve.
+        {{ t('RootPicker.introBefore') }} <code>package.json</code>, <code>tsconfig.json</code>,
+        <code>composer.json</code> {{ t('RootPicker.or') }} <code>Cargo.toml</code>{{ t('RootPicker.introAfter') }}
       </p>
     </div>
 
-    <UButton v-if="inApp" icon="i-lucide-folder-open" label="Choose a folder" size="lg" class="justify-self-start" :loading="busy" @click="browse" />
+    <UButton v-if="inApp" icon="i-lucide-folder-open" :label="t('RootPicker.chooseFolder')" size="lg" class="justify-self-start" :loading="busy" @click="browse" />
 
     <div class="grid gap-1.5">
       <form class="flex gap-2" @submit.prevent="submit">
         <UInput
           ref="pathBox"
           v-model="path"
-          :placeholder="info.recent.length ? 'A path, or letters to find a recent one' : 'C:\\Users\\you\\Projects\\my-app'"
+          :placeholder="info.recent.length ? t('RootPicker.pathOrFilter') : t('RootPicker.examplePath')"
           class="flex-1"
           :ui="{ base: 'font-mono' }"
-          aria-label="Path or filter"
+          :aria-label="t('RootPicker.pathLabel')"
         />
-        <UButton type="submit" label="Open" color="neutral" variant="outline" :disabled="!path.trim() && active < 0" :loading="busy && !inApp" />
+        <UButton type="submit" :label="t('common.open')" color="neutral" variant="outline" :disabled="!path.trim() && active < 0" :loading="busy && !inApp" />
       </form>
       <p v-if="verdict" class="flex items-center gap-1.5 text-xs" :class="verdict.color"><UIcon :name="verdict.icon" class="size-3.5" />{{ verdict.text }}</p>
     </div>
@@ -149,11 +148,11 @@ onMounted(() => nextTick(() => pathBox.value?.inputRef?.focus()))
 
     <section v-if="info.recent.length" class="grid gap-2">
       <h2 class="flex items-center gap-2 text-xs font-semibold tracking-wider text-muted uppercase">
-        Recent
-        <span v-if="path.trim() && shown.length < info.recent.length" class="font-normal tracking-normal normal-case">{{ shown.length }} of {{ info.recent.length }}</span>
-        <span class="ml-auto font-normal tracking-normal normal-case">↑ ↓ to pick, Enter to open</span>
+        {{ t('RootPicker.recent') }}
+        <span v-if="path.trim() && shown.length < info.recent.length" class="font-normal tracking-normal normal-case">{{ t('RootPicker.shownOf', { shown: shown.length, total: info.recent.length }) }}</span>
+        <span class="ml-auto font-normal tracking-normal normal-case">{{ t('RootPicker.keys') }}</span>
       </h2>
-      <p v-if="!shown.length" class="text-sm text-muted">No recent repository matches; Enter opens the path.</p>
+      <p v-if="!shown.length" class="text-sm text-muted">{{ t('RootPicker.noMatch') }}</p>
       <ul class="grid gap-1">
         <li v-for="(recent, at) in shown" :key="recent" class="group relative">
           <button
@@ -168,30 +167,30 @@ onMounted(() => nextTick(() => pathBox.value?.inputRef?.focus()))
             <span class="grid min-w-0">
               <span class="flex min-w-0 items-center gap-2">
                 <span class="truncate font-medium text-highlighted">{{ nameOf(recent) }}</span>
-                <UBadge v-if="info.tabs.includes(recent)" label="in a tab" size="sm" variant="subtle" color="neutral" />
-                <UBadge v-if="details.get(recent)?.openable === false" label="not found" size="sm" variant="subtle" color="warning" />
+                <UBadge v-if="info.tabs.includes(recent)" :label="t('RootPicker.inTab')" size="sm" variant="subtle" color="neutral" />
+                <UBadge v-if="details.get(recent)?.openable === false" :label="t('RootPicker.notFound')" size="sm" variant="subtle" color="warning" />
               </span>
               <span class="truncate font-mono text-label text-muted">{{ recent }}</span>
             </span>
             <span class="grid justify-items-end gap-0.5 pr-14 text-label text-muted">
               <span v-if="details.get(recent)?.branch" class="flex items-center gap-1 font-mono"><UIcon name="i-lucide-git-branch" class="size-3" />{{ details.get(recent)!.branch }}</span>
               <span class="flex items-center gap-2">
-                <span v-if="details.get(recent)?.changes" class="flex items-center gap-1 text-warning" :title="`${details.get(recent)!.changes} files not committed yet`"><UIcon name="i-lucide-pencil-line" class="size-3" />{{ details.get(recent)!.changes }}</span>
+                <span v-if="details.get(recent)?.changes" class="flex items-center gap-1 text-warning" :title="t('RootPicker.uncommitted', { count: details.get(recent)!.changes! })"><UIcon name="i-lucide-pencil-line" class="size-3" />{{ details.get(recent)!.changes }}</span>
                 <span v-if="details.get(recent)?.lastCommit" :title="details.get(recent)!.lastCommit!.subject">{{ ago(details.get(recent)!.lastCommit!.time) }}</span>
               </span>
             </span>
           </button>
           <span class="absolute top-1/2 right-2 flex -translate-y-1/2 gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100">
-            <UButton v-if="details.get(recent)?.openable !== false" icon="i-lucide-folder-open" size="xs" color="neutral" variant="ghost" :aria-label="`Show ${nameOf(recent)} in the file manager`" title="Show in the file manager" @click="reveal(recent)" />
-            <UButton icon="i-lucide-x" size="xs" color="neutral" variant="ghost" :aria-label="`Remove ${nameOf(recent)} from the recent list`" title="Remove from the list (the folder stays)" @click="forget(recent)" />
+            <UButton v-if="details.get(recent)?.openable !== false" icon="i-lucide-folder-open" size="xs" color="neutral" variant="ghost" :aria-label="t('RootPicker.revealNamed', { name: nameOf(recent) })" :title="t('RootPicker.reveal')" @click="reveal(recent)" />
+            <UButton icon="i-lucide-x" size="xs" color="neutral" variant="ghost" :aria-label="t('RootPicker.forgetNamed', { name: nameOf(recent) })" :title="t('RootPicker.forget')" @click="forget(recent)" />
           </span>
         </li>
       </ul>
     </section>
 
-    <p class="text-xs text-muted">You can also drop a folder on this window, or run <code>haunt &lt;folder&gt;</code> in a terminal.</p>
+    <p class="text-xs text-muted">{{ t('RootPicker.dropBefore') }} <code>haunt &lt;folder&gt;</code> {{ t('RootPicker.dropAfter') }}</p>
 
-    <UButton v-if="picking && scan" label="Back" color="neutral" variant="ghost" class="justify-self-start" @click="picking = false">
+    <UButton v-if="picking && scan" :label="t('RootPicker.back')" color="neutral" variant="ghost" class="justify-self-start" @click="picking = false">
       <template #trailing><UKbd value="Esc" size="sm" /></template>
     </UButton>
   </div>

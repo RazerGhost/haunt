@@ -5,25 +5,26 @@ import { busyFiles, riskOf } from './risk.ts'
 test('a small, tested change in quiet files is low', () => {
   const risk = riskOf({ changed: 2, unreached: 0, callers: 1, busy: [], days: 180 })
   assert.equal(risk.level, 'low')
-  assert.deepEqual(risk.reasons, ['1 function calls what changed', 'tests reach every changed function'])
+  assert.deepEqual(risk.reasons, [{ kind: 'callers', count: 1 }, { kind: 'reached', count: 2, partly: false }])
 })
 
 test('callers, untested functions and busy files add up', () => {
   const medium = riskOf({ changed: 4, unreached: 1, callers: 6, busy: [], days: 180 })
   assert.equal(medium.level, 'medium')
-  assert.equal(medium.reasons[1], '1 of 4 changed functions no test reaches')
+  assert.deepEqual(medium.reasons[1], { kind: 'unreached', count: 1, of: 4 })
 
   const high = riskOf({ changed: 3, unreached: 2, callers: 25, busy: [{ path: 'src/api/entries.ts', commits: 31 }], days: 180 })
   assert.equal(high.level, 'high')
   assert.equal(high.points, 5)
-  assert.equal(high.reasons[2], 'touches a busy file (entries.ts, 31 commits in 180 days)')
+  assert.deepEqual(high.reasons[2], { kind: 'busy', count: 1, name: 'entries.ts', commits: 31, days: 180 })
 })
 
 test('functions in a language whose tests Haunt does not read are left out of the test count', () => {
   const risk = riskOf({ changed: 5, unreached: 1, unread: 3, callers: 0, busy: [], days: 180 })
-  assert.deepEqual(risk.reasons, ['1 of 2 changed functions no test reaches', 'tests not read for 3 (PHP, Rust or Lua)'])
+  assert.deepEqual(risk.reasons, [{ kind: 'unreached', count: 1, of: 2 }, { kind: 'unread', count: 3 }])
   assert.equal(risk.points, 2)
-  assert.deepEqual(riskOf({ changed: 2, unreached: 0, unread: 2, callers: 0, busy: [], days: 180 }).reasons, ['tests not read for 2 (PHP, Rust or Lua)'])
+  assert.deepEqual(riskOf({ changed: 2, unreached: 0, unread: 2, callers: 0, busy: [], days: 180 }).reasons, [{ kind: 'unread', count: 2 }])
+  assert.deepEqual(riskOf({ changed: 5, unreached: 0, unread: 3, callers: 0, busy: [], days: 180 }).reasons, [{ kind: 'reached', count: 2, partly: true }, { kind: 'unread', count: 3 }])
 })
 
 test('busy files are the busiest tenth, eight changes or more', () => {

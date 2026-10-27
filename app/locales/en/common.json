@@ -1,0 +1,26 @@
+{
+  "cancel": "Cancel",
+  "close": "Close",
+  "open": "Open",
+  "stop": "Stop",
+  "copy": "Copy",
+  "undo": "Undo",
+  "restore": "Restore",
+  "tryAgain": "Try again.",
+  "notSaved": "Not saved",
+  "settings": "Settings",
+  "function": "Function",
+  "files": {
+    "one": "{count} file",
+    "other": "{count} files"
+  },
+  "parts": {
+    "one": "{count} part",
+    "other": "{count} parts"
+  },
+  "functions": {
+    "one": "{count} function",
+    "other": "{count} functions"
+  },
+  "fns": "{count} fns"
+}

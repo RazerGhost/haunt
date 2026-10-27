@@ -80,7 +80,7 @@ const drafting = ref(false)
 async function draft(): Promise<void> {
   const at = repo.value
   if (!at || drafting.value) return
-  if ((subject.value.trim() || body.value.trim()) && !await dialog.confirm({ title: 'Replace the message?', description: 'The draft takes the place of the subject and description written now.', confirm: 'Replace' })) return
+  if ((subject.value.trim() || body.value.trim()) && !await dialog.confirm({ title: t('CommitBox.replaceTitle'), description: t('CommitBox.replaceDescription'), confirm: t('CommitBox.replace') })) return
   drafting.value = true
   try {
     const staged = await haunt.stagedChanges(at)
@@ -89,7 +89,7 @@ async function draft(): Promise<void> {
     subject.value = made.subject
     body.value = made.body
   } catch (error) {
-    failure.failed('No draft', error, 'The staged changes could not be read.')
+    failure.failed(t('CommitBox.noDraft'), error, t('CommitBox.stagedNotRead'))
   } finally {
     drafting.value = false
   }
@@ -99,8 +99,8 @@ const notes = computed(() => {
   const box = commitBox.value
   if (!box || box.trusted) return []
   const out: string[] = []
-  if (box.hooks.length) out.push(`Its ${box.hooks.join(', ')} ${box.hooks.length === 1 ? 'hook does' : 'hooks do'} not run: this folder is not trusted.`)
-  if (box.signing) out.push('The commit is not signed: signing runs only in a trusted folder.')
+  if (box.hooks.length) out.push(t('CommitBox.hooksSkipped', { count: box.hooks.length, hooks: box.hooks.join(', ') }))
+  if (box.signing) out.push(t('CommitBox.notSigned'))
   return out
 })
 const ready = computed(() => !!subject.value.trim() && (props.staged > 0 || amend.value) && !busy.value)
@@ -124,29 +124,29 @@ async function submit(): Promise<void> {
 <template>
   <form class="grid gap-2 p-3" @submit.prevent="submit">
     <div class="flex items-center gap-1.5">
-      <UInput v-model="subject" placeholder="Subject" size="sm" class="min-w-0 flex-1" aria-label="Commit subject" @keydown.ctrl.enter="submit" @keydown.meta.enter="submit">
+      <UInput v-model="subject" :placeholder="t('CommitBox.subject')" size="sm" class="min-w-0 flex-1" :aria-label="t('CommitBox.subjectLabel')" @keydown.ctrl.enter="submit" @keydown.meta.enter="submit">
         <template v-if="subjectLength" #trailing>
-          <span class="text-label tabular-nums" :class="subjectLength > 72 ? 'text-error' : subjectLength > 50 ? 'text-warning' : 'text-dimmed'" :title="subjectLength > 50 ? 'Git advises a subject of at most 50 characters' : undefined">{{ subjectLength }}</span>
+          <span class="text-label tabular-nums" :class="subjectLength > 72 ? 'text-error' : subjectLength > 50 ? 'text-warning' : 'text-dimmed'" :title="subjectLength > 50 ? t('CommitBox.subjectLong') : undefined">{{ subjectLength }}</span>
         </template>
       </UInput>
       <UDropdownMenu :items="recentItems" :content="{ align: 'end' }" @update:open="(open: boolean) => { if (open) void loadRecent() }">
-        <UButton icon="i-lucide-history" size="sm" color="neutral" variant="ghost" aria-label="Recent subjects" title="Start from a recent subject" />
+        <UButton icon="i-lucide-history" size="sm" color="neutral" variant="ghost" :aria-label="t('CommitBox.recent')" :title="t('CommitBox.recentHelp')" />
       </UDropdownMenu>
-      <UButton icon="i-lucide-file-pen-line" size="sm" color="neutral" variant="ghost" aria-label="Draft message" title="Draft a message from the staged changes, by function. Made here, without AI." :disabled="!props.staged" :loading="drafting" @click="draft" />
+      <UButton icon="i-lucide-file-pen-line" size="sm" color="neutral" variant="ghost" :aria-label="t('CommitBox.draft')" :title="t('CommitBox.draftHelp')" :disabled="!props.staged" :loading="drafting" @click="draft" />
     </div>
-    <UTextarea v-model="body" placeholder="Description (optional)" size="sm" :rows="3" autoresize :maxrows="10" aria-label="Commit description" @keydown.ctrl.enter="submit" @keydown.meta.enter="submit" />
-    <p v-if="longLines" class="text-xs text-warning">{{ longLines }} {{ longLines === 1 ? 'line is' : 'lines are' }} over 72 characters; git advises wrapping at 72.</p>
+    <UTextarea v-model="body" :placeholder="t('CommitBox.description')" size="sm" :rows="3" autoresize :maxrows="10" :aria-label="t('CommitBox.descriptionLabel')" @keydown.ctrl.enter="submit" @keydown.meta.enter="submit" />
+    <p v-if="longLines" class="text-xs text-warning">{{ t('CommitBox.longLines', { count: longLines }) }}</p>
     <p v-if="amend && amendPushed.length" class="flex items-start gap-1.5 text-xs text-warning">
-      <UIcon name="i-lucide-triangle-alert" class="mt-0.5 size-3.5 shrink-0" />The last commit is on {{ amendPushed.join(', ') }}: amending it means pushing with Overwrite.
+      <UIcon name="i-lucide-triangle-alert" class="mt-0.5 size-3.5 shrink-0" />{{ t('CommitBox.amendPushed', { remotes: amendPushed.join(', ') }) }}
     </p>
     <p v-for="note in notes" :key="note" class="flex items-start gap-1.5 text-xs text-warning">
       <UIcon name="i-lucide-shield-alert" class="mt-0.5 size-3.5 shrink-0" />{{ note }}
     </p>
     <div class="flex flex-wrap items-center gap-4">
-      <UCheckbox v-model="amend" label="Amend" size="sm" :disabled="!commitBox?.lastMessage" />
-      <UCheckbox v-model="signoff" label="Sign off" size="sm" />
+      <UCheckbox v-model="amend" :label="t('CommitBox.amend')" size="sm" :disabled="!commitBox?.lastMessage" />
+      <UCheckbox v-model="signoff" :label="t('CommitBox.signOff')" size="sm" />
       <span class="ml-auto text-label text-muted">Ctrl Enter</span>
-      <UButton type="submit" :label="amend ? 'Amend last commit' : props.staged ? `Commit ${props.staged} ${props.staged === 1 ? 'file' : 'files'}` : 'Commit'" icon="i-lucide-git-commit-horizontal" size="sm" :disabled="!ready" :loading="busy" />
+      <UButton type="submit" :label="amend ? t('CommitBox.amendLast') : props.staged ? t('CommitBox.commitFiles', { count: props.staged }) : t('CommitBox.commit')" icon="i-lucide-git-commit-horizontal" size="sm" :disabled="!ready" :loading="busy" />
     </div>
   </form>
 </template>

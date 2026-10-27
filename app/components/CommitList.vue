@@ -46,25 +46,25 @@ const menu = computed(() => {
   const at = { rev: commit.sha, label: `${commit.sha.slice(0, 7)} (${commit.subject})` }
   return [
     [
-      { label: 'New branch here…', icon: 'i-lucide-git-branch-plus', onSelect: () => refActions.newBranch(at) },
-      { label: 'New tag here…', icon: 'i-lucide-tag', onSelect: () => refActions.newTag(at) }
+      { label: t('CommitList.newBranch'), icon: 'i-lucide-git-branch-plus', onSelect: () => refActions.newBranch(at) },
+      { label: t('CommitList.newTag'), icon: 'i-lucide-tag', onSelect: () => refActions.newTag(at) }
     ],
     [
-      { label: `Cherry-pick onto ${current.value?.name ?? 'the current branch'}…`, icon: 'i-lucide-cherry', onSelect: () => undo.cherryPick(commit.sha, commit.subject) },
-      { label: 'Revert…', icon: 'i-lucide-undo-2', onSelect: () => undo.revert(commit.sha, commit.subject) },
+      { label: current.value ? t('CommitList.cherryPick', { branch: current.value.name }) : t('CommitList.cherryPickCurrent'), icon: 'i-lucide-cherry', onSelect: () => undo.cherryPick(commit.sha, commit.subject) },
+      { label: t('CommitList.revert'), icon: 'i-lucide-undo-2', onSelect: () => undo.revert(commit.sha, commit.subject) },
       // The commit HEAD is on: undo it; any other: reset the branch to it.
       commit.refs.some(ref => ref.kind === 'head')
-        ? { label: 'Undo this commit…', icon: 'i-lucide-rotate-ccw', onSelect: () => undo.undoCommit(commit.subject) }
-        : { label: `Reset ${current.value?.name ?? 'the branch'} to here…`, icon: 'i-lucide-history', onSelect: () => undo.reset(commit.sha, at.label) },
-      ...commit.refs.some(ref => ref.kind === 'head') ? [] : [{ label: 'Interactive rebase from here…', icon: 'i-lucide-git-pull-request-arrow', onSelect: () => navigateTo({ path: '/rebase', query: { onto: commit.sha } }) }],
-      ...commit.refs.some(ref => ref.kind === 'head') ? [] : [{ label: 'Bisect: this one is good…', icon: 'i-lucide-crosshair', onSelect: () => navigateTo({ path: '/bisect', query: { good: commit.sha } }) }]
+        ? { label: t('CommitList.undoCommit'), icon: 'i-lucide-rotate-ccw', onSelect: () => undo.undoCommit(commit.subject) }
+        : { label: current.value ? t('CommitList.reset', { branch: current.value.name }) : t('CommitList.resetCurrent'), icon: 'i-lucide-history', onSelect: () => undo.reset(commit.sha, at.label) },
+      ...commit.refs.some(ref => ref.kind === 'head') ? [] : [{ label: t('CommitList.rebase'), icon: 'i-lucide-git-pull-request-arrow', onSelect: () => navigateTo({ path: '/rebase', query: { onto: commit.sha } }) }],
+      ...commit.refs.some(ref => ref.kind === 'head') ? [] : [{ label: t('CommitList.bisectGood'), icon: 'i-lucide-crosshair', onSelect: () => navigateTo({ path: '/bisect', query: { good: commit.sha } }) }]
     ],
     [
-      { label: 'Copy the sha', icon: 'i-lucide-copy', onSelect: () => navigator.clipboard?.writeText(commit.sha) },
-      { label: 'Copy the message', icon: 'i-lucide-copy', onSelect: () => copyMessage(commit.sha) },
-      { label: 'Save as a patch…', icon: 'i-lucide-file-diff', onSelect: () => patches.save(commit.sha) },
+      { label: t('CommitList.copySha'), icon: 'i-lucide-copy', onSelect: () => navigator.clipboard?.writeText(commit.sha) },
+      { label: t('CommitList.copyMessage'), icon: 'i-lucide-copy', onSelect: () => copyMessage(commit.sha) },
+      { label: t('CommitList.savePatch'), icon: 'i-lucide-file-diff', onSelect: () => patches.save(commit.sha) },
       // It and the commits after it, up to where you are (a first commit has nothing before it to start after).
-      ...commit.parents.length && !commit.refs.some(ref => ref.kind === 'head') ? [{ label: 'Save this and later as patches…', icon: 'i-lucide-files', onSelect: () => patches.save('HEAD', commit.parents[0]!) }] : [],
+      ...commit.parents.length && !commit.refs.some(ref => ref.kind === 'head') ? [{ label: t('CommitList.savePatches'), icon: 'i-lucide-files', onSelect: () => patches.save('HEAD', commit.parents[0]!) }] : [],
       ...webs.label.value ? [{ label: webs.label.value, icon: 'i-lucide-external-link', onSelect: () => webs.openCommit(commit.sha) }] : [],
       ...webs.copyLabel.value ? [{ label: webs.copyLabel.value, icon: 'i-lucide-link', onSelect: () => webs.copyCommit(commit.sha) }] : []
     ]
@@ -87,7 +87,7 @@ async function page(fresh: boolean, limit = PAGE): Promise<void> {
     more.value = found.more
     problem.value = ''
   } catch (error) {
-    problem.value = errorMessage(error, 'The commits could not be read.')
+    problem.value = errorMessage(error, t('CommitList.readError'))
   }
 }
 watch(() => [props.from, props.author, props.message, props.path, props.changed, props.merges, repo.value, order.value], () => {
@@ -139,9 +139,9 @@ function move(step: number): void {
 function when(seconds: number): string {
   if (times.value === 'date') return new Date(seconds * 1000).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
   const minutes = Math.floor((Date.now() / 1000 - seconds) / 60)
-  if (minutes < 60) return `${Math.max(1, minutes)} min`
-  if (minutes < 60 * 24) return `${Math.floor(minutes / 60)} h`
-  if (minutes < 60 * 24 * 30) return `${Math.floor(minutes / 1440)} d`
+  if (minutes < 60) return t('CommitList.minutes', { count: Math.max(1, minutes) })
+  if (minutes < 60 * 24) return t('CommitList.hours', { count: Math.floor(minutes / 60) })
+  if (minutes < 60 * 24 * 30) return t('CommitList.days', { count: Math.floor(minutes / 1440) })
   return new Date(seconds * 1000).toLocaleDateString()
 }
 
@@ -150,7 +150,7 @@ function when(seconds: number): string {
 <template>
   <div class="flex min-h-0 flex-col">
     <UAlert v-if="problem" class="m-3" color="error" variant="subtle" icon="i-lucide-circle-alert" :description="problem" />
-    <p v-else-if="!loading && !commits.length" class="p-6 text-center text-sm text-muted">No commits{{ props.author || props.message || props.path || props.changed || props.merges ? ' match the filters' : ' yet' }}.</p>
+    <p v-else-if="!loading && !commits.length" class="p-6 text-center text-sm text-muted">{{ props.author || props.message || props.path || props.changed || props.merges ? t('CommitList.noMatch') : t('CommitList.noCommits') }}</p>
     <!-- The work not committed yet, above the history: one click to Local changes. -->
     <NuxtLink
       v-if="localChanges && !props.from && !props.author && !props.message && !props.path && !props.changed && !props.merges"
@@ -158,8 +158,8 @@ function when(seconds: number): string {
       class="flex shrink-0 items-center gap-2 border-b border-default px-3 py-1.5 text-ui hover:bg-elevated/60"
     >
       <span class="grid size-3.5 shrink-0 place-items-center rounded-full border-2 border-dashed border-warning" aria-hidden="true" />
-      <span class="font-medium text-highlighted">Local changes</span>
-      <span class="text-muted">{{ localChanges }} {{ localChanges === 1 ? 'file' : 'files' }} not committed yet{{ current ? `, on ${current.name}` : '' }}</span>
+      <span class="font-medium text-highlighted">{{ t('CommitList.localChanges') }}</span>
+      <span class="text-muted">{{ current ? t('CommitList.notCommittedOn', { count: localChanges, branch: current.name }) : t('CommitList.notCommitted', { count: localChanges }) }}</span>
       <UIcon name="i-lucide-chevron-right" class="ml-auto size-3.5 text-dimmed" />
     </NuxtLink>
     <UContextMenu :items="menu" :disabled="!menuFor">
@@ -168,7 +168,7 @@ function when(seconds: number): string {
       class="relative min-h-0 flex-1 overflow-auto outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-(--ui-primary)"
       tabindex="0"
       role="listbox"
-      aria-label="Commits"
+      :aria-label="t('CommitList.commits')"
       @scroll.passive="onScroll"
       @keydown.down.prevent="move(1)"
       @keydown.up.prevent="move(-1)"
@@ -191,7 +191,7 @@ function when(seconds: number): string {
               <span
                 class="flex shrink-0 items-center gap-0.5 rounded px-1.5 text-label leading-4 font-medium"
                 :class="ref.kind === 'branch' ? 'bg-(--ui-primary)/10 text-highlighted' : ref.kind === 'remote' ? 'border border-default text-muted' : 'bg-warning/15 text-warning'"
-                :title="ref.kind === 'branch' ? 'Branch' : ref.kind === 'remote' ? 'Remote branch' : 'Tag'"
+                :title="ref.kind === 'branch' ? t('CommitList.branch') : ref.kind === 'remote' ? t('CommitList.remoteBranch') : t('CommitList.tag')"
               >
                 <UIcon v-if="ref.kind === 'tag'" name="i-lucide-tag" class="size-2.5" />
                 <UIcon v-else-if="ref.kind === 'remote'" name="i-lucide-cloud" class="size-2.5" />

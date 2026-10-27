@@ -27,16 +27,16 @@ export function useWeb() {
   const { repo } = useRepositories()
   const toast = useToast()
   /** "Open on GitHub", or null when the repository has no remote on the web. */
-  const label = computed(() => (web.value ? `Open on ${hostName(web.value.kind)}` : null))
+  const label = computed(() => (web.value ? t('composables.useWeb.openOn', { host: hostName(web.value.kind) }) : null))
   /** "Copy GitHub link", or null. */
-  const copyLabel = computed(() => (web.value ? `Copy ${hostName(web.value.kind)} link` : null))
+  const copyLabel = computed(() => (web.value ? t('composables.useWeb.copyLink', { host: hostName(web.value.kind) }) : null))
 
   async function copy(url: string): Promise<void> {
     try {
       await navigator.clipboard.writeText(url)
-      toast.add({ title: 'Link copied', description: url, icon: 'i-lucide-link' })
+      toast.add({ title: t('composables.useWeb.copied'), description: url, icon: 'i-lucide-link' })
     } catch {
-      toast.add({ title: 'Could not copy the link', description: url, color: 'error', icon: 'i-lucide-circle-alert' })
+      toast.add({ title: t('composables.useWeb.notCopied'), description: url, color: 'error', icon: 'i-lucide-circle-alert' })
     }
   }
 
@@ -45,7 +45,7 @@ export function useWeb() {
     try {
       await haunt.openOnWeb(repo.value, url)
     } catch (error) {
-      toast.add({ title: 'Could not open the page', description: errorMessage(error, 'Try again.'), color: 'error', icon: 'i-lucide-circle-alert' })
+      toast.add({ title: t('composables.useWeb.notOpened'), description: errorMessage(error, t('common.tryAgain')), color: 'error', icon: 'i-lucide-circle-alert' })
     }
   }
   return {

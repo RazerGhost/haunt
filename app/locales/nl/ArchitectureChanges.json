@@ -1,0 +1,32 @@
+{
+  "readError": "De imports konden niet worden gelezen.",
+  "rule": {
+    "layer": "breekt de lagen",
+    "door": "voorbij de deur"
+  },
+  "ruleRemoved": {
+    "layer": "breekt de lagen niet meer",
+    "door": "niet meer voorbij de deur"
+  },
+  "noLonger": "niet meer: {rule}",
+  "reading": "De imports van voor en na worden gelezen…",
+  "noImports": "Deze wijziging voegt geen imports toe of verwijdert ze tussen de bestanden die Haunt scant.",
+  "addsBreaks": {
+    "one": "Voegt {count} import toe die de regels breekt",
+    "other": "Voegt {count} imports toe die de regels breken"
+  },
+  "removesBreaks": "verwijdert er {count}",
+  "cycles": {
+    "one": "{count} import sluit een kringloop",
+    "other": "{count} imports sluiten een kringloop"
+  },
+  "totals": {
+    "one": "{count} import toegevoegd ({addedBetween} tussen onderdelen), {removed} verwijderd ({removedBetween} tussen onderdelen).",
+    "other": "{count} imports toegevoegd ({addedBetween} tussen onderdelen), {removed} verwijderd ({removedBetween} tussen onderdelen)."
+  },
+  "noRules": "Geen regels controleren hier imports. Voeg lagen toe in haunt.config.json, of een architectuurscript met een judge.",
+  "judgedNow": "Opgezocht en beoordeeld tegen de bestanden en regels zoals ze nu zijn.",
+  "openFile": "Open {path} in de editor",
+  "typesOnly": "alleen types",
+  "closesCycle": "sluit een kringloop"
+}

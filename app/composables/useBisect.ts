@@ -43,7 +43,7 @@ export function useBisect() {
       state.value = await haunt.bisectState(at)
       return true
     } catch (error) {
-      failure.failed(what, error, 'Git could not do that.')
+      failure.failed(what, error, t('composables.useBisect.fallback'))
       return false
     } finally {
       busy.value = false
@@ -61,11 +61,11 @@ export function useBisect() {
       const { [at]: _, ...rest } = focus.value
       focus.value = rest
     }
-    return run('Bisecting did not start', where => haunt.bisectStart(where, bad, good))
+    return run(t('composables.useBisect.notStarted'), where => haunt.bisectStart(where, bad, good))
   }
-  const mark = (how: BisectMark) => run('Not marked', where => haunt.bisectMark(where, how))
-  const jump = (sha: string) => run('Not checked out', where => haunt.bisectJump(where, sha))
-  const stop = () => run('Bisecting did not stop', where => haunt.bisectStop(where))
+  const mark = (how: BisectMark) => run(t('composables.useBisect.notMarked'), where => haunt.bisectMark(where, how))
+  const jump = (sha: string) => run(t('composables.useBisect.notCheckedOut'), where => haunt.bisectJump(where, sha))
+  const stop = () => run(t('composables.useBisect.notStopped'), where => haunt.bisectStop(where))
 
   /** The commits that touched the function it was started from, among the ones still in play. */
   const suggested = computed(() => {

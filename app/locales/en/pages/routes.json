@@ -1,0 +1,19 @@
+{
+  "readFailed": "The routes could not be read.",
+  "title": "Routes",
+  "filter": "Filter by method, path, handler or file",
+  "reload": "Read the routes again",
+  "scanning": "Scanning the code…",
+  "none": "No routes found",
+  "noneHelp": {
+    "before": "Haunt finds routes written the way Hono and Express write them (",
+    "with": ", with",
+    "and": "and",
+    "prefixes": "prefixes) and WordPress's",
+    "after": "."
+  },
+  "open": "Open {file} in the editor",
+  "callPath": "Call path",
+  "tryIt": "Try it",
+  "tryItHelp": "Send a request to your dev server"
+}

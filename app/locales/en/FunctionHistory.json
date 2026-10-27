@@ -1,0 +1,32 @@
+{
+  "moved": "Moved here from {file}. Before this, its history there:",
+  "movedRenamed": "Moved here from {file}, where it was {name}. Before this, its history there:",
+  "today": "today",
+  "yesterday": "yesterday",
+  "daysAgo": {
+    "one": "{count} day ago",
+    "other": "{count} days ago"
+  },
+  "monthsAgo": {
+    "one": "{count} month ago",
+    "other": "{count} months ago"
+  },
+  "yearsAgo": {
+    "one": "{count} year ago",
+    "other": "{count} years ago"
+  },
+  "history": "History",
+  "noHistory": "No history: the file is not in git.",
+  "lastChanged": "Last changed {ago} by",
+  "behaviour": "Last changed how it works",
+  "born": "Born in",
+  "authorLines": {
+    "one": "{name}: {count} line",
+    "other": "{name}: {count} lines"
+  },
+  "seeCommit": "See it in the commit list",
+  "cosmetic": "spacing or comments only",
+  "all": "All {count} commits",
+  "mentioning": "Commits mentioning {name}",
+  "mentioningHelp": "Commits that added or removed this name"
+}

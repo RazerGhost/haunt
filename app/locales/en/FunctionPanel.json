@@ -1,0 +1,41 @@
+{
+  "kind": {
+    "function": "function",
+    "arrow": "arrow function",
+    "method": "method",
+    "class": "class"
+  },
+  "exported": "exported",
+  "lines": {
+    "one": "{count} line",
+    "other": "{count} lines"
+  },
+  "since": "{status} since {base}",
+  "status": {
+    "added": "added",
+    "changed": "changed",
+    "removed": "removed",
+    "moved": "moved"
+  },
+  "reach": {
+    "one": "calls a changed function, {count} step away",
+    "other": "calls a changed function, {count} steps away"
+  },
+  "openInEditor": "Open in editor",
+  "callGraph": "Call graph",
+  "inPart": "In its part",
+  "blame": "Blame the file",
+  "unpin": "Unpin",
+  "pin": "Pin",
+  "unpinHelp": "Unpin it",
+  "pinHelp": "Pin it to the Code sidebar and the palette",
+  "copyWhere": "Copy path:line",
+  "linkHelp": "A link to this function's lines at the last commit",
+  "writtenIn": "Written inside",
+  "writtenInside": "Written inside it ({count})",
+  "workingOut": "Working out the call graph",
+  "calls": "Calls ({count})",
+  "noCalls": "Nothing that was scanned.",
+  "calledBy": "Called by ({count})",
+  "noCallers": "No direct calls (it may be called through an interface or a route table)."
+}

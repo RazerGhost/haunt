@@ -1,0 +1,15 @@
+{
+  "kind": {
+    "part": "onderdeel",
+    "folder": "map"
+  },
+  "lines": {
+    "one": "{count} regel",
+    "other": "{count} regels"
+  },
+  "calls": {
+    "one": "{count} aanroeper, roept {callees} aan",
+    "other": "{count} aanroepers, roept {callees} aan"
+  },
+  "map": "Waar je bent: klik of sleep om te verplaatsen"
+}

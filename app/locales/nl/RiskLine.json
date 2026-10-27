@@ -1,0 +1,28 @@
+{
+  "level": {
+    "low": "laag risico",
+    "medium": "gemiddeld risico",
+    "high": "hoog risico"
+  },
+  "callers": {
+    "one": "{count} functie roept aan wat gewijzigd is",
+    "other": "{count} functies roepen aan wat gewijzigd is"
+  },
+  "unreached": {
+    "one": "{unreached} van {count} gewijzigde functie door geen test bereikt",
+    "other": "{unreached} van {count} gewijzigde functies door geen test bereikt"
+  },
+  "reached": {
+    "one": "een test bereikt de gewijzigde functie",
+    "other": "tests bereiken elke gewijzigde functie"
+  },
+  "reachedPartly": "tests bereiken elke gewijzigde functie waarvan Haunt de tests leest",
+  "unread": "tests niet gelezen voor {count} (PHP, Rust of Lua)",
+  "busy": {
+    "one": "raakt een druk bestand ({name}, {commits} commits in {days} dagen)",
+    "other": "raakt {count} drukke bestanden (het drukste {name}, {commits} commits in {days} dagen)"
+  },
+  "size": "{count} functies gewijzigd",
+  "quiet": "niets roept het aan, en het raakt geen druk bestand",
+  "hint": "{reasons}. Op basis van aanroepers, tests en de wijzigingen van de laatste {days} dagen: een hint waar je eerst kijkt."
+}

@@ -9,20 +9,20 @@ const route = useRoute()
   <div v-if="state?.active" class="flex items-center gap-3 border-b border-info/30 bg-info/10 px-3 py-1.5 text-ui" role="status">
     <UIcon name="i-lucide-crosshair" class="size-4 shrink-0 text-info" />
     <p v-if="state.culprit" class="min-w-0 flex-1 truncate">
-      <span class="font-medium text-highlighted">Found the first bad commit:</span>
+      <span class="font-medium text-highlighted">{{ t('BisectBanner.found') }}</span>
       <span class="text-muted"> {{ state.culprit.subject }} · {{ state.culprit.sha.slice(0, 7) }}</span>
     </p>
     <p v-else class="min-w-0 flex-1 truncate">
-      <span class="font-medium text-highlighted">Bisecting</span>
-      <span class="text-muted"> · testing {{ state.current?.subject ?? '…' }} · {{ state.left }} {{ state.left === 1 ? 'commit' : 'commits' }} in play, about {{ state.steps }} {{ state.steps === 1 ? 'step' : 'steps' }} left</span>
+      <span class="font-medium text-highlighted">{{ t('BisectBanner.bisecting') }}</span>
+      <span class="text-muted"> · {{ t('BisectBanner.testing', { subject: state.current?.subject ?? '…' }) }} · {{ t('BisectBanner.inPlay', { count: state.left }) }}, {{ t('BisectBanner.stepsLeft', { count: state.steps }) }}</span>
     </p>
     <template v-if="!state.culprit">
-      <UButton label="Good" size="xs" color="success" variant="soft" :loading="busy" @click="mark('good')" />
-      <UButton label="Bad" size="xs" color="error" variant="soft" :disabled="busy" @click="mark('bad')" />
-      <UButton label="Skip" size="xs" color="neutral" variant="ghost" :disabled="busy" title="This one cannot be tested: try another" @click="mark('skip')" />
+      <UButton :label="t('BisectBanner.good')" size="xs" color="success" variant="soft" :loading="busy" @click="mark('good')" />
+      <UButton :label="t('BisectBanner.bad')" size="xs" color="error" variant="soft" :disabled="busy" @click="mark('bad')" />
+      <UButton :label="t('BisectBanner.skip')" size="xs" color="neutral" variant="ghost" :disabled="busy" :title="t('BisectBanner.skipHelp')" @click="mark('skip')" />
     </template>
-    <UButton v-else label="See it" size="xs" color="primary" :to="{ path: '/commits', query: { commit: state.culprit.sha } }" />
-    <UButton v-if="route.path !== '/bisect'" label="Open" size="xs" color="neutral" variant="ghost" to="/bisect" />
-    <UButton label="Stop" size="xs" color="neutral" variant="ghost" :disabled="busy" title="Back to the branch it started from" @click="stop" />
+    <UButton v-else :label="t('BisectBanner.seeIt')" size="xs" color="primary" :to="{ path: '/commits', query: { commit: state.culprit.sha } }" />
+    <UButton v-if="route.path !== '/bisect'" :label="t('common.open')" size="xs" color="neutral" variant="ghost" to="/bisect" />
+    <UButton :label="t('common.stop')" size="xs" color="neutral" variant="ghost" :disabled="busy" :title="t('BisectBanner.stopHelp')" @click="stop" />
   </div>
 </template>

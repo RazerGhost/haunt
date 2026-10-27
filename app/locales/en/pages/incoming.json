@@ -1,0 +1,40 @@
+{
+  "readError": "What a pull would bring in could not be read.",
+  "title": "Before pulling",
+  "summary": {
+    "one": "{upstream} has {count} commit your branch does not.",
+    "other": "{upstream} has {count} commits your branch does not."
+  },
+  "summaryAhead": {
+    "one": "{upstream} has {count} commit your branch does not, and your branch has {ahead} of its own.",
+    "other": "{upstream} has {count} commits your branch does not, and your branch has {ahead} of its own."
+  },
+  "theyChange": {
+    "one": "They change {count} function in {files}.",
+    "other": "They change {count} functions in {files}."
+  },
+  "files": {
+    "one": "{count} file",
+    "other": "{count} files"
+  },
+  "noUpstream": "This branch tracks no remote branch, so there is nothing to pull.",
+  "pull": "Pull",
+  "both": {
+    "one": "{count} function changes on both sides",
+    "other": "{count} functions change on both sides"
+  },
+  "bothHelp": "You changed these too: a pull may conflict here.",
+  "noneBoth": "No function changes on both sides",
+  "noneBothHelp": "None of the functions these commits change is one you changed too.",
+  "changedBoth": "Changed on both sides",
+  "whatTheyChange": "What they change",
+  "status": {
+    "added": "added",
+    "changed": "changed",
+    "removed": "removed",
+    "moved": "moved"
+  },
+  "youToo": "you changed it too",
+  "noFunctions": "No function changes: imports, types or other lines.",
+  "commits": "The commits"
+}

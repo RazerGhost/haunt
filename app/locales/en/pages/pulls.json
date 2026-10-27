@@ -1,0 +1,35 @@
+{
+  "readFailed": "The pull requests could not be read.",
+  "fetchedOne": "Fetched #{number}",
+  "fetched": {
+    "one": "Fetched {count} pull request from {remote}",
+    "other": "Fetched {count} pull requests from {remote}"
+  },
+  "newestOf": "The newest {count} of {total}. Fetch an older one by its number.",
+  "notFetched": "The pull requests were not fetched",
+  "fetchFailed": "The pull requests could not be fetched.",
+  "fetchAgain": "Fetch again",
+  "fetchPulls": "Fetch pull requests",
+  "numberPlaceholder": "An older one: #123",
+  "number": "Pull request number",
+  "fetch": "Fetch",
+  "note": "Fetched as refs, no account needed. Titles and comments are on the host; here you see each one's commits.",
+  "none": "No pull requests fetched yet.",
+  "commits": {
+    "one": "{count} commit",
+    "other": "{count} commits"
+  },
+  "compared": {
+    "one": "{count} commit by {author}, compared with where it left {base}.",
+    "other": "{count} commits by {author}, compared with where it left {base}."
+  },
+  "noBase": {
+    "one": "{count} commit by {author}; no main branch to compare it with, so its newest commit is shown.",
+    "other": "{count} commits by {author}; no main branch to compare it with, so its newest commit is shown."
+  },
+  "inCommitList": "In the commit list",
+  "newBranch": "New branch from it…",
+  "allChanges": "All its changes",
+  "pick": "Pick a pull request to review it.",
+  "fetchToReview": "Fetch pull requests to review them without switching branch."
+}

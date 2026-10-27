@@ -1,0 +1,15 @@
+{
+  "scanning": "Scanning",
+  "layers": "Layers",
+  "hotspots": "Hotspots",
+  "hotspotsHelp": {
+    "one": "Tint parts by changes in the last {count} day",
+    "other": "Tint parts by changes in the last {count} days"
+  },
+  "mapError": "The layer map could not be read",
+  "found": {
+    "one": "{count} function named like “{term}”, in {files} files",
+    "other": "{count} functions named like “{term}”, in {files} files"
+  },
+  "first150": "Showing the first 150 files. Narrow the search to see the rest."
+}

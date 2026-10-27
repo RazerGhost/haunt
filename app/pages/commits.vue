@@ -15,7 +15,7 @@ const message = computed(() => param('message'))
 const path = computed(() => param('path'))
 const changed = computed(() => param('changed'))
 const merges = computed(() => (param('merges') === 'only' || param('merges') === 'none' ? param('merges') as 'only' | 'none' : undefined))
-const MERGES = [{ value: 'all', label: 'All commits' }, { value: 'none', label: 'No merges' }, { value: 'only', label: 'Merges only' }]
+const MERGES = computed(() => [{ value: 'all', label: t('pages.commits.allCommits') }, { value: 'none', label: t('pages.commits.noMerges') }, { value: 'only', label: t('pages.commits.mergesOnly') }])
 const mergeChoice = computed({ get: () => merges.value ?? 'all', set: (value: string) => set({ merges: value === 'all' ? null : value }) })
 const selected = computed(() => param('commit') || null)
 const compare = computed(() => param('compare') || null)
@@ -32,7 +32,7 @@ function set(values: Record<string, string | null>): void {
 // The select needs a value for "every branch"; no branch can be called this.
 const ALL = '*all*'
 const branches = computed(() => [
-  { value: ALL, label: 'All branches' },
+  { value: ALL, label: t('pages.commits.allBranches') },
   ...(refs.value?.branches.map(branch => ({ value: branch.name, label: branch.name })) ?? []),
   ...(refs.value?.remotes.flatMap(remote => remote.branches.map(branch => ({ value: `${remote.name}/${branch.name}`, label: `${remote.name}/${branch.name}` }))) ?? [])
 ])
@@ -87,15 +87,15 @@ function drag(start: PointerEvent): void {
 <template>
   <div class="flex h-full flex-col">
     <div class="flex flex-wrap items-center gap-2 border-b border-default px-3 py-1.5">
-      <USelect v-model="branch" :items="branches" size="xs" class="w-48" aria-label="Branch" />
-      <UInput v-model="typed.message" icon="i-lucide-message-square" placeholder="Message" size="xs" class="w-44" aria-label="Filter by message" />
-      <UInput v-model="typed.author" icon="i-lucide-user" placeholder="Author" size="xs" class="w-36" aria-label="Filter by author" />
-      <UInput v-model="typed.path" icon="i-lucide-file" placeholder="File or folder" size="xs" class="w-48" :ui="{ base: 'font-mono' }" aria-label="Filter by file or folder" />
-      <UInput v-model="typed.changed" icon="i-lucide-text-search" placeholder="Text in changes" size="xs" class="w-40" :ui="{ base: 'font-mono' }" title="Commits that added or removed this text" aria-label="Filter by text added or removed" />
-      <USelect v-model="mergeChoice" :items="MERGES" size="xs" class="w-32" aria-label="Merges" />
-      <UButton v-if="filtered" label="Clear" icon="i-lucide-x" size="xs" color="neutral" variant="ghost" @click="clear" />
-      <UButton v-if="refs?.sha" label="HEAD" icon="i-lucide-crosshair" size="xs" color="neutral" variant="ghost" title="Pick the commit you are on" @click="pick(refs.sha!, false)" />
-      <span class="ml-auto text-label text-muted">Ctrl-click a second commit to compare · ↑ ↓ to move</span>
+      <USelect v-model="branch" :items="branches" size="xs" class="w-48" :aria-label="t('pages.commits.branch')" />
+      <UInput v-model="typed.message" icon="i-lucide-message-square" :placeholder="t('pages.commits.message')" size="xs" class="w-44" :aria-label="t('pages.commits.byMessage')" />
+      <UInput v-model="typed.author" icon="i-lucide-user" :placeholder="t('pages.commits.author')" size="xs" class="w-36" :aria-label="t('pages.commits.byAuthor')" />
+      <UInput v-model="typed.path" icon="i-lucide-file" :placeholder="t('pages.commits.path')" size="xs" class="w-48" :ui="{ base: 'font-mono' }" :aria-label="t('pages.commits.byPath')" />
+      <UInput v-model="typed.changed" icon="i-lucide-text-search" :placeholder="t('pages.commits.changed')" size="xs" class="w-40" :ui="{ base: 'font-mono' }" :title="t('pages.commits.changedHelp')" :aria-label="t('pages.commits.byChanged')" />
+      <USelect v-model="mergeChoice" :items="MERGES" size="xs" class="w-32" :aria-label="t('pages.commits.merges')" />
+      <UButton v-if="filtered" :label="t('pages.commits.clear')" icon="i-lucide-x" size="xs" color="neutral" variant="ghost" @click="clear" />
+      <UButton v-if="refs?.sha" label="HEAD" icon="i-lucide-crosshair" size="xs" color="neutral" variant="ghost" :title="t('pages.commits.pickHead')" @click="pick(refs.sha!, false)" />
+      <span class="ml-auto text-label text-muted">{{ t('pages.commits.hint') }}</span>
     </div>
     <div ref="area" class="flex min-h-0 flex-1 flex-col">
       <CommitList :from="from" :author="author" :message="message" :path="path" :changed="changed" :merges="merges" :selected="selected" :compare="compare" class="min-h-0" :style="{ flex: `${1 - share} 1 0` }" @select="pick" />
@@ -103,12 +103,12 @@ function drag(start: PointerEvent): void {
         class="h-1.5 shrink-0 cursor-row-resize border-y border-default bg-elevated/50 hover:bg-accented"
         role="separator"
         aria-orientation="horizontal"
-        aria-label="Drag to resize the details"
+        :aria-label="t('pages.commits.resize')"
         @pointerdown.prevent="drag"
       />
       <div class="flex min-h-0 flex-col" :style="{ flex: `${share} 1 0` }">
         <CommitDetails v-if="selected" :sha="selected" :compare="compare" class="min-h-0 flex-1" @select="sha => pick(sha, false)" />
-        <p v-else class="grid flex-1 place-items-center text-sm text-muted">Pick a commit to see what it changed.</p>
+        <p v-else class="grid flex-1 place-items-center text-sm text-muted">{{ t('pages.commits.pick') }}</p>
       </div>
     </div>
   </div>

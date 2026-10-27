@@ -1,0 +1,12 @@
+{
+  "heat": {
+    "one": "{count} bestandswijziging in de laatste 180 dagen",
+    "other": "{count} bestandswijzigingen in de laatste 180 dagen"
+  },
+  "layers": "Lagen",
+  "bandSize": "{parts} · {functions}",
+  "tileSize": "{files} · {functions}",
+  "found": "{count} gevonden",
+  "split": "{top} op bestandsniveau, {nested} genest",
+  "fns": "{count} fn"
+}

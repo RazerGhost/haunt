@@ -1,0 +1,10 @@
+{
+  "conflicts": {
+    "one": "{count} bestand met conflicten",
+    "other": "{count} bestanden met conflicten"
+  },
+  "noConflicts": "geen conflicten meer",
+  "resolve": "Conflicten oplossen",
+  "continue": "Doorgaan",
+  "abort": "Afbreken"
+}

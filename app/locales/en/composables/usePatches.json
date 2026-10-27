@@ -1,0 +1,14 @@
+{
+  "saveIn": "Save the patches in",
+  "saved": {
+    "one": "Saved a patch",
+    "other": "Saved {count} patches"
+  },
+  "notSaved": "No patch saved",
+  "notRead": "The patches could not be read",
+  "applyTitle": "Apply patches",
+  "filter": "Patches",
+  "committed": "Patches committed",
+  "applied": "Patches applied to the working tree",
+  "notApplied": "The patches were not applied"
+}

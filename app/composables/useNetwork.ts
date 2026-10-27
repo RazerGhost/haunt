@@ -34,10 +34,10 @@ export function startNetwork(): void {
   watch(repo, () => { running.value = null })
   document.addEventListener('visibilitychange', () => {
     if (document.hidden || !finishedAway) return
-    const what = { fetch: 'Fetching', pull: 'Pulling', push: 'Pushing' }[finishedAway]
+    const op = finishedAway
     finishedAway = null
     const last = lastFetch.value
-    toast.add({ title: `${what} finished while Haunt was in the background`, description: last && !last.ok ? 'The last fetch failed: see Fetch\'s tooltip.' : undefined, icon: 'i-lucide-bell' })
+    toast.add({ title: t(`composables.useNetwork.finishedAway.${op}`), description: last && !last.ok ? t('composables.useNetwork.lastFetchFailed') : undefined, icon: 'i-lucide-bell' })
   })
   // A background fetch says nothing but that the refs changed: read when it last ran then, too.
   watch([repo, gitChanged('refs')], () => void readLast(), { immediate: true })
@@ -48,7 +48,7 @@ export function startNetwork(): void {
       if (news.done) void readLast()
       if (news.done && document.hidden) finishedAway = news.op
       // The system says so too, when Haunt's window is not in front (Rust checks).
-      if (news.done) void haunt.notify(`${{ fetch: 'Fetching', pull: 'Pulling', push: 'Pushing' }[news.op]} finished`, folderName(repo.value ?? '')).catch(() => {})
+      if (news.done) void haunt.notify(t(`composables.useNetwork.finished.${news.op}`), folderName(repo.value ?? '')).catch(() => {})
       if (news.done && questionShown !== null) {
         const id = questionShown
         questionShown = null
@@ -58,14 +58,14 @@ export function startNetwork(): void {
     } else if (news.type === 'ask') {
       void answer(news.id, news.prompt, news.secret, news.yesNo)
     } else if (news.type === 'fetched') {
-      const title = `${news.commits} new ${news.commits === 1 ? 'commit' : 'commits'} on the remote branch`
+      const title = t('composables.useNetwork.newCommits', { count: news.commits })
       // The system says so too, when Haunt's window is not in front (Rust checks).
       void haunt.notify(title, folderName(news.repo ?? repo.value ?? '')).catch(() => {})
       toast.add({
         title,
-        description: 'Fetched in the background.',
+        description: t('composables.useNetwork.fetchedBackground'),
         icon: 'i-lucide-cloud-download',
-        actions: [{ label: 'See them', color: 'neutral', variant: 'outline', onClick: () => { void navigateTo('/incoming') } }]
+        actions: [{ label: t('composables.useNetwork.seeThem'), color: 'neutral', variant: 'outline', onClick: () => { void navigateTo('/incoming') } }]
       })
     } else if (news.type === 'notice') {
       toast.add({ title: news.message, color: 'warning', icon: 'i-lucide-folder-x' })
@@ -80,17 +80,17 @@ export function startNetwork(): void {
     let text: string | null
     if (yesNo) {
       const chosen = await dialog.choose({
-        title: 'git asks',
+        title: t('composables.useNetwork.gitAsks'),
         description: prompt,
-        choices: [{ label: 'Yes', value: 'yes', color: 'primary' }, { label: 'No', value: 'no' }]
+        choices: [{ label: t('composables.useNetwork.yes'), value: 'yes', color: 'primary' }, { label: t('composables.useNetwork.no'), value: 'no' }]
       })
       text = chosen
     } else {
       const typed = await dialog.prompt({
-        title: 'git asks',
-        description: `${prompt.replace(/:\s*$/, '')}. Haunt passes your answer to git and keeps nothing.`,
-        input: { label: secret ? 'Password or passphrase' : 'Answer', value: '', secret, required: false },
-        confirm: 'Send'
+        title: t('composables.useNetwork.gitAsks'),
+        description: t('composables.useNetwork.promptHelp', { prompt: prompt.replace(/:\s*$/, '') }),
+        input: { label: secret ? t('composables.useNetwork.password') : t('composables.useNetwork.answer'), value: '', secret, required: false },
+        confirm: t('composables.useNetwork.send')
       })
       text = typed ? typed.text : null
     }
@@ -117,7 +117,7 @@ export function useNetwork() {
     try {
       await haunt.fetch(at)
     } catch (error) {
-      failed('Fetching did not finish', error)
+      failed(t('composables.useNetwork.fetchFailed'), error)
     }
   }
 
@@ -127,24 +127,24 @@ export function useNetwork() {
     try {
       const pulled = await haunt.pull(at, mode)
       if (pulled === 'conflicts') {
-        toast.add({ title: 'Pulling stopped on conflicts', description: 'Resolve them, then continue (or abort to put everything back).', color: 'warning', icon: 'i-lucide-git-merge' })
+        toast.add({ title: t('composables.useNetwork.conflicts'), description: t('composables.useNetwork.conflictsHelp'), color: 'warning', icon: 'i-lucide-git-merge' })
         void navigateTo('/conflicts')
       } else if (pulled === 'upToDate') {
-        toast.add({ title: 'Already up to date', description: `${current.value?.upstream ?? 'The remote branch'} has nothing new.`, icon: 'i-lucide-check' })
+        toast.add({ title: t('composables.useNetwork.upToDate'), description: t('composables.useNetwork.upToDateHelp', { upstream: current.value?.upstream ?? t('composables.useNetwork.theRemoteBranch') }), icon: 'i-lucide-check' })
       } else if (pulled === 'diverged') {
         // Settings may have decided already (Git: when the branches went apart).
         const setting = await haunt.appSettings().then(found => found.pull).catch(() => 'ask' as const)
         if (setting !== 'ask') return await pull(setting)
-        const branch = current.value?.name ?? 'Your branch'
+        const branch = current.value?.name ?? t('composables.useNetwork.yourBranch')
         const chosen = await dialog.choose<PullMode>({
-          title: 'Merge or rebase?',
-          description: `Both ${branch} and ${current.value?.upstream ?? 'its remote branch'} have new commits. Rebase puts yours on top; merge joins them.`,
-          choices: [{ label: 'Rebase', value: 'rebase', color: 'primary' }, { label: 'Merge', value: 'merge' }]
+          title: t('composables.useNetwork.mergeOrRebase'),
+          description: t('composables.useNetwork.divergedHelp', { branch, upstream: current.value?.upstream ?? t('composables.useNetwork.itsRemoteBranch') }),
+          choices: [{ label: t('composables.useNetwork.rebase'), value: 'rebase', color: 'primary' }, { label: t('composables.useNetwork.merge'), value: 'merge' }]
         })
         if (chosen) await pull(chosen)
       }
     } catch (error) {
-      failed('Pulling did not finish', error)
+      failed(t('composables.useNetwork.pullFailed'), error)
     }
   }
 
@@ -156,23 +156,23 @@ export function useNetwork() {
       const pushed = await haunt.push(at, remote, force)
       if (pushed.kind === 'chooseRemote') {
         const chosen = await dialog.choose({
-          title: 'Push to which remote?',
-          description: `${current.value?.name ?? 'This branch'} has no remote branch yet; Haunt creates one with the same name.`,
+          title: t('composables.useNetwork.whichRemote'),
+          description: t('composables.useNetwork.whichRemoteHelp', { name: current.value?.name ?? t('composables.useNetwork.thisBranch') }),
           choices: pushed.remotes.map((name, index) => ({ label: name, value: name, color: index === 0 ? 'primary' as const : undefined }))
         })
         if (chosen) await push(chosen)
       } else if (pushed.kind === 'rejected') {
-        const upstream = current.value?.upstream ?? 'The remote branch'
+        const upstream = current.value?.upstream ?? t('composables.useNetwork.theRemoteBranch')
         const chosen = await dialog.choose({
-          title: 'The remote has commits you do not',
-          description: `${upstream} has commits you do not. Pull first, or overwrite (only if it has not moved since your last fetch).`,
-          choices: [{ label: 'Pull first', value: 'pull', color: 'primary' }, { label: 'Overwrite', value: 'force', color: 'error' }]
+          title: t('composables.useNetwork.rejected'),
+          description: t('composables.useNetwork.rejectedHelp', { upstream }),
+          choices: [{ label: t('composables.useNetwork.pullFirst'), value: 'pull', color: 'primary' }, { label: t('composables.useNetwork.overwrite'), value: 'force', color: 'error' }]
         })
         if (chosen === 'pull') await pull()
         else if (chosen === 'force') await push(remote, true)
       }
     } catch (error) {
-      failed('Pushing did not finish', error)
+      failed(t('composables.useNetwork.pushFailed'), error)
     }
   }
 
@@ -183,16 +183,16 @@ export function useNetwork() {
       const pushed = await haunt.pushTag(at, name, remote)
       if (pushed.kind === 'chooseRemote') {
         const chosen = await dialog.choose({
-          title: `Push ${name} to which remote?`,
-          description: 'This repository has several remotes.',
+          title: t('composables.useNetwork.tagWhichRemote', { name }),
+          description: t('composables.useNetwork.severalRemotes'),
           choices: pushed.remotes.map((remote, index) => ({ label: remote, value: remote, color: index === 0 ? 'primary' as const : undefined }))
         })
         if (chosen) await pushTag(name, chosen)
       } else {
-        toast.add({ title: `Pushed ${name}`, icon: 'i-lucide-check' })
+        toast.add({ title: t('composables.useNetwork.tagPushed', { name }), icon: 'i-lucide-check' })
       }
     } catch (error) {
-      failed(`${name} was not pushed`, error)
+      failed(t('composables.useNetwork.tagNotPushed', { name }), error)
     }
   }
 

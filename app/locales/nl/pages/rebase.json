@@ -1,0 +1,42 @@
+{
+  "notRead": "De commits konden niet gelezen worden.",
+  "action": {
+    "pick": "Houden",
+    "reword": "Bericht wijzigen",
+    "squash": "Squashen in de commit erboven",
+    "fixup": "Fixup in de commit erboven",
+    "drop": "Weglaten"
+  },
+  "noCommits": "Er zijn geen commits na die op deze branch.",
+  "allDropped": "Alle commits zouden weggelaten worden.",
+  "nothingAbove": "De eerste commit die blijft heeft niets erboven om in op te gaan.",
+  "needsMessage": "Een commit met gewijzigd bericht heeft een nieuw bericht nodig.",
+  "confirmTitle": "{branch} rebasen?",
+  "thisBranch": "deze branch",
+  "thisBranchStart": "Deze branch",
+  "rewrittenOnto": {
+    "one": "{count} commit wordt opnieuw geschreven bovenop {onto}.",
+    "other": "{count} commits worden opnieuw geschreven bovenop {onto}."
+  },
+  "rewrittenOrder": {
+    "one": "{count} commit wordt opnieuw geschreven in de nieuwe volgorde.",
+    "other": "{count} commits worden opnieuw geschreven in de nieuwe volgorde."
+  },
+  "dropped": {
+    "one": "{count} weggelaten (de reflog van git heeft hem nog een tijdje).",
+    "other": "{count} weggelaten (de reflog van git heeft ze nog een tijdje)."
+  },
+  "pushed": "Ze staan al op {remotes}: pushen kan daarna alleen met Overschrijven.",
+  "rebase": "Rebasen",
+  "stopped": "De rebase is gestopt op conflicten",
+  "stoppedHelp": "Los ze op en ga dan door (of breek af om de branch terug te zetten).",
+  "rebased": "Gerebased",
+  "notRebased": "Niet gerebased",
+  "title": "Interactieve rebase",
+  "intro": "{branch} op {onto}, oudste bovenaan. Verplaats commits en kies wat er met elk gebeurt.",
+  "pushedAlert": "Deze commits staan op {remotes}. Push na het rebasen met Overschrijven; anderen moeten bijwerken.",
+  "moveUp": "Omhoog",
+  "moveDown": "Omlaag",
+  "newMessage": "Het nieuwe bericht",
+  "nothingChanged": "Nog niets gewijzigd."
+}

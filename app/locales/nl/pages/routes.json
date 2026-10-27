@@ -1,0 +1,19 @@
+{
+  "readFailed": "De routes konden niet worden gelezen.",
+  "title": "Routes",
+  "filter": "Filter op methode, pad, handler of bestand",
+  "reload": "De routes opnieuw lezen",
+  "scanning": "De code wordt gescand…",
+  "none": "Geen routes gevonden",
+  "noneHelp": {
+    "before": "Haunt vindt routes die geschreven zijn zoals Hono en Express dat doen (",
+    "with": ", met",
+    "and": "en",
+    "prefixes": "als prefix) en de",
+    "after": " van WordPress."
+  },
+  "open": "{file} openen in de editor",
+  "callPath": "Aanroeppad",
+  "tryIt": "Proberen",
+  "tryItHelp": "Een request naar je dev-server sturen"
+}

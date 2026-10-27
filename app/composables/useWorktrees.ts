@@ -42,10 +42,10 @@ export function useWorktrees() {
     let isNew = false
     if (!name) {
       const answer = await dialog.prompt({
-        title: 'New worktree',
-        description: 'A branch in its own folder and tab: an existing one, or a new one from here.',
-        input: { label: 'Branch', value: '', placeholder: 'feature/name' },
-        confirm: 'Next'
+        title: t('composables.useWorktrees.newWorktree'),
+        description: t('composables.useWorktrees.newHelp'),
+        input: { label: t('composables.useWorktrees.branch'), value: '', placeholder: 'feature/name' },
+        confirm: t('composables.useWorktrees.next')
       })
       name = answer?.text.trim()
       if (!name) return
@@ -53,10 +53,10 @@ export function useWorktrees() {
       isNew = !branches.includes(name)
     }
     const place = await dialog.prompt({
-      title: `Check out ${name} in a new worktree`,
-      description: isNew ? `${name} is made where you are now, and checked out in this folder.` : 'Its own folder: one that does not exist yet, or an empty one.',
-      input: { label: 'Folder', value: suggested(name), placeholder: suggested(name) },
-      confirm: 'Make it and open it'
+      title: t('composables.useWorktrees.placeTitle', { name }),
+      description: isNew ? t('composables.useWorktrees.placeNew', { name }) : t('composables.useWorktrees.placeHelp'),
+      input: { label: t('composables.useWorktrees.folder'), value: suggested(name), placeholder: suggested(name) },
+      confirm: t('composables.useWorktrees.make')
     })
     const folder = place?.text.trim()
     if (!folder) return
@@ -64,9 +64,9 @@ export function useWorktrees() {
       const made = await haunt.addWorktree(at, folder, name, isNew, null)
       await load()
       await chooseRoot(made)
-      toast.add({ title: `${name} is open in its own worktree`, description: made, icon: 'i-lucide-git-fork', color: 'success' })
+      toast.add({ title: t('composables.useWorktrees.opened', { name }), description: made, icon: 'i-lucide-git-fork', color: 'success' })
     } catch (error) {
-      failure.failed('The worktree was not made', error, 'Git could not make it.')
+      failure.failed(t('composables.useWorktrees.notMade'), error, t('composables.useWorktrees.notMadeHelp'))
     }
   }
 
@@ -75,9 +75,9 @@ export function useWorktrees() {
     const at = repo.value
     if (!at) return
     const ok = await dialog.confirm({
-      title: `Remove the worktree ${folderName(worktree.path)}?`,
-      description: `Its folder (${worktree.path}) goes${worktree.branch ? `; the branch ${worktree.branch} stays` : ''}.`,
-      confirm: 'Remove',
+      title: t('composables.useWorktrees.removeTitle', { name: folderName(worktree.path) }),
+      description: worktree.branch ? t('composables.useWorktrees.removeHelpBranch', { path: worktree.path, branch: worktree.branch }) : t('composables.useWorktrees.removeHelp', { path: worktree.path }),
+      confirm: t('composables.useWorktrees.remove'),
       danger: true
     })
     if (!ok) return
@@ -87,18 +87,18 @@ export function useWorktrees() {
       await haunt.removeWorktree(at, worktree.path, false)
     } catch (error) {
       const said = errorMessage(error, '')
-      if (!said.includes('not committed')) return failure.failed('The worktree was not removed', error, 'Git could not remove it.')
+      if (!said.includes('not committed')) return failure.failed(t('composables.useWorktrees.notRemoved'), error, t('composables.useWorktrees.notRemovedHelp'))
       const anyway = await dialog.confirm({
-        title: 'It has changes not committed',
-        description: `${said} Removing it throws them away for good.`,
-        confirm: 'Remove with its changes',
+        title: t('composables.useWorktrees.uncommitted'),
+        description: t('composables.useWorktrees.uncommittedHelp', { said }),
+        confirm: t('composables.useWorktrees.removeAnyway'),
         danger: true
       })
       if (!anyway) return
       try {
         await haunt.removeWorktree(at, worktree.path, true)
       } catch (again) {
-        return failure.failed('The worktree was not removed', again, 'Git could not remove it.')
+        return failure.failed(t('composables.useWorktrees.notRemoved'), again, t('composables.useWorktrees.notRemovedHelp'))
       }
     }
     await load()
@@ -110,7 +110,7 @@ export function useWorktrees() {
       await haunt.pruneWorktrees(repo.value)
       await load()
     } catch (error) {
-      failure.failed('Not pruned', error, 'Git could not prune them.')
+      failure.failed(t('composables.useWorktrees.notPruned'), error, t('composables.useWorktrees.notPrunedHelp'))
     }
   }
 

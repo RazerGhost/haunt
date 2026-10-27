@@ -1,0 +1,41 @@
+{
+  "kind": {
+    "function": "functie",
+    "arrow": "pijlfunctie",
+    "method": "methode",
+    "class": "klasse"
+  },
+  "exported": "geëxporteerd",
+  "lines": {
+    "one": "{count} regel",
+    "other": "{count} regels"
+  },
+  "since": "{status} sinds {base}",
+  "status": {
+    "added": "toegevoegd",
+    "changed": "gewijzigd",
+    "removed": "verwijderd",
+    "moved": "verplaatst"
+  },
+  "reach": {
+    "one": "roept een gewijzigde functie aan, {count} stap verder",
+    "other": "roept een gewijzigde functie aan, {count} stappen verder"
+  },
+  "openInEditor": "Openen in editor",
+  "callGraph": "Aanroepgraaf",
+  "inPart": "In zijn onderdeel",
+  "blame": "Blame van het bestand",
+  "unpin": "Losmaken",
+  "pin": "Vastzetten",
+  "unpinHelp": "Losmaken",
+  "pinHelp": "Vastzetten in de Code-zijbalk en het palet",
+  "copyWhere": "Pad:regel kopiëren",
+  "linkHelp": "Een link naar de regels van deze functie bij de laatste commit",
+  "writtenIn": "Geschreven in",
+  "writtenInside": "Erin geschreven ({count})",
+  "workingOut": "De aanroepgraaf uitzoeken",
+  "calls": "Roept aan ({count})",
+  "noCalls": "Niets dat gescand is.",
+  "calledBy": "Aangeroepen door ({count})",
+  "noCallers": "Geen directe aanroepen (misschien wordt hij aangeroepen via een interface of een routetabel)."
+}

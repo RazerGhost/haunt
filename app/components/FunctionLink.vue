@@ -12,8 +12,8 @@ const found = computed(() => index.value?.functions.get(props.id) ?? null)
       <span class="truncate font-mono text-xs text-highlighted hover:underline">{{ found.fn.name }}</span>
       <span class="truncate font-mono text-label text-muted">{{ tailOf(found.file.path) }}:{{ found.fn.line }}</span>
     </button>
-    <span v-if="props.guessed" class="text-label text-muted" title="Matched by name, without a type checker: likely, not certain">≈</span>
-    <span v-if="props.count && props.count > 1" class="text-label text-muted tabular-nums" :title="`${props.count} call sites`">×{{ props.count }}</span>
-    <UButton icon="i-lucide-square-arrow-out-up-right" size="xs" color="neutral" variant="ghost" :aria-label="`Open ${found.fn.name} in the editor`" @click="open(found.file.path, found.fn.line)" />
+    <span v-if="props.guessed" class="text-label text-muted" :title="t('FunctionLink.guessed')">≈</span>
+    <span v-if="props.count && props.count > 1" class="text-label text-muted tabular-nums" :title="t('FunctionLink.sites', { count: props.count })">×{{ props.count }}</span>
+    <UButton icon="i-lucide-square-arrow-out-up-right" size="xs" color="neutral" variant="ghost" :aria-label="t('FunctionLink.open', { name: found.fn.name })" @click="open(found.file.path, found.fn.line)" />
   </li>
 </template>

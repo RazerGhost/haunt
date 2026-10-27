@@ -42,7 +42,7 @@ async function load(): Promise<void> {
     if (diff.value === view) tokens.value = coloured
   } catch (error) {
     diff.value = null
-    problem.value = errorMessage(error, 'The diff could not be read.')
+    problem.value = errorMessage(error, t('LocalDiff.notRead'))
   }
 }
 watch(() => [props.path, props.oldPath, props.staged], () => {
@@ -162,18 +162,18 @@ const SIGN = { add: '+', del: '−', context: ' ' } as const
       <span class="min-w-0 flex-1 truncate font-mono text-highlighted" :title="props.oldPath !== props.path ? `${props.oldPath} → ${props.path}` : props.path">
         <template v-if="props.oldPath !== props.path"><span class="text-muted">{{ props.oldPath }} → </span></template>{{ props.path }}
       </span>
-      <span v-if="pickable && !count" class="text-muted">Click lines to pick them</span>
-      <UButton v-if="!props.untracked" label="History" icon="i-lucide-history" size="xs" color="neutral" variant="ghost" :to="{ path: '/history', query: { path: props.path } }" />
-      <UButton v-if="!props.untracked" label="Blame" icon="i-lucide-user-round-search" size="xs" color="neutral" variant="ghost" :to="{ path: '/blame', query: { path: props.path } }" />
-      <UButton v-if="count" :label="`Clear ${count} picked`" size="xs" color="neutral" variant="ghost" @click="picked = new Set()" />
+      <span v-if="pickable && !count" class="text-muted">{{ t('LocalDiff.clickToPick') }}</span>
+      <UButton v-if="!props.untracked" :label="t('LocalDiff.history')" icon="i-lucide-history" size="xs" color="neutral" variant="ghost" :to="{ path: '/history', query: { path: props.path } }" />
+      <UButton v-if="!props.untracked" :label="t('LocalDiff.blame')" icon="i-lucide-user-round-search" size="xs" color="neutral" variant="ghost" :to="{ path: '/blame', query: { path: props.path } }" />
+      <UButton v-if="count" :label="t('LocalDiff.clearPicked', { count })" size="xs" color="neutral" variant="ghost" @click="picked = new Set()" />
       <template v-if="!props.staged">
-        <UButton :label="count ? `Stage ${count} ${count === 1 ? 'line' : 'lines'}` : 'Stage file'" icon="i-lucide-plus" size="xs" :disabled="busy" @click="act('stage')" />
-        <UButton :label="count ? `Discard ${count} ${count === 1 ? 'line' : 'lines'}` : 'Discard file'" icon="i-lucide-undo-2" size="xs" color="neutral" variant="outline" :disabled="busy" @click="discard" />
+        <UButton :label="count ? t('LocalDiff.stageLines', { count }) : t('LocalDiff.stageFile')" icon="i-lucide-plus" size="xs" :disabled="busy" @click="act('stage')" />
+        <UButton :label="count ? t('LocalDiff.discardLines', { count }) : t('LocalDiff.discardFile')" icon="i-lucide-undo-2" size="xs" color="neutral" variant="outline" :disabled="busy" @click="discard" />
       </template>
-      <UButton v-else :label="count ? `Unstage ${count} ${count === 1 ? 'line' : 'lines'}` : 'Unstage file'" icon="i-lucide-minus" size="xs" color="neutral" variant="outline" :disabled="busy" @click="act('unstage')" />
+      <UButton v-else :label="count ? t('LocalDiff.unstageLines', { count }) : t('LocalDiff.unstageFile')" icon="i-lucide-minus" size="xs" color="neutral" variant="outline" :disabled="busy" @click="act('unstage')" />
     </div>
     <div v-if="pickable && byFunction.length" class="flex flex-wrap items-center gap-1 border-b border-default px-3 py-1 text-xs">
-      <span class="mr-1 text-muted">Pick a function:</span>
+      <span class="mr-1 text-muted">{{ t('LocalDiff.pickFunction') }}</span>
       <UButton
         v-for="group in byFunction"
         :key="group.name + group.keys[0]"
@@ -182,18 +182,18 @@ const SIGN = { add: '+', del: '−', context: ' ' } as const
         :color="group.keys.every(item => picked.has(item)) ? 'primary' : 'neutral'"
         :variant="group.keys.every(item => picked.has(item)) ? 'soft' : 'ghost'"
         class="font-mono"
-        :title="`Pick the ${group.keys.length} changed ${group.keys.length === 1 ? 'line' : 'lines'} of ${group.name}`"
+        :title="t('LocalDiff.pickFunctionLines', { count: group.keys.length, name: group.name })"
         @click="pickFunction(group.keys)"
       />
     </div>
 
     <p v-if="problem" class="p-3 text-sm text-error">{{ problem }}</p>
     <p v-else-if="props.conflicted" class="flex items-center gap-2 p-3 text-sm text-warning">
-      This file has conflicts.
-      <UButton label="Resolve it" size="xs" color="warning" :to="{ path: '/conflicts', query: { path: props.path } }" />
+      {{ t('LocalDiff.conflicted') }}
+      <UButton :label="t('LocalDiff.resolve')" size="xs" color="warning" :to="{ path: '/conflicts', query: { path: props.path } }" />
     </p>
-    <p v-else-if="diff?.binary" class="p-3 text-sm text-muted">A binary file: no lines to compare.</p>
-    <p v-else-if="diff && !diff.hunks.length" class="p-3 text-sm text-muted">No lines changed (the file was renamed, emptied or its mode changed).</p>
+    <p v-else-if="diff?.binary" class="p-3 text-sm text-muted">{{ t('LocalDiff.binary') }}</p>
+    <p v-else-if="diff && !diff.hunks.length" class="p-3 text-sm text-muted">{{ t('LocalDiff.noLines') }}</p>
 
     <div v-else-if="diff" class="min-h-0 flex-1 overflow-auto font-mono text-xs leading-[1.6]">
       <table class="w-full border-collapse">

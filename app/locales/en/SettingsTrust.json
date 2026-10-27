@@ -1,0 +1,7 @@
+{
+  "stillTrusted": "Still trusted",
+  "intro": "A trusted folder may run its own code: TypeScript and architecture scripts when scanning, git hooks and filters when writing. Pull and push need trust.",
+  "none": "No folder is trusted.",
+  "notFound": "Not found",
+  "stop": "Stop trusting"
+}

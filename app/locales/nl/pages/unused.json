@@ -1,0 +1,31 @@
+{
+  "kind": {
+    "dead": {
+      "label": "Niets gebruikt ze",
+      "what": "Niet geëxporteerd, en geen aanroep, verwijzing of vermelding in een template die de scan ziet: waarschijnlijk dood.",
+      "empty": "Elke functie die niet geëxporteerd is, wordt gebruikt."
+    },
+    "unreferenced": {
+      "label": "Geëxporteerd, hier ongebruikt",
+      "what": "Geëxporteerd, maar niets in de scan gebruikt ze: dood, of van buitenaf gebruikt (een tool of script).",
+      "empty": "Elke export wordt ergens in de scan gebruikt."
+    },
+    "export": {
+      "label": "Alleen in hun bestand gebruikt",
+      "what": "Geëxporteerd, maar alleen gebruikt in het bestand dat ze exporteert: de export kan weg.",
+      "empty": "Geen export wordt alleen in zijn eigen bestand gebruikt."
+    }
+  },
+  "hint": "Een hint, geen oordeel. Weggelaten: tests, methodes, default exports, bestanden die het framework laadt en exports van ingangen.",
+  "waiting": "Wachten op de scan.",
+  "working": "De aanroepen en het gebruik worden uitgezocht…",
+  "show": "{name} in het paneel tonen",
+  "open": "{place} openen in de editor",
+  "looking": "Zoeken…",
+  "failed": "Niet te zeggen.",
+  "never": "Geen ander bestand heeft het ooit genoemd.",
+  "lastTitle": "De laatste commit waarin een ander bestand {name} noemde",
+  "last": "Laatst elders genoemd: {subject} · {date}",
+  "when": "Wanneer?",
+  "whenHelp": "Ongeveer wanneer het laatste gebruik verdween: de laatste commit waarin een ander bestand het noemde"
+}

@@ -31,25 +31,25 @@ function calls(id: string) {
       ]"
     >
       <div class="flex min-w-0 items-center gap-1.5">
-        <span class="grid size-4.5 shrink-0 place-items-center rounded border border-default bg-elevated font-mono text-label" :class="KIND_COLOR[fn.kind]" :title="fn.kind">{{ KIND[fn.kind] }}</span>
+        <span class="grid size-4.5 shrink-0 place-items-center rounded border border-default bg-elevated font-mono text-label" :class="KIND_COLOR[fn.kind]" :title="t(`FunctionTree.kind.${fn.kind}`)">{{ KIND[fn.kind] }}</span>
         <button
           type="button"
           class="min-w-0 flex-1 truncate text-left font-mono text-xs hover:underline"
           :class="fn.anonymous ? 'text-muted italic' : 'text-highlighted'"
-          :title="`${fn.name} (lines ${fn.line}–${fn.endLine})`"
+          :title="t('FunctionTree.where', { name: fn.name, from: fn.line, to: fn.endLine })"
           @click="select(fn.id)"
         >
           {{ fn.name }}
         </button>
-        <UBadge v-if="fn.exported" label="exp" size="sm" variant="soft" color="info" class="text-label" />
+        <UBadge v-if="fn.exported" :label="t('FunctionTree.exported')" size="sm" variant="soft" color="info" class="text-label" />
         <UBadge v-if="fn.async" label="async" size="sm" variant="soft" color="secondary" class="text-label" />
         <span
           v-if="index && (calls(fn.id).in || calls(fn.id).out)"
           class="font-mono text-label whitespace-nowrap text-muted tabular-nums"
-          :title="`Called from ${calls(fn.id).in} functions, calls ${calls(fn.id).out}`"
+          :title="t('FunctionTree.calls', { count: calls(fn.id).in, out: calls(fn.id).out })"
         >↘{{ calls(fn.id).in }} ↗{{ calls(fn.id).out }}</span>
         <span class="font-mono text-label whitespace-nowrap text-dimmed tabular-nums">:{{ fn.line }}</span>
-        <UButton icon="i-lucide-square-arrow-out-up-right" size="xs" color="neutral" variant="ghost" class="-my-1" :aria-label="`Open ${fn.name} in the editor`" @click="open(props.path, fn.line)" />
+        <UButton icon="i-lucide-square-arrow-out-up-right" size="xs" color="neutral" variant="ghost" class="-my-1" :aria-label="t('FunctionTree.open', { name: fn.name })" @click="open(props.path, fn.line)" />
       </div>
       <FunctionTree v-if="fn.children.length" :items="fn.children" :path="props.path" :term="props.term" class="pl-2" />
     </div>

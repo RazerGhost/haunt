@@ -1,0 +1,7 @@
+{
+  "nothing": "Niets te doen met deze twee",
+  "currentBranch": "de huidige branch",
+  "nothingHelp": "Sleep een branch naar {current} om te mergen, of {current} naar een branch om te rebasen.",
+  "merge": "{from} mergen in {into}",
+  "rebase": "{from} rebasen op {onto}"
+}

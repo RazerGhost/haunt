@@ -1,0 +1,62 @@
+{
+  "profileBefore": "How the profile",
+  "profileAfter": "looks. Each profile has its own; new profiles copy the current look. Themes are from Nuxt UI.",
+  "theme": "Theme",
+  "iconSetsKept": "Icon sets kept on this computer:",
+  "removeIcons": "Remove the {set} icons",
+  "ownChoices": {
+    "one": "{count} of your own choice on top of {theme}.",
+    "other": "{count} of your own choices on top of {theme}."
+  },
+  "backToTheme": "Back to the theme",
+  "lightOrDark": "Light or dark",
+  "mode": {
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "palette": {
+    "light": "In light mode",
+    "dark": "In dark mode"
+  },
+  "sameAsLight": "Same as light",
+  "mainColour": "Main colour",
+  "mainColourLightHelp": "Buttons, links and what is picked. Plain is black.",
+  "mainColourDarkHelp": "The same in dark mode. Plain is white.",
+  "mainColourOf": "{palette}, main colour: {colour}",
+  "themes": "Theme's",
+  "themesWith": "Theme's ({label})",
+  "plain": "Plain",
+  "plainName": "plain",
+  "greys": "Greys",
+  "greysHelp": "The backgrounds, borders and muted text.",
+  "webFonts": "Load web fonts",
+  "webFontsHelp": "From fonts.coollabs.io (Google Fonts without tracking), for every profile. Off: only installed fonts are used.",
+  "otherColours": "Other colours",
+  "otherColoursHelp": "Colours for success, info, warnings, errors, and the secondary colour.",
+  "role": {
+    "secondary": "Secondary",
+    "success": "Success",
+    "info": "Info",
+    "warning": "Warning",
+    "error": "Error"
+  },
+  "corners": "Corners",
+  "font": "Font",
+  "fontRemoteHelp": "Loaded from coolLabs Fonts.",
+  "fontLocalHelp": "Used if installed, else the system font.",
+  "systemFonts": "System fonts",
+  "fontSize": "Font size",
+  "fontSizeHelp": "Text size in General is a step either side of it.",
+  "icons": "Icons",
+  "iconsHelp": "Lucide is built in; other sets download once.",
+  "toDownload": "{label} (download)",
+  "notDownloaded": "{set} is not downloaded: Lucide shows instead.",
+  "download": "Download {set}",
+  "group": {
+    "buttons": "Buttons",
+    "inputs": "Fields",
+    "panels": "Panels"
+  },
+  "controlSize": "Control size"
+}

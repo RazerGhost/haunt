@@ -1,0 +1,25 @@
+{
+  "noPart": "(files not in the code now)",
+  "status": {
+    "added": "added",
+    "changed": "changed",
+    "removed": "removed",
+    "moved": "moved"
+  },
+  "fileStatus": {
+    "added": "added",
+    "modified": "modified",
+    "deleted": "deleted",
+    "renamed": "renamed"
+  },
+  "renamedFrom": "renamed from {name}",
+  "movedFrom": "moved from {name}",
+  "fromNameIn": "from {name} in {file}",
+  "fromFile": "from {file}",
+  "openFile": "Open the file in the editor",
+  "notInCode": "{name} (not in the code now)",
+  "openFunction": "Open {name} in the editor",
+  "unread": "Its functions could not be read this time. See the diff, or open it again.",
+  "movedOut": "Functions moved out of this file; they are listed where they are now.",
+  "noFunction": "No function changed (only imports, markup or top-level code)."
+}

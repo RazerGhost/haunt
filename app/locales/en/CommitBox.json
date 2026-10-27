@@ -1,0 +1,34 @@
+{
+  "replaceTitle": "Replace the message?",
+  "replaceDescription": "The draft takes the place of the subject and description written now.",
+  "replace": "Replace",
+  "noDraft": "No draft",
+  "stagedNotRead": "The staged changes could not be read.",
+  "hooksSkipped": {
+    "one": "Its {hooks} hook does not run: this folder is not trusted.",
+    "other": "Its {hooks} hooks do not run: this folder is not trusted."
+  },
+  "notSigned": "The commit is not signed: signing runs only in a trusted folder.",
+  "subject": "Subject",
+  "subjectLabel": "Commit subject",
+  "subjectLong": "Git advises a subject of at most 50 characters",
+  "recent": "Recent subjects",
+  "recentHelp": "Start from a recent subject",
+  "draft": "Draft message",
+  "draftHelp": "Draft a message from the staged changes, by function. Made here, without AI.",
+  "description": "Description (optional)",
+  "descriptionLabel": "Commit description",
+  "longLines": {
+    "one": "{count} line is over 72 characters; git advises wrapping at 72.",
+    "other": "{count} lines are over 72 characters; git advises wrapping at 72."
+  },
+  "amendPushed": "The last commit is on {remotes}: amending it means pushing with Overwrite.",
+  "amend": "Amend",
+  "signOff": "Sign off",
+  "amendLast": "Amend last commit",
+  "commitFiles": {
+    "one": "Commit {count} file",
+    "other": "Commit {count} files"
+  },
+  "commit": "Commit"
+}

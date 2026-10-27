@@ -44,7 +44,7 @@ watch(picked, async (path) => {
     segments.value = found.result !== null && !found.binary ? parseConflicts(found.result) : []
     text.value = found.result ?? ''
   } catch (error) {
-    problem.value = errorMessage(error, 'The file could not be read.')
+    problem.value = errorMessage(error, t('pages.conflicts.notRead'))
   }
 }, { immediate: true })
 
@@ -62,7 +62,7 @@ const numbered = computed(() => {
 function context(value: string): string {
   const lines = value.replace(/\n$/, '').split('\n')
   if (lines.length <= 7) return lines.join('\n')
-  return [...lines.slice(0, 3), `… ${lines.length - 6} more lines …`, ...lines.slice(-3)].join('\n')
+  return [...lines.slice(0, 3), t('pages.conflicts.moreLines', { count: lines.length - 6 }), ...lines.slice(-3)].join('\n')
 }
 const deletedBy = computed(() => {
   if (!file.value) return null
@@ -76,12 +76,12 @@ async function save(write: (at: string) => Promise<unknown>): Promise<void> {
   saving.value = true
   try {
     await write(repo.value)
-    toast.add({ title: `${picked.value} is resolved`, icon: 'i-lucide-check' })
+    toast.add({ title: t('pages.conflicts.resolved', { path: picked.value ?? '' }), icon: 'i-lucide-check' })
     // The next file, if any; the list comes back on the git news.
     const next = files.value.find(path => path !== picked.value)
     void router.replace({ query: { ...route.query, path: next } })
   } catch (error) {
-    failure.failed('Not resolved', error, 'Try again.')
+    failure.failed(t('pages.conflicts.notResolved'), error, t('common.tryAgain'))
   } finally {
     saving.value = false
   }
@@ -89,7 +89,7 @@ async function save(write: (at: string) => Promise<unknown>): Promise<void> {
 async function resolve(): Promise<void> {
   const result = editing.value ? text.value : joinSegments(segments.value)
   if (/^<{7}( |$)/m.test(result) && /^>{7}( |$)/m.test(result)) {
-    const ok = await dialog.confirm({ title: 'Conflict markers are left', description: 'The file still has <<<<<<< and >>>>>>> lines. Mark it resolved anyway?', confirm: 'Mark resolved', danger: true })
+    const ok = await dialog.confirm({ title: t('pages.conflicts.markersTitle'), description: t('pages.conflicts.markersDescription'), confirm: t('pages.conflicts.markResolved'), danger: true })
     if (!ok) return
   }
   await save(at => haunt.resolve(at, picked.value!, result))
@@ -111,12 +111,12 @@ function go(step: number): void {
 <template>
   <div v-if="!operation" class="grid justify-items-center gap-3 py-16 text-muted">
     <UIcon name="i-lucide-check-circle" class="size-6" />
-    <p>Nothing to resolve: no merge, revert, cherry-pick or rebase is going on.</p>
-    <UButton label="All commits" to="/commits" size="sm" color="neutral" variant="outline" />
+    <p>{{ t('pages.conflicts.nothing') }}</p>
+    <UButton :label="t('pages.conflicts.allCommits')" to="/commits" size="sm" color="neutral" variant="outline" />
   </div>
   <div v-else class="grid h-full grid-cols-[16rem_minmax(0,1fr)]">
     <aside class="flex min-h-0 flex-col border-r border-default">
-      <p class="border-b border-default px-3 py-2 text-label font-semibold tracking-wider text-muted uppercase">Conflicts <span class="tabular-nums">{{ files.length }}</span></p>
+      <p class="border-b border-default px-3 py-2 text-label font-semibold tracking-wider text-muted uppercase">{{ t('pages.conflicts.conflicts') }} <span class="tabular-nums">{{ files.length }}</span></p>
       <ul class="min-h-0 flex-1 overflow-auto p-1">
         <li v-for="path in files" :key="path">
           <NuxtLink
@@ -130,31 +130,31 @@ function go(step: number): void {
           </NuxtLink>
         </li>
       </ul>
-      <p v-if="!files.length" class="p-3 text-ui text-muted">No conflicts left. Continue in the banner above to finish.</p>
+      <p v-if="!files.length" class="p-3 text-ui text-muted">{{ t('pages.conflicts.noneLeft') }}</p>
     </aside>
 
     <section v-if="picked" class="flex min-h-0 flex-col">
       <header class="flex flex-wrap items-center gap-2 border-b border-default px-4 py-2">
         <span class="min-w-0 flex-1 truncate font-mono text-ui font-medium text-highlighted">{{ picked }}</span>
-        <UButton icon="i-lucide-square-arrow-out-up-right" label="Open in editor" size="xs" color="neutral" variant="ghost" @click="openInEditor(picked!)" />
-        <UButton :label="`Take all of yours (${operation.ours})`" size="xs" color="neutral" variant="outline" :disabled="saving || operating" @click="take('ours')" />
-        <UButton :label="`Take all of theirs (${operation.theirs})`" size="xs" color="neutral" variant="outline" :disabled="saving || operating" @click="take('theirs')" />
+        <UButton icon="i-lucide-square-arrow-out-up-right" :label="t('pages.conflicts.openInEditor')" size="xs" color="neutral" variant="ghost" @click="openInEditor(picked!)" />
+        <UButton :label="t('pages.conflicts.takeOurs', { name: operation.ours })" size="xs" color="neutral" variant="outline" :disabled="saving || operating" @click="take('ours')" />
+        <UButton :label="t('pages.conflicts.takeTheirs', { name: operation.theirs })" size="xs" color="neutral" variant="outline" :disabled="saving || operating" @click="take('theirs')" />
       </header>
 
       <UAlert v-if="problem" color="error" variant="subtle" icon="i-lucide-circle-alert" :description="problem" class="m-4" />
       <div v-else-if="!file" class="grid justify-items-center py-10"><UIcon name="i-lucide-loader-circle" class="size-5 animate-spin text-muted" /></div>
       <div v-else-if="file.binary || deletedBy || file.result === null" class="p-4 text-ui text-muted">
-        <p v-if="deletedBy">{{ deletedBy === 'yours' ? `Your side (${operation.ours}) deleted this file; theirs changed it.` : `Their side (${operation.theirs}) deleted this file; yours changed it.` }} Take one side: the file, or its deletion.</p>
-        <p v-else>A binary file: take one side whole.</p>
+        <p v-if="deletedBy">{{ deletedBy === 'yours' ? t('pages.conflicts.deletedOurs', { name: operation.ours }) : t('pages.conflicts.deletedTheirs', { name: operation.theirs }) }}</p>
+        <p v-else>{{ t('pages.conflicts.binary') }}</p>
       </div>
       <template v-else>
         <div class="flex items-center gap-3 px-4 pt-3 text-xs text-muted">
-          <span>{{ left ? `${left} ${left === 1 ? 'block conflicts' : 'blocks conflict'}: pick yours, theirs or both for each.` : 'Every block is chosen. Mark the file resolved to stage it.' }}</span>
+          <span>{{ left ? t('pages.conflicts.blocksLeft', { count: left }) : t('pages.conflicts.allChosen') }}</span>
           <UFieldGroup v-if="left && !editing" size="xs">
-            <UButton icon="i-lucide-chevron-up" color="neutral" variant="outline" aria-label="Previous conflict" title="Previous conflict" @click="go(-1)" />
-            <UButton icon="i-lucide-chevron-down" color="neutral" variant="outline" aria-label="Next conflict" title="Next conflict" @click="go(1)" />
+            <UButton icon="i-lucide-chevron-up" color="neutral" variant="outline" :aria-label="t('pages.conflicts.previous')" :title="t('pages.conflicts.previous')" @click="go(-1)" />
+            <UButton icon="i-lucide-chevron-down" color="neutral" variant="outline" :aria-label="t('pages.conflicts.next')" :title="t('pages.conflicts.next')" @click="go(1)" />
           </UFieldGroup>
-          <USwitch v-model="editing" label="Edit as text" size="xs" class="ml-auto" @update:model-value="(on: boolean) => { if (on) text = joinSegments(segments) }" />
+          <USwitch v-model="editing" :label="t('pages.conflicts.editAsText')" size="xs" class="ml-auto" @update:model-value="(on: boolean) => { if (on) text = joinSegments(segments) }" />
         </div>
         <div v-if="editing" class="min-h-0 flex-1 p-4">
           <UTextarea v-model="text" :rows="20" autoresize class="w-full" :ui="{ base: 'font-mono text-xs' }" />
@@ -165,26 +165,26 @@ function go(step: number): void {
             <div v-else ref="blocks" class="grid gap-2 rounded-md border border-warning/40 p-2">
               <div class="grid grid-cols-2 gap-2">
                 <div class="min-w-0">
-                  <p class="mb-1 text-label font-semibold text-muted uppercase">Yours · {{ operation.ours }}</p>
+                  <p class="mb-1 text-label font-semibold text-muted uppercase">{{ t('pages.conflicts.yours') }} · {{ operation.ours }}</p>
                   <CodeLines v-if="item.segment.ours" :path="picked!" :text="item.segment.ours" class="rounded bg-success/10 p-2" />
-                  <p v-else class="rounded bg-success/10 p-2 text-xs text-muted">(nothing)</p>
+                  <p v-else class="rounded bg-success/10 p-2 text-xs text-muted">{{ t('pages.conflicts.empty') }}</p>
                 </div>
                 <div class="min-w-0">
-                  <p class="mb-1 text-label font-semibold text-muted uppercase">Theirs · {{ operation.theirs }}</p>
+                  <p class="mb-1 text-label font-semibold text-muted uppercase">{{ t('pages.conflicts.theirs') }} · {{ operation.theirs }}</p>
                   <CodeLines v-if="item.segment.theirs" :path="picked!" :text="item.segment.theirs" class="rounded bg-info/10 p-2" />
-                  <p v-else class="rounded bg-info/10 p-2 text-xs text-muted">(nothing)</p>
+                  <p v-else class="rounded bg-info/10 p-2 text-xs text-muted">{{ t('pages.conflicts.empty') }}</p>
                 </div>
               </div>
               <div class="flex gap-1.5">
-                <UButton label="Use yours" size="xs" color="neutral" variant="outline" @click="pick(item.index, 'ours')" />
-                <UButton label="Use theirs" size="xs" color="neutral" variant="outline" @click="pick(item.index, 'theirs')" />
-                <UButton label="Use both" size="xs" color="neutral" variant="outline" @click="pick(item.index, 'both')" />
+                <UButton :label="t('pages.conflicts.useOurs')" size="xs" color="neutral" variant="outline" @click="pick(item.index, 'ours')" />
+                <UButton :label="t('pages.conflicts.useTheirs')" size="xs" color="neutral" variant="outline" @click="pick(item.index, 'theirs')" />
+                <UButton :label="t('pages.conflicts.useBoth')" size="xs" color="neutral" variant="outline" @click="pick(item.index, 'both')" />
               </div>
             </div>
           </template>
         </div>
         <footer class="flex justify-end gap-2 border-t border-default px-4 py-2">
-          <UButton label="Mark as resolved" icon="i-lucide-check" size="sm" color="primary" :loading="saving" :disabled="operating" @click="resolve" />
+          <UButton :label="t('pages.conflicts.markAsResolved')" icon="i-lucide-check" size="sm" color="primary" :loading="saving" :disabled="operating" @click="resolve" />
         </footer>
       </template>
     </section>

@@ -1,0 +1,19 @@
+{
+  "notUpdated": "The submodules were not updated",
+  "open": "Open in its own tab",
+  "clone": "Clone and check out",
+  "checkOut": "Check out the recorded commit",
+  "copyAddress": "Copy its address",
+  "title": "Submodules",
+  "updateHelp": "Check out all at their recorded commits, cloning missing ones",
+  "trustFirst": "Updating clones from .gitmodules: trust this folder first",
+  "update": "Update the submodules",
+  "state": {
+    "current": "at the recorded commit",
+    "moved": "at another commit than the one recorded",
+    "missing": "not checked out yet"
+  },
+  "from": "From {url}",
+  "notThere": "not there",
+  "moved": "moved"
+}

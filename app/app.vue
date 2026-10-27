@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { en, nl } from '@nuxt/ui/locale'
+
 /*
  * The window: the tabs on top, the toolbar under them, the sidebar on the left, the screen in the middle and the
  * selected function on the right. Each tab remembers its screen.
@@ -24,14 +26,17 @@ const { textSize } = usePreferences()
 const { baseSize } = useAppearance()
 if (import.meta.client) watch([textSize, baseSize], ([size, base]) => { document.documentElement.style.fontSize = `${base + TEXT_STEPS[size]}px` }, { immediate: true })
 
-useHead({ title: 'Haunt', htmlAttrs: { lang: 'en' }, link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }] })
+// The window's language (Settings, General), for its texts (t), Nuxt UI's own and the page's lang.
+const language = useLanguage()
+const uiLocales = { en, nl }
+useHead({ title: 'Haunt', htmlAttrs: { lang: language }, link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }] })
 </script>
 
 <template>
-  <UApp>
+  <UApp :locale="uiLocales[language]">
     <div class="flex h-dvh flex-col">
       <TitleBar />
-      <UAlert v-if="problems.length" color="error" variant="subtle" icon="i-lucide-circle-alert" title="Haunt is missing something on this machine" class="rounded-none">
+      <UAlert v-if="problems.length" color="error" variant="subtle" icon="i-lucide-circle-alert" :title="t('app.missing')" class="rounded-none">
         <template #description>
           <p v-for="problem in problems" :key="problem">{{ problem }}</p>
         </template>
@@ -51,7 +56,7 @@ useHead({ title: 'Haunt', htmlAttrs: { lang: 'en' }, link: [{ rel: 'icon', type:
         </aside>
       </div>
     </div>
-    <USlideover v-model:open="panelOpen" title="Function">
+    <USlideover v-model:open="panelOpen" :title="t('common.function')">
       <template #body>
         <FunctionPanel />
       </template>

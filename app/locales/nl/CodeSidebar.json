@@ -1,0 +1,22 @@
+{
+  "layers": "Lagen",
+  "layersWhat": "Wat op wat ligt, per onderdeel",
+  "canvas": "Canvas",
+  "canvasWhat": "Wat in wat zit, als vakken",
+  "calls": "Aanroepen",
+  "callsWhat": "Hoe een functie wordt bereikt",
+  "imports": "Imports",
+  "importsWhat": "Wie wie importeert",
+  "unused": "Ongebruikt",
+  "unusedWhat": "Wat niets gebruikt",
+  "routes": "Routes",
+  "routesWhat": "De HTTP-routes en hun handlers",
+  "pinned": "Vastgezet",
+  "gone": "{name} staat niet meer in {path}",
+  "unpin": "{name} losmaken",
+  "scanning": "Scannen",
+  "functions": {
+    "one": "{count} functie",
+    "other": "{count} functies"
+  }
+}

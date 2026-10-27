@@ -77,7 +77,7 @@ export function useAppearance() {
     try {
       info.value = await haunt.setAppearance({ ...look.value, ...next })
     } catch (error) {
-      failure.failed('The look did not change', error, 'Try again.')
+      failure.failed(t('composables.useAppearance.notChanged'), error, t('common.tryAgain'))
     }
   }
   /** A theme, with every choice of the profile's own put back to the theme's. */

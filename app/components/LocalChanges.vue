@@ -71,8 +71,8 @@ function askDiscard(what: { lines: LineRef[] } | { file: true }): void {
 const confirmText = computed(() => {
   const what = confirming.value
   if (!what) return ''
-  if ('lines' in what) return `${what.lines.length} picked ${what.lines.length === 1 ? 'line' : 'lines'} of ${what.path}`
-  return what.paths.length === 1 ? what.paths[0]! : `${what.paths.length} files`
+  if ('lines' in what) return t('LocalChanges.pickedLines', { count: what.lines.length, path: what.path })
+  return what.paths.length === 1 ? what.paths[0]! : t('LocalChanges.files', { count: what.paths.length })
 })
 const when = (seconds: number) => new Date(seconds * 1000).toLocaleString()
 </script>
@@ -82,9 +82,9 @@ const when = (seconds: number) => new Date(seconds * 1000).toLocaleString()
     <aside class="flex min-h-0 flex-col border-r border-default select-none">
       <section class="flex min-h-0 flex-1 flex-col">
         <header class="flex items-center gap-1 border-b border-default px-3 py-1.5">
-          <h2 class="flex-1 text-label font-semibold tracking-wider text-muted uppercase">Unstaged <span class="font-normal tabular-nums">{{ unstaged.length }}</span></h2>
-          <UButton v-if="unstaged.length" label="Stage all" size="xs" color="neutral" variant="ghost" :disabled="busy" @click="stage(unstaged.map(file => file.path))" />
-          <UButton v-if="unstaged.length" icon="i-lucide-undo-2" size="xs" color="neutral" variant="ghost" aria-label="Discard all" title="Discard all" :disabled="busy" @click="confirming = { paths: unstaged.map(file => file.path) }" />
+          <h2 class="flex-1 text-label font-semibold tracking-wider text-muted uppercase">{{ t('LocalChanges.unstaged') }} <span class="font-normal tabular-nums">{{ unstaged.length }}</span></h2>
+          <UButton v-if="unstaged.length" :label="t('LocalChanges.stageAll')" size="xs" color="neutral" variant="ghost" :disabled="busy" @click="stage(unstaged.map(file => file.path))" />
+          <UButton v-if="unstaged.length" icon="i-lucide-undo-2" size="xs" color="neutral" variant="ghost" :aria-label="t('LocalChanges.discardAll')" :title="t('LocalChanges.discardAll')" :disabled="busy" @click="confirming = { paths: unstaged.map(file => file.path) }" />
         </header>
         <ul class="min-h-0 flex-1 overflow-y-auto py-1">
           <li
@@ -98,17 +98,17 @@ const when = (seconds: number) => new Date(seconds * 1000).toLocaleString()
           >
             <span class="w-3 shrink-0 text-center font-mono text-label font-semibold" :class="file.conflicted ? 'text-error' : STATUS[file.status].class">{{ file.conflicted ? '!' : file.untracked ? '?' : STATUS[file.status].letter }}</span>
             <span class="min-w-0 flex-1 truncate"><span class="text-muted">{{ folder(file.path) }}</span>{{ name(file.path) }}</span>
-            <UButton icon="i-lucide-undo-2" size="xs" color="neutral" variant="ghost" class="opacity-0 group-hover:opacity-100" aria-label="Discard" title="Discard" :disabled="busy" @click.stop="confirming = { paths: [file.path] }" />
-            <UButton icon="i-lucide-plus" size="xs" color="neutral" variant="ghost" class="opacity-0 group-hover:opacity-100" aria-label="Stage" title="Stage" :disabled="busy" @click.stop="stage([file.path])" />
+            <UButton icon="i-lucide-undo-2" size="xs" color="neutral" variant="ghost" class="opacity-0 group-hover:opacity-100" :aria-label="t('LocalChanges.discard')" :title="t('LocalChanges.discard')" :disabled="busy" @click.stop="confirming = { paths: [file.path] }" />
+            <UButton icon="i-lucide-plus" size="xs" color="neutral" variant="ghost" class="opacity-0 group-hover:opacity-100" :aria-label="t('LocalChanges.stage')" :title="t('LocalChanges.stage')" :disabled="busy" @click.stop="stage([file.path])" />
           </li>
-          <li v-if="!unstaged.length" class="px-3 py-2 text-ui text-muted">Nothing unstaged.</li>
+          <li v-if="!unstaged.length" class="px-3 py-2 text-ui text-muted">{{ t('LocalChanges.nothingUnstaged') }}</li>
         </ul>
       </section>
 
       <section class="flex min-h-0 flex-1 flex-col border-t border-default">
         <header class="flex items-center gap-1 border-b border-default px-3 py-1.5">
-          <h2 class="flex-1 text-label font-semibold tracking-wider text-muted uppercase">Staged <span class="font-normal tabular-nums">{{ staged.length }}</span></h2>
-          <UButton v-if="staged.length" label="Unstage all" size="xs" color="neutral" variant="ghost" :disabled="busy" @click="unstage(staged.map(file => file.path))" />
+          <h2 class="flex-1 text-label font-semibold tracking-wider text-muted uppercase">{{ t('LocalChanges.staged') }} <span class="font-normal tabular-nums">{{ staged.length }}</span></h2>
+          <UButton v-if="staged.length" :label="t('LocalChanges.unstageAll')" size="xs" color="neutral" variant="ghost" :disabled="busy" @click="unstage(staged.map(file => file.path))" />
         </header>
         <ul class="min-h-0 flex-1 overflow-y-auto py-1">
           <li
@@ -122,21 +122,21 @@ const when = (seconds: number) => new Date(seconds * 1000).toLocaleString()
           >
             <span class="w-3 shrink-0 text-center font-mono text-label font-semibold" :class="STATUS[file.status].class">{{ STATUS[file.status].letter }}</span>
             <span class="min-w-0 flex-1 truncate"><span class="text-muted">{{ folder(file.path) }}</span>{{ name(file.path) }}</span>
-            <UButton icon="i-lucide-minus" size="xs" color="neutral" variant="ghost" class="opacity-0 group-hover:opacity-100" aria-label="Unstage" title="Unstage" :disabled="busy" @click.stop="unstage([file.path])" />
+            <UButton icon="i-lucide-minus" size="xs" color="neutral" variant="ghost" class="opacity-0 group-hover:opacity-100" :aria-label="t('LocalChanges.unstage')" :title="t('LocalChanges.unstage')" :disabled="busy" @click.stop="unstage([file.path])" />
           </li>
-          <li v-if="!staged.length" class="px-3 py-2 text-ui text-muted">Nothing staged.</li>
+          <li v-if="!staged.length" class="px-3 py-2 text-ui text-muted">{{ t('LocalChanges.nothingStaged') }}</li>
         </ul>
       </section>
 
       <details v-if="discarded.length" class="border-t border-default px-3 py-2 text-ui">
-        <summary class="cursor-pointer text-muted">Recently discarded <span class="tabular-nums">{{ discarded.length }}</span></summary>
+        <summary class="cursor-pointer text-muted">{{ t('LocalChanges.recentlyDiscarded') }} <span class="tabular-nums">{{ discarded.length }}</span></summary>
         <ul class="mt-1 grid max-h-48 gap-1 overflow-y-auto">
           <li v-for="entry in discarded" :key="entry.id" class="flex items-center gap-2">
             <span class="min-w-0 flex-1 truncate" :title="`${entry.paths.join('\n')}\n${when(entry.at)}`">
-              {{ entry.paths.length === 1 ? entry.paths[0] : `${entry.paths.length} files` }}
+              {{ entry.paths.length === 1 ? entry.paths[0] : t('LocalChanges.files', { count: entry.paths.length }) }}
               <span class="text-label text-muted">{{ when(entry.at) }}</span>
             </span>
-            <UButton label="Restore" size="xs" color="neutral" variant="outline" :disabled="busy" @click="restore(entry.id)" />
+            <UButton :label="t('common.restore')" size="xs" color="neutral" variant="outline" :disabled="busy" @click="restore(entry.id)" />
           </li>
         </ul>
       </details>
@@ -156,15 +156,15 @@ const when = (seconds: number) => new Date(seconds * 1000).toLocaleString()
         class="min-h-0 flex-1"
         @discard="askDiscard"
       />
-      <p v-else class="grid flex-1 place-items-center text-sm text-muted">{{ status ? 'No local changes.' : '' }}</p>
+      <p v-else class="grid flex-1 place-items-center text-sm text-muted">{{ status ? t('LocalChanges.noChanges') : '' }}</p>
       <CommitBox :staged="staged.length" class="border-t border-default" />
     </div>
 
-    <UModal v-model:open="open" title="Discard these changes?" :description="`${confirmText}. They are kept in Recently discarded for 30 days.`">
+    <UModal v-model:open="open" :title="t('LocalChanges.discardTitle')" :description="t('LocalChanges.discardDescription', { what: confirmText })">
       <template #footer>
         <div class="flex w-full justify-end gap-2">
-          <UButton label="Keep them" color="neutral" variant="ghost" @click="confirming = null" />
-          <UButton label="Discard" color="error" variant="soft" icon="i-lucide-undo-2" @click="confirmDiscard" />
+          <UButton :label="t('LocalChanges.keep')" color="neutral" variant="ghost" @click="confirming = null" />
+          <UButton :label="t('LocalChanges.discard')" color="error" variant="soft" icon="i-lucide-undo-2" @click="confirmDiscard" />
         </div>
       </template>
     </UModal>

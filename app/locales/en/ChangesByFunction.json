@@ -1,0 +1,47 @@
+{
+  "sinceMain": "Since main",
+  "uncommitted": "Uncommitted only",
+  "compareWithMenu": "Compare with…",
+  "compareWith": "Compare with",
+  "ref": "Branch, tag or commit",
+  "compare": "Compare",
+  "comparedWith": "Compared with",
+  "aheadBehind": {
+    "one": "{count} commit ahead, {behind} behind",
+    "other": "{count} commits ahead, {behind} behind"
+  },
+  "review": "Review",
+  "stepsBefore": "Callers",
+  "stepsAfter": "steps out",
+  "readError": "The changes could not be read",
+  "notRepo": "This folder is not in a git repository.",
+  "nothingSince": "Nothing changed since {base}.",
+  "followsAlong": "Save a file or switch the comparison above; this view follows along.",
+  "functionsIn": {
+    "one": "{count} function in {files}",
+    "other": "{count} functions in {files}"
+  },
+  "files": {
+    "one": "{count} file",
+    "other": "{count} files"
+  },
+  "affected": {
+    "one": "{count} caller could be affected",
+    "other": "{count} callers could be affected"
+  },
+  "otherFiles": {
+    "one": "{count} other file changed (not code Haunt reads)",
+    "other": "{count} other files changed (not code Haunt reads)"
+  },
+  "status": {
+    "added": "added",
+    "modified": "modified",
+    "deleted": "deleted",
+    "renamed": "renamed"
+  },
+  "impact": "What could break",
+  "impactHelp": {
+    "one": "Functions that call a changed one, up to {count} step out, nearest first. Calls through interfaces or markup are not included.",
+    "other": "Functions that call a changed one, up to {count} steps out, nearest first. Calls through interfaces or markup are not included."
+  }
+}

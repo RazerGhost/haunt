@@ -37,11 +37,11 @@ const shown = computed(() => {
 
 <template>
   <section class="grid gap-1.5">
-    <h3 class="text-xs font-semibold tracking-wider text-muted uppercase">Code</h3>
-    <p v-if="failed" class="text-xs text-muted">The code could not be read.</p>
+    <h3 class="text-xs font-semibold tracking-wider text-muted uppercase">{{ t('FunctionCode.title') }}</h3>
+    <p v-if="failed" class="text-xs text-muted">{{ t('FunctionCode.failed') }}</p>
     <div v-else-if="source" class="max-h-96 overflow-auto rounded-md border border-default bg-elevated/40 py-1.5">
       <pre class="font-mono text-label leading-[1.55]"><code><span v-for="(line, n) in shown" :key="n" class="flex pr-3 hover:bg-elevated"><span class="sticky left-0 w-10 shrink-0 bg-(--ui-bg) pr-2 text-right text-dimmed select-none">{{ source.start + n }}</span><span v-if="tokens?.[n]?.length" class="pl-2 whitespace-pre"><span v-for="(token, at) in tokens[n]" :key="at" class="code-token" :style="token.htmlStyle">{{ token.content }}</span></span><span v-else class="pl-2 whitespace-pre">{{ line || ' ' }}</span></span></code></pre>
-      <button v-if="source.cut" type="button" class="px-3 pt-1 text-xs text-muted hover:underline" @click="open(props.path, props.start)">The first 400 lines; open the file for the rest.</button>
+      <button v-if="source.cut" type="button" class="px-3 pt-1 text-xs text-muted hover:underline" @click="open(props.path, props.start)">{{ t('FunctionCode.cut') }}</button>
     </div>
   </section>
 </template>

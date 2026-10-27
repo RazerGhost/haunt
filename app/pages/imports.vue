@@ -102,7 +102,6 @@ const pickedPart = computed(() => {
     in: groups.value.filter(group => group.to === name).sort((a, b) => b.shown.length - a.shown.length)
   }
 })
-const ruleLabel = { layer: 'layer', door: 'entry' }
 </script>
 
 <template>
@@ -111,21 +110,21 @@ const ruleLabel = { layer: 'layer', door: 'entry' }
   </div>
   <div v-else class="flex h-full flex-col">
     <div class="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-default px-4 py-2 text-sm">
-      <span class="text-muted tabular-nums">{{ summary.imports }} imports between parts</span>
+      <span class="text-muted tabular-nums">{{ t('pages.imports.summary', { count: summary.imports }) }}</span>
       <template v-if="rules">
-        <span class="flex items-center gap-1.5 tabular-nums"><i class="inline-block h-0.5 w-5 bg-(--rule-new)" />{{ summary.new }} {{ summary.known ? 'new rule breaks' : 'rule breaks' }}</span>
-        <span v-if="summary.known" class="flex items-center gap-1.5 tabular-nums"><i class="inline-block h-0.5 w-5 bg-(--rule-known)" />{{ summary.known }} known (accepted for now)</span>
+        <span class="flex items-center gap-1.5 tabular-nums"><i class="inline-block h-0.5 w-5 bg-(--rule-new)" />{{ summary.known ? t('pages.imports.newBreaks', { count: summary.new }) : t('pages.imports.breaksCount', { count: summary.new }) }}</span>
+        <span v-if="summary.known" class="flex items-center gap-1.5 tabular-nums"><i class="inline-block h-0.5 w-5 bg-(--rule-known)" />{{ t('pages.imports.known', { count: summary.known }) }}</span>
       </template>
-      <span class="tabular-nums" :class="scan?.cycles.length ? 'text-error' : 'text-muted'">{{ scan?.cycles.length ?? 0 }} runtime cycles</span>
+      <span class="tabular-nums" :class="scan?.cycles.length ? 'text-error' : 'text-muted'">{{ t('pages.imports.cycles', { count: scan?.cycles.length ?? 0 }) }}</span>
       <div class="ml-auto flex flex-wrap items-center gap-4">
-        <UButton v-if="rules" label="Over time" icon="i-lucide-chart-column" size="xs" :color="overTime ? 'primary' : 'neutral'" :variant="overTime ? 'soft' : 'ghost'" @click="overTime = !overTime" />
-        <USwitch v-model="typeOnly" label="Type-only imports (dashed)" size="sm" />
-        <USwitch v-if="rules" v-model="onlyBreaks" label="Only rule breaks" size="sm" />
+        <UButton v-if="rules" :label="t('pages.imports.overTime')" icon="i-lucide-chart-column" size="xs" :color="overTime ? 'primary' : 'neutral'" :variant="overTime ? 'soft' : 'ghost'" @click="overTime = !overTime" />
+        <USwitch v-model="typeOnly" :label="t('pages.imports.typeOnly')" size="sm" />
+        <USwitch v-if="rules" v-model="onlyBreaks" :label="t('pages.imports.onlyBreaks')" size="sm" />
       </div>
     </div>
     <ArchitectureHistory v-if="overTime && rules" :now="allBreaks" />
     <TrustLayersNote class="m-4 mb-0" />
-    <UAlert v-if="scan?.architectureError" class="m-4" color="warning" variant="subtle" icon="i-lucide-triangle-alert" title="The layer rules could not be read" :description="scan.architectureError" />
+    <UAlert v-if="scan?.architectureError" class="m-4" color="warning" variant="subtle" icon="i-lucide-triangle-alert" :title="t('pages.imports.rulesError')" :description="scan.architectureError" />
     <div class="flex min-h-0 flex-1">
       <div class="min-w-0 flex-1">
         <GraphView
@@ -139,33 +138,33 @@ const ruleLabel = { layer: 'layer', door: 'entry' }
           @open="id => router.push({ query: { part: id } })"
           @background="picked = null"
         />
-        <p v-else-if="scan" class="grid h-full place-items-center px-6 text-center text-sm text-muted">No parts to draw.</p>
+        <p v-else-if="scan" class="grid h-full place-items-center px-6 text-center text-sm text-muted">{{ t('pages.imports.noParts') }}</p>
       </div>
       <aside class="w-96 shrink-0 overflow-auto border-l border-default p-4">
         <template v-if="pickedEdge">
-          <div class="font-mono text-xs tracking-wider text-muted uppercase">Imports</div>
+          <div class="font-mono text-xs tracking-wider text-muted uppercase">{{ t('pages.imports.imports') }}</div>
           <h2 class="mb-3 font-mono text-base font-semibold text-highlighted">{{ pickedEdge.from }} → {{ pickedEdge.to }}</h2>
           <ul class="grid gap-2">
             <li v-for="file in pickedEdge.shown" :key="`${file.from}->${file.to}`" class="grid gap-1 rounded-md border border-default p-2">
               <button type="button" class="text-left font-mono text-xs break-all hover:underline" @click="open(file.from)">{{ file.from }}</button>
               <span class="font-mono text-xs break-all text-muted">→ {{ file.to }}</span>
               <span class="flex flex-wrap gap-1">
-                <UBadge v-if="file.typeOnly" label="types only" size="sm" variant="outline" color="neutral" />
-                <UBadge v-for="rule in file.breaks" :key="rule" :label="`breaks ${ruleLabel[rule]} rule`" size="sm" variant="soft" :color="file.known ? 'warning' : 'error'" />
-                <UBadge v-if="file.breaks.length && file.known" label="accepted for now" size="sm" variant="outline" color="warning" />
+                <UBadge v-if="file.typeOnly" :label="t('pages.imports.typesOnly')" size="sm" variant="outline" color="neutral" />
+                <UBadge v-for="rule in file.breaks" :key="rule" :label="t(`pages.imports.breaks.${rule}`)" size="sm" variant="soft" :color="file.known ? 'warning' : 'error'" />
+                <UBadge v-if="file.breaks.length && file.known" :label="t('pages.imports.accepted')" size="sm" variant="outline" color="warning" />
               </span>
             </li>
           </ul>
         </template>
         <template v-else-if="pickedPart">
-          <div class="font-mono text-xs tracking-wider text-muted uppercase">Part</div>
+          <div class="font-mono text-xs tracking-wider text-muted uppercase">{{ t('pages.imports.part') }}</div>
           <h2 class="mb-1 font-mono text-base font-semibold text-highlighted">{{ pickedPart.name }}</h2>
           <div class="mb-4 flex flex-wrap gap-2">
-            <UButton label="Inside it" icon="i-lucide-folder-open" size="sm" color="neutral" variant="outline" @click="router.push({ query: { part: pickedPart.name } })" />
-            <UButton label="Its files and functions" icon="i-lucide-layers" size="sm" color="neutral" variant="outline" :to="{ path: '/layers', query: { part: pickedPart.name } }" />
+            <UButton :label="t('pages.imports.inside')" icon="i-lucide-folder-open" size="sm" color="neutral" variant="outline" @click="router.push({ query: { part: pickedPart.name } })" />
+            <UButton :label="t('pages.imports.filesAndFunctions')" icon="i-lucide-layers" size="sm" color="neutral" variant="outline" :to="{ path: '/layers', query: { part: pickedPart.name } }" />
           </div>
           <section v-for="side in (['out', 'in'] as const)" :key="side" class="mb-4 grid gap-1.5">
-            <h3 class="text-xs font-semibold tracking-wider text-muted uppercase">{{ side === 'out' ? 'Uses' : 'Used by' }} ({{ pickedPart[side].length }})</h3>
+            <h3 class="text-xs font-semibold tracking-wider text-muted uppercase">{{ t(`pages.imports.side.${side}`, { count: pickedPart[side].length }) }}</h3>
             <button
               v-for="group in pickedPart[side]"
               :key="`${group.from}->${group.to}`"
@@ -179,23 +178,21 @@ const ruleLabel = { layer: 'layer', door: 'entry' }
           </section>
         </template>
         <template v-else>
-          <h2 class="mb-2 font-semibold text-highlighted">Imports between parts</h2>
+          <h2 class="mb-2 font-semibold text-highlighted">{{ t('pages.imports.title') }}</h2>
           <p v-if="rules === 'config'" class="mb-3 text-sm text-muted">
-            Rules from <code>haunt.config.json</code>: a part may use lower layers, and parts of its own layer listed in
-            <code>uses</code>; with <code>entries</code>, only through those files. Parts no rule matches sit above and are
-            not checked.
+            {{ t('pages.imports.config.before') }} <code>haunt.config.json</code>{{ t('pages.imports.config.afterConfig') }}
+            <code>uses</code>{{ t('pages.imports.config.afterUses') }} <code>entries</code>{{ t('pages.imports.config.after') }}
           </p>
           <p v-else-if="rules === 'script'" class="mb-3 text-sm text-muted">
-            Rules from the architecture script named in <code>haunt.config.json</code> (it runs because the folder is
-            trusted). Parts it does not name sit above and are not checked.
+            {{ t('pages.imports.script.before') }} <code>haunt.config.json</code> {{ t('pages.imports.script.after') }}
           </p>
           <p v-else class="mb-3 text-sm text-muted">
-            Arrows show imports between parts. To check them against your own layers, add a
-            <code>haunt.config.json</code> (see Haunt's README).
+            {{ t('pages.imports.none.before') }}
+            <code>haunt.config.json</code> {{ t('pages.imports.none.after') }}
           </p>
-          <p class="mb-3 text-sm text-muted">Click an arrow for its files, a part for what it uses; double-click to go inside. Tests are left out.</p>
+          <p class="mb-3 text-sm text-muted">{{ t('pages.imports.help') }}</p>
           <template v-if="scan?.cycles.length">
-            <h3 class="mb-1 text-xs font-semibold tracking-wider text-muted uppercase">Runtime cycles</h3>
+            <h3 class="mb-1 text-xs font-semibold tracking-wider text-muted uppercase">{{ t('pages.imports.runtimeCycles') }}</h3>
             <ul class="grid gap-2">
               <li v-for="(cycle, i) in scan.cycles" :key="i" class="font-mono text-xs break-all text-error">{{ cycle.join(' → ') }}</li>
             </ul>

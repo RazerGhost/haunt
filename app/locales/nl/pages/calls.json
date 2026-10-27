@@ -1,0 +1,73 @@
+{
+  "direction": {
+    "both": "Aanroepers en aangeroepen",
+    "callers": "Aanroepers",
+    "callees": "Aangeroepen"
+  },
+  "tab": {
+    "called": "Meest aangeroepen",
+    "entries": "Ingangen",
+    "recent": "Recent"
+  },
+  "calledBy": "Aangeroepen door",
+  "calls": "Roept aan",
+  "stepsUp": {
+    "one": "{count} stap omhoog",
+    "other": "{count} stappen omhoog"
+  },
+  "stepsDown": {
+    "one": "{count} stap omlaag",
+    "other": "{count} stappen omlaag"
+  },
+  "itCalls": {
+    "one": "Roept {count} functie aan.",
+    "other": "Roept {count} functies aan."
+  },
+  "itCallsNothing": "Roept niets in de scan aan.",
+  "isEntry": "{name} is een ingang: niets in de scan roept het aan.",
+  "inCycle": "{name} wordt alleen aangeroepen vanuit een kringloop (functies die elkaar aanroepen), nooit vanuit een ingang; de directe aanroepers staan erbij.",
+  "steps": {
+    "one": "{count} stap",
+    "other": "{count} stappen"
+  },
+  "stepsRange": "{shortest} tot {longest} stappen",
+  "reached": {
+    "one": "{name} wordt bereikt vanuit {count} ingang in {steps}.",
+    "other": "{name} wordt bereikt vanuit {count} ingangen in {steps}."
+  },
+  "reachedShortest": {
+    "one": "{name} wordt bereikt vanuit {count} ingang in {steps} (de 12 kortste paden staan erbij).",
+    "other": "{name} wordt bereikt vanuit {count} ingangen in {steps} (de 12 kortste paden staan erbij)."
+  },
+  "groupFunctions": {
+    "one": "{count} functie",
+    "other": "{count} functies"
+  },
+  "matching": "Gevonden functies",
+  "waiting": "Wachten op de aanroepgraaf.",
+  "entriesHelp": "Functies die niets aanroept en die zelf andere aanroepen: waar de code binnenkomt.",
+  "recentEmpty": "De functies die je in het midden zet, komen hier.",
+  "callsCount": "roept {count} aan",
+  "calledFrom": "aangeroepen vanuit {count}",
+  "back": "Terug",
+  "trail": "Spoor",
+  "functions": "Functies",
+  "paths": "Paden",
+  "pathsHelp": "Hoe de code het bereikt, van boven naar beneden",
+  "around": "Rondom",
+  "aroundHelp": "Aanroepers links, wat het aanroept rechts",
+  "show": "Tonen",
+  "stepsBelow": "Stappen eronder",
+  "stepsLabel": "Stappen",
+  "grouped": {
+    "one": "{count} functie gegroepeerd per onderdeel en map: klik op een groep om hem te openen.",
+    "other": "{count} functies gegroepeerd per onderdeel en map: klik op een groep om hem te openen."
+  },
+  "hidden": "Nog {count} weggelaten: meer dan {max} in een kolom.",
+  "changed": "gewijzigd",
+  "affected": "roept een gewijzigde aan",
+  "hintPaths": "Dubbele rand: een ingang · klik om te bekijken · dubbelklik om te centreren · scroll om te zoomen",
+  "hint": "klik om te bekijken · dubbelklik om te centreren · scroll om te zoomen",
+  "working": "De aanroepgraaf wordt uitgezocht…",
+  "pick": "Kies of zoek een functie: Paden laat zien hoe de code het vanuit de ingangen bereikt."
+}

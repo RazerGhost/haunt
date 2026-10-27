@@ -1,0 +1,32 @@
+{
+  "readError": "The imports could not be read.",
+  "rule": {
+    "layer": "breaks the layers",
+    "door": "past the door"
+  },
+  "ruleRemoved": {
+    "layer": "no longer breaks the layers",
+    "door": "no longer past the door"
+  },
+  "noLonger": "no longer {rule}",
+  "reading": "Reading the imports before and after…",
+  "noImports": "This change adds or removes no imports between the files Haunt scans.",
+  "addsBreaks": {
+    "one": "Adds {count} import that breaks the rules",
+    "other": "Adds {count} imports that break the rules"
+  },
+  "removesBreaks": "removes {count}",
+  "cycles": {
+    "one": "{count} import closes a cycle",
+    "other": "{count} imports close a cycle"
+  },
+  "totals": {
+    "one": "{count} import added ({addedBetween} between parts), {removed} removed ({removedBetween} between parts).",
+    "other": "{count} imports added ({addedBetween} between parts), {removed} removed ({removedBetween} between parts)."
+  },
+  "noRules": "No rules check imports here. Add layers in haunt.config.json, or an architecture script with a judge.",
+  "judgedNow": "Resolved and judged against the files and rules as they are now.",
+  "openFile": "Open {path} in the editor",
+  "typesOnly": "types only",
+  "closesCycle": "closes a cycle"
+}

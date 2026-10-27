@@ -1,0 +1,31 @@
+{
+  "notRead": "De diff kon niet gelezen worden.",
+  "clickToPick": "Klik op regels om ze te kiezen",
+  "history": "Geschiedenis",
+  "blame": "Blame",
+  "clearPicked": "{count} gekozen wissen",
+  "stageLines": {
+    "one": "{count} regel stagen",
+    "other": "{count} regels stagen"
+  },
+  "stageFile": "Bestand stagen",
+  "discardLines": {
+    "one": "{count} regel weggooien",
+    "other": "{count} regels weggooien"
+  },
+  "discardFile": "Bestand weggooien",
+  "unstageLines": {
+    "one": "{count} regel unstagen",
+    "other": "{count} regels unstagen"
+  },
+  "unstageFile": "Bestand unstagen",
+  "pickFunction": "Kies een functie:",
+  "pickFunctionLines": {
+    "one": "De {count} gewijzigde regel van {name} kiezen",
+    "other": "De {count} gewijzigde regels van {name} kiezen"
+  },
+  "conflicted": "Dit bestand heeft conflicten.",
+  "resolve": "Oplossen",
+  "binary": "Een binair bestand: geen regels om te vergelijken.",
+  "noLines": "Geen regels gewijzigd (het bestand is hernoemd of leeggemaakt, of de modus is gewijzigd)."
+}

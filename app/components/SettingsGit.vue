@@ -11,45 +11,36 @@ const { app, save, saveOnline } = useAppSettings()
 async function saveGit(pull: PullChoice, fetchEvery: number): Promise<void> {
   await save(haunt.setGitSettings(pull, fetchEvery))
 }
-const pulls: { value: PullChoice, label: string, help: string }[] = [
-  { value: 'ask', label: 'Ask', help: 'Haunt asks each time whether to rebase or merge.' },
-  { value: 'rebase', label: 'Rebase', help: 'Your commits go on top of the remote ones, in a straight line.' },
-  { value: 'merge', label: 'Merge', help: 'A merge commit joins the two.' }
-]
-const intervals = [
-  { value: 0, label: 'Off' },
-  { value: 5, label: 'Every 5 minutes' },
-  { value: 15, label: 'Every 15 minutes' },
-  { value: 30, label: 'Every 30 minutes' }
-]
+const pulls: PullChoice[] = ['ask', 'rebase', 'merge']
+const intervals = computed(() => [0, 5, 15, 30].map(value => ({ value, label: value ? t('SettingsGit.every', { count: value }) : t('SettingsGit.off') })))
 </script>
 
 <template>
   <div class="grid content-start gap-5">
     <template v-if="app">
-      <UFormField label="When branches diverge" :help="pulls.find(item => item.value === app!.pull)?.help">
+      <UFormField :label="t('SettingsGit.diverge')" :help="t(`SettingsGit.pull.${app.pull}Help`)">
         <UFieldGroup>
           <UButton
             v-for="option in pulls"
-            :key="option.value"
-            :label="option.label"
+            :key="option"
+            :label="t(`SettingsGit.pull.${option}`)"
             size="sm"
-            :color="app.pull === option.value ? 'primary' : 'neutral'"
-            :variant="app.pull === option.value ? 'solid' : 'outline'"
-            @click="saveGit(option.value, app!.fetchEvery)"
+            :color="app.pull === option ? 'primary' : 'neutral'"
+            :variant="app.pull === option ? 'solid' : 'outline'"
+            @click="saveGit(option, app!.fetchEvery)"
           />
         </UFieldGroup>
       </UFormField>
-      <UFormField label="Fetch in the background" help="Keeps the Pull and Push counts current. Remotes that need a sign-in are skipped.">
+      <UFormField :label="t('SettingsGit.fetch')" :help="t('SettingsGit.fetchHelp')">
         <USelect :model-value="app.fetchEvery" :items="intervals" class="w-56" @update:model-value="value => saveGit(app!.pull, Number(value))" />
       </UFormField>
       <USwitch
         :model-value="app.hostTools"
-        label="Pull request status"
-        description="Shows each branch's pull request and checks via gh, glab or tea (Gitea untested). Uses your account; runs nothing from the repository."
+        :label="t('SettingsGit.hostTools')"
+        :description="t('SettingsGit.hostToolsHelp')"
         @update:model-value="(value: boolean) => saveOnline(value, app!.updateCheck)"
       />
     </template>
-    <USwitch v-model="signoff" label="Sign off by default" description="Sign off is ticked in the commit box (adds a Signed-off-by line)." />
+    <USwitch v-model="signoff" :label="t('SettingsGit.signoff')" :description="t('SettingsGit.signoffHelp')" />
   </div>
 </template>

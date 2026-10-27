@@ -1,0 +1,62 @@
+{
+  "profileBefore": "Hoe het profiel",
+  "profileAfter": "eruitziet. Elk profiel heeft een eigen uiterlijk; nieuwe profielen nemen het huidige over. De thema's komen van Nuxt UI.",
+  "theme": "Thema",
+  "iconSetsKept": "Iconensets op deze computer:",
+  "removeIcons": "De {set}-iconen verwijderen",
+  "ownChoices": {
+    "one": "{count} eigen keuze bovenop {theme}.",
+    "other": "{count} eigen keuzes bovenop {theme}."
+  },
+  "backToTheme": "Terug naar het thema",
+  "lightOrDark": "Licht of donker",
+  "mode": {
+    "system": "Systeem",
+    "light": "Licht",
+    "dark": "Donker"
+  },
+  "palette": {
+    "light": "In lichte modus",
+    "dark": "In donkere modus"
+  },
+  "sameAsLight": "Zelfde als licht",
+  "mainColour": "Hoofdkleur",
+  "mainColourLightHelp": "Knoppen, links en wat gekozen is. Neutraal is zwart.",
+  "mainColourDarkHelp": "Hetzelfde in donkere modus. Neutraal is wit.",
+  "mainColourOf": "{palette}, hoofdkleur: {colour}",
+  "themes": "Van het thema",
+  "themesWith": "Van het thema ({label})",
+  "plain": "Neutraal",
+  "plainName": "neutraal",
+  "greys": "Grijstinten",
+  "greysHelp": "De achtergronden, randen en gedempte tekst.",
+  "webFonts": "Weblettertypen laden",
+  "webFontsHelp": "Van fonts.coollabs.io (Google Fonts zonder tracking), voor elk profiel. Uit: alleen geïnstalleerde lettertypen worden gebruikt.",
+  "otherColours": "Andere kleuren",
+  "otherColoursHelp": "Kleuren voor succes, info, waarschuwingen, fouten en de tweede kleur.",
+  "role": {
+    "secondary": "Tweede kleur",
+    "success": "Succes",
+    "info": "Info",
+    "warning": "Waarschuwing",
+    "error": "Fout"
+  },
+  "corners": "Hoeken",
+  "font": "Lettertype",
+  "fontRemoteHelp": "Geladen van coolLabs Fonts.",
+  "fontLocalHelp": "Gebruikt als het geïnstalleerd is, anders het systeemlettertype.",
+  "systemFonts": "Systeemlettertypen",
+  "fontSize": "Lettergrootte",
+  "fontSizeHelp": "De tekstgrootte in Algemeen is een stap groter of kleiner.",
+  "icons": "Iconen",
+  "iconsHelp": "Lucide zit erin; andere sets worden één keer gedownload.",
+  "toDownload": "{label} (downloaden)",
+  "notDownloaded": "{set} is niet gedownload: Lucide wordt getoond.",
+  "download": "{set} downloaden",
+  "group": {
+    "buttons": "Knoppen",
+    "inputs": "Velden",
+    "panels": "Panelen"
+  },
+  "controlSize": "Formaat van knoppen en velden"
+}

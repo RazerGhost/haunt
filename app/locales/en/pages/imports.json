@@ -1,0 +1,55 @@
+{
+  "summary": {
+    "one": "{count} import between parts",
+    "other": "{count} imports between parts"
+  },
+  "newBreaks": {
+    "one": "{count} new rule break",
+    "other": "{count} new rule breaks"
+  },
+  "breaksCount": {
+    "one": "{count} rule break",
+    "other": "{count} rule breaks"
+  },
+  "known": "{count} known (accepted for now)",
+  "cycles": {
+    "one": "{count} runtime cycle",
+    "other": "{count} runtime cycles"
+  },
+  "overTime": "Over time",
+  "typeOnly": "Type-only imports (dashed)",
+  "onlyBreaks": "Only rule breaks",
+  "rulesError": "The layer rules could not be read",
+  "noParts": "No parts to draw.",
+  "imports": "Imports",
+  "typesOnly": "types only",
+  "breaks": {
+    "layer": "breaks layer rule",
+    "door": "breaks entry rule"
+  },
+  "accepted": "accepted for now",
+  "part": "Part",
+  "inside": "Inside it",
+  "filesAndFunctions": "Its files and functions",
+  "side": {
+    "out": "Uses ({count})",
+    "in": "Used by ({count})"
+  },
+  "title": "Imports between parts",
+  "config": {
+    "before": "Rules from",
+    "afterConfig": ": a part may use lower layers, and parts of its own layer listed in",
+    "afterUses": "; with",
+    "after": ", only through those files. Parts no rule matches sit above and are not checked."
+  },
+  "script": {
+    "before": "Rules from the architecture script named in",
+    "after": "(it runs because the folder is trusted). Parts it does not name sit above and are not checked."
+  },
+  "none": {
+    "before": "Arrows show imports between parts. To check them against your own layers, add a",
+    "after": "(see Haunt's README)."
+  },
+  "help": "Click an arrow for its files, a part for what it uses; double-click to go inside. Tests are left out.",
+  "runtimeCycles": "Runtime cycles"
+}

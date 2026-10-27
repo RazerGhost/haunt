@@ -1,0 +1,17 @@
+{
+  "test": "test",
+  "commits": {
+    "one": "{count} commit touched this file in the last 180 days",
+    "other": "{count} commits touched this file in the last 180 days"
+  },
+  "functions": {
+    "one": "{count} fn",
+    "other": "{count} fns"
+  },
+  "lines": {
+    "one": "{count} line",
+    "other": "{count} lines"
+  },
+  "open": "Open the file in the editor",
+  "none": "No functions: types, schemas or data only."
+}

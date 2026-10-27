@@ -1,0 +1,28 @@
+{
+  "folderSize": "{files} · {functions}",
+  "folder": "Folder",
+  "file": "File",
+  "allParts": "All parts",
+  "summary": {
+    "one": "{count} import between {nodes} folders and files",
+    "other": "{count} imports between {nodes} folders and files"
+  },
+  "cycles": {
+    "one": "{count} arrow in a cycle",
+    "other": "{count} arrows in a cycle"
+  },
+  "typeOnly": "Type-only imports (dashed)",
+  "scriptOnly": "The architecture script lists only imports between parts.",
+  "empty": "Nothing in this folder.",
+  "imports": "Imports",
+  "inCycle": "In a cycle: these folders import each other at runtime.",
+  "typesOnly": "types only",
+  "nodeSize": "{files} · {functions}",
+  "inside": "Inside it",
+  "side": {
+    "out": "Imports from ({count})",
+    "in": "Imported by ({count})"
+  },
+  "title": "Inside {name}",
+  "help": "Arrows show imports between folders or files, thicker for more. Importers sit higher, cycles are red. Click an arrow for its files, a folder for its imports; double-click to go inside. Imports between parts are in All parts."
+}

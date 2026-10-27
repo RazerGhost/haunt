@@ -1,0 +1,7 @@
+{
+  "openOn": "Open on {host}",
+  "copyLink": "Copy {host} link",
+  "copied": "Link copied",
+  "notCopied": "Could not copy the link",
+  "notOpened": "Could not open the page"
+}

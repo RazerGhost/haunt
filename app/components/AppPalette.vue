@@ -22,7 +22,7 @@ async function openTerminal(root: string): Promise<void> {
   try {
     await haunt.terminalTab(root)
   } catch (error) {
-    toast.add({ title: 'Could not open a terminal', description: errorMessage(error, 'Try again.'), color: 'error', icon: 'i-lucide-circle-alert' })
+    toast.add({ title: t('AppPalette.terminalFailed'), description: errorMessage(error, t('common.tryAgain')), color: 'error', icon: 'i-lucide-circle-alert' })
   }
 }
 
@@ -55,48 +55,48 @@ const groups = computed(() => {
   const sha = /^[0-9a-f]{7,40}$/i.test(term.value.trim()) ? term.value.trim() : null
   return [
     ...sha
-      ? [{ id: 'commit', label: 'Commit', ignoreFilter: true, items: [{ label: `Go to commit ${sha}`, icon: 'i-lucide-git-commit-vertical', onSelect: () => run(() => router.push({ path: '/commits', query: { commit: sha } })) }] }]
+      ? [{ id: 'commit', label: t('AppPalette.commit'), ignoreFilter: true, items: [{ label: t('AppPalette.goToCommit', { sha }), icon: 'i-lucide-git-commit-vertical', onSelect: () => run(() => router.push({ path: '/commits', query: { commit: sha } })) }] }]
       : [],
     {
       id: 'actions',
-      label: 'Actions',
+      label: t('AppPalette.actions'),
       items: [
-        ...undo.last.value ? [{ label: `Undo: ${undo.last.value.title}`, suffix: undo.last.value.undo, icon: 'i-lucide-undo-2', onSelect: () => run(() => undo.undo()) }] : [],
-        { label: 'Fetch', icon: 'i-lucide-refresh-cw', onSelect: () => run(() => network.fetch()) },
-        ...info.value?.root ? [{ label: 'Open a terminal here', icon: 'i-lucide-square-terminal', onSelect: () => run(() => openTerminal(info.value!.root!)) }] : [],
-        ...network.trusted.value && branch?.upstream ? [{ label: `Pull ${branch.upstream}`, icon: 'i-lucide-arrow-down-to-line', onSelect: () => run(() => network.pull()) }] : [],
-        ...branch?.behind ? [{ label: 'Incoming changes', suffix: 'what a pull would bring in', icon: 'i-lucide-eye', onSelect: () => run(() => router.push('/incoming')) }] : [],
-        ...network.trusted.value && branch ? [{ label: `Push ${branch.name}`, icon: 'i-lucide-arrow-up-from-line', onSelect: () => run(() => network.push()) }] : [],
-        { label: 'New branch…', icon: 'i-lucide-git-branch-plus', onSelect: () => run(() => refActions.newBranch()) },
-        { label: 'Stash local changes…', icon: 'i-lucide-archive', onSelect: () => run(() => refActions.stash()) },
-        { label: 'Git mode', suffix: 'history and branches', icon: 'i-lucide-git-branch', kbds: ['meta', '1'], onSelect: () => run(() => switchTo('git')) },
-        { label: 'Code mode', suffix: 'layers, canvas, calls, imports', icon: 'i-lucide-braces', kbds: ['meta', '2'], onSelect: () => run(() => switchTo('code')) }
+        ...undo.last.value ? [{ label: t('AppPalette.undo', { title: undo.last.value.title }), suffix: undo.last.value.undo, icon: 'i-lucide-undo-2', onSelect: () => run(() => undo.undo()) }] : [],
+        { label: t('AppPalette.fetch'), icon: 'i-lucide-refresh-cw', onSelect: () => run(() => network.fetch()) },
+        ...info.value?.root ? [{ label: t('AppPalette.terminal'), icon: 'i-lucide-square-terminal', onSelect: () => run(() => openTerminal(info.value!.root!)) }] : [],
+        ...network.trusted.value && branch?.upstream ? [{ label: t('AppPalette.pull', { upstream: branch.upstream }), icon: 'i-lucide-arrow-down-to-line', onSelect: () => run(() => network.pull()) }] : [],
+        ...branch?.behind ? [{ label: t('AppPalette.incoming'), suffix: t('AppPalette.incomingHelp'), icon: 'i-lucide-eye', onSelect: () => run(() => router.push('/incoming')) }] : [],
+        ...network.trusted.value && branch ? [{ label: t('AppPalette.push', { name: branch.name }), icon: 'i-lucide-arrow-up-from-line', onSelect: () => run(() => network.push()) }] : [],
+        { label: t('AppPalette.newBranch'), icon: 'i-lucide-git-branch-plus', onSelect: () => run(() => refActions.newBranch()) },
+        { label: t('AppPalette.stash'), icon: 'i-lucide-archive', onSelect: () => run(() => refActions.stash()) },
+        { label: t('AppPalette.gitMode'), suffix: t('AppPalette.gitModeHelp'), icon: 'i-lucide-git-branch', kbds: ['meta', '1'], onSelect: () => run(() => switchTo('git')) },
+        { label: t('AppPalette.codeMode'), suffix: t('AppPalette.codeModeHelp'), icon: 'i-lucide-braces', kbds: ['meta', '2'], onSelect: () => run(() => switchTo('code')) }
       ]
     },
     {
       id: 'screens',
-      label: 'Screens',
+      label: t('AppPalette.screens'),
       items: [
-        { label: 'Local changes', icon: 'i-lucide-pencil-line', to: '/local' },
-        { label: 'All commits', icon: 'i-lucide-git-commit-vertical', to: '/commits' },
-        { label: 'Pull requests', icon: 'i-lucide-git-pull-request', to: '/pulls' },
-        { label: 'Bisect', suffix: 'find the commit that broke something', icon: 'i-lucide-crosshair', to: '/bisect' },
-        { label: 'Release notes', suffix: 'between two tags', icon: 'i-lucide-scroll-text', to: '/release' },
-        { label: 'Apply patches', icon: 'i-lucide-file-diff', to: '/patches' },
-        { label: 'Health', suffix: 'size, large files, old branches', icon: 'i-lucide-heart-pulse', to: '/health' },
-        ...branch ? [{ label: `Review ${branch.name}`, suffix: 'function by function', icon: 'i-lucide-list-checks', to: '/review' }] : [],
-        ...operation.value ? [{ label: `Conflicts: ${operation.value.title}`, icon: 'i-lucide-git-merge', to: '/conflicts' }] : [],
-        { label: 'Layers', icon: 'i-lucide-layers', to: '/layers' },
-        { label: 'Canvas', icon: 'i-lucide-boxes', to: '/canvas' },
-        { label: 'Calls', icon: 'i-lucide-git-fork', to: '/calls' },
-        { label: 'Imports', icon: 'i-lucide-network', to: '/imports' },
-        { label: 'Unused functions', icon: 'i-lucide-ghost', to: '/unused' },
-        { label: 'Routes', suffix: 'the HTTP routes in the code', icon: 'i-lucide-route', to: '/routes' }
+        { label: t('AppPalette.localChanges'), icon: 'i-lucide-pencil-line', to: '/local' },
+        { label: t('AppPalette.allCommits'), icon: 'i-lucide-git-commit-vertical', to: '/commits' },
+        { label: t('AppPalette.pullRequests'), icon: 'i-lucide-git-pull-request', to: '/pulls' },
+        { label: t('AppPalette.bisect'), suffix: t('AppPalette.bisectHelp'), icon: 'i-lucide-crosshair', to: '/bisect' },
+        { label: t('AppPalette.releaseNotes'), suffix: t('AppPalette.releaseNotesHelp'), icon: 'i-lucide-scroll-text', to: '/release' },
+        { label: t('AppPalette.patches'), icon: 'i-lucide-file-diff', to: '/patches' },
+        { label: t('AppPalette.health'), suffix: t('AppPalette.healthHelp'), icon: 'i-lucide-heart-pulse', to: '/health' },
+        ...branch ? [{ label: t('AppPalette.review', { name: branch.name }), suffix: t('AppPalette.reviewHelp'), icon: 'i-lucide-list-checks', to: '/review' }] : [],
+        ...operation.value ? [{ label: t('AppPalette.conflicts', { title: operation.value.title }), icon: 'i-lucide-git-merge', to: '/conflicts' }] : [],
+        { label: t('AppPalette.layers'), icon: 'i-lucide-layers', to: '/layers' },
+        { label: t('AppPalette.canvas'), icon: 'i-lucide-boxes', to: '/canvas' },
+        { label: t('AppPalette.calls'), icon: 'i-lucide-git-fork', to: '/calls' },
+        { label: t('AppPalette.imports'), icon: 'i-lucide-network', to: '/imports' },
+        { label: t('AppPalette.unused'), icon: 'i-lucide-ghost', to: '/unused' },
+        { label: t('AppPalette.routes'), suffix: t('AppPalette.routesHelp'), icon: 'i-lucide-route', to: '/routes' }
       ].map(item => ({ ...item, onSelect: () => run(() => router.push(item.to)) }))
     },
     {
       id: 'branches',
-      label: 'Switch to a branch',
+      label: t('AppPalette.branches'),
       items: (refs.value?.branches ?? []).filter(item => !item.current).map(item => ({
         label: item.name,
         suffix: item.subject,
@@ -106,12 +106,12 @@ const groups = computed(() => {
     },
     {
       id: 'tabs',
-      label: 'Open repositories',
+      label: t('AppPalette.tabs'),
       items: tabs.map(tab => ({ label: tab.split(/[\\/]/).pop() ?? tab, suffix: tab, icon: 'i-lucide-folder-git-2', onSelect: () => run(() => chooseRoot(tab)) }))
     },
     {
       id: 'pinned',
-      label: 'Pinned functions',
+      label: t('AppPalette.pinned'),
       items: pins.pinned.value.filter(pin => pin.found).map(pin => ({
         label: pin.name,
         suffix: tailOf(pin.path),
@@ -124,12 +124,12 @@ const groups = computed(() => {
     },
     {
       id: 'functions',
-      label: 'Functions',
+      label: t('AppPalette.functions'),
       // Searched here, not by the palette: there are thousands.
       ignoreFilter: true,
       items: functions.value.map(fn => ({
         label: fn.name,
-        suffix: `${tailOf(fn.path)} · called from ${fn.callers}`,
+        suffix: t('AppPalette.calledFrom', { path: tailOf(fn.path), count: fn.callers }),
         icon: 'i-lucide-square-function',
         onSelect: () => run(() => {
           select(fn.id)
@@ -142,12 +142,12 @@ const groups = computed(() => {
 </script>
 
 <template>
-  <UModal v-model:open="open" :ui="{ content: 'max-w-2xl' }" title="Command palette" description="Search for an action, a screen, a branch, a repository or a function.">
+  <UModal v-model:open="open" :ui="{ content: 'max-w-2xl' }" :title="t('AppPalette.title')" :description="t('AppPalette.description')">
     <template #content>
       <UCommandPalette
         v-model:search-term="term"
         :groups="groups"
-        placeholder="Type an action, a screen, a branch or a function…"
+        :placeholder="t('AppPalette.placeholder')"
         close
         class="h-[28rem]"
         @update:open="(value: boolean) => { open = value }"

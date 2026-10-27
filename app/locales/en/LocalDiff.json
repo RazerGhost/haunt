@@ -1,0 +1,31 @@
+{
+  "notRead": "The diff could not be read.",
+  "clickToPick": "Click lines to pick them",
+  "history": "History",
+  "blame": "Blame",
+  "clearPicked": "Clear {count} picked",
+  "stageLines": {
+    "one": "Stage {count} line",
+    "other": "Stage {count} lines"
+  },
+  "stageFile": "Stage file",
+  "discardLines": {
+    "one": "Discard {count} line",
+    "other": "Discard {count} lines"
+  },
+  "discardFile": "Discard file",
+  "unstageLines": {
+    "one": "Unstage {count} line",
+    "other": "Unstage {count} lines"
+  },
+  "unstageFile": "Unstage file",
+  "pickFunction": "Pick a function:",
+  "pickFunctionLines": {
+    "one": "Pick the {count} changed line of {name}",
+    "other": "Pick the {count} changed lines of {name}"
+  },
+  "conflicted": "This file has conflicts.",
+  "resolve": "Resolve it",
+  "binary": "A binary file: no lines to compare.",
+  "noLines": "No lines changed (the file was renamed, emptied or its mode changed)."
+}

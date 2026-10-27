@@ -20,13 +20,13 @@ export function usePatches() {
     const at = repo.value
     if (!at) return
     const { open } = await import('@tauri-apps/plugin-dialog')
-    const folder = await open({ directory: true, title: 'Save the patches in' })
+    const folder = await open({ directory: true, title: t('composables.usePatches.saveIn') })
     if (typeof folder !== 'string') return
     try {
       const saved = await haunt.savePatches(at, from, to, folder)
-      toast.add({ title: saved.length === 1 ? 'Saved a patch' : `Saved ${saved.length} patches`, description: folder, icon: 'i-lucide-file-diff', color: 'success' })
+      toast.add({ title: t('composables.usePatches.saved', { count: saved.length }), description: folder, icon: 'i-lucide-file-diff', color: 'success' })
     } catch (error) {
-      failure.failed('No patch saved', error)
+      failure.failed(t('composables.usePatches.notSaved'), error)
     }
   }
 
@@ -41,7 +41,7 @@ export function usePatches() {
       preview.value = await haunt.previewPatches(at, files.value)
     } catch (error) {
       preview.value = null
-      failure.failed('The patches could not be read', error)
+      failure.failed(t('composables.usePatches.notRead'), error)
     } finally {
       busy.value = false
     }
@@ -50,7 +50,7 @@ export function usePatches() {
   /** Picks patch files and reads them. */
   async function choose(): Promise<void> {
     const { open } = await import('@tauri-apps/plugin-dialog')
-    const chosen = await open({ multiple: true, title: 'Apply patches', filters: [{ name: 'Patches', extensions: ['patch', 'diff', 'mbox', 'eml', 'txt'] }] })
+    const chosen = await open({ multiple: true, title: t('composables.usePatches.applyTitle'), filters: [{ name: t('composables.usePatches.filter'), extensions: ['patch', 'diff', 'mbox', 'eml', 'txt'] }] })
     if (!chosen) return
     files.value = (Array.isArray(chosen) ? chosen : [chosen]).sort()
     await read()
@@ -63,12 +63,12 @@ export function usePatches() {
     busy.value = true
     try {
       await haunt.applyPatches(at, files.value, commit)
-      toast.add({ title: commit ? 'Patches committed' : 'Patches applied to the working tree', icon: 'i-lucide-check', color: 'success' })
+      toast.add({ title: commit ? t('composables.usePatches.committed') : t('composables.usePatches.applied'), icon: 'i-lucide-check', color: 'success' })
       files.value = []
       preview.value = null
       return true
     } catch (error) {
-      failure.failed('The patches were not applied', error)
+      failure.failed(t('composables.usePatches.notApplied'), error)
       return false
     } finally {
       busy.value = false

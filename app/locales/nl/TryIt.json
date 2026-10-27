@@ -1,0 +1,28 @@
+{
+  "noAnswer": "Geen antwoord",
+  "sendFailed": "De request kon niet worden verstuurd.",
+  "saved": "Request bewaard",
+  "saveFailed": "Het bestand kon niet worden geschreven.",
+  "titleRoute": "{route} proberen",
+  "title": "Proberen",
+  "description": "Een request naar je dev-server op deze computer; er gaat niets naar buiten.",
+  "method": "Methode",
+  "address": "Adres van de dev-server",
+  "addressHelp": "Het adres van je dev-server, bewaard voor deze repository",
+  "path": "Pad",
+  "headersPlaceholder": "Header: waarde, één per regel",
+  "headers": "Headers",
+  "body": "Body",
+  "send": "Versturen",
+  "save": "Bewaren in {file}",
+  "saveHelp": "Bewaard in de repository als .http-bestand, om met de code te committen",
+  "truncated": "Alleen de eerste 2 MB staan hier.",
+  "headerCount": {
+    "one": "{count} header",
+    "other": "{count} headers"
+  },
+  "noBody": "(geen body)",
+  "through": "Gaat via",
+  "unknownHandler": "De handler is geen functie die de scan kent.",
+  "branchNote": "Uit de code zoals die er staat: het pad van een request kan zich splitsen."
+}

@@ -1,0 +1,45 @@
+{
+  "stopped": "Tests gestopt",
+  "passed": "Tests geslaagd",
+  "failed": "Tests mislukt",
+  "testsIn": {
+    "one": "{count} test in {folder}",
+    "other": "{count} tests in {folder}"
+  },
+  "didNotRun": "De tests zijn niet uitgevoerd",
+  "couldNotRun": "De tests konden niet draaien.",
+  "title": "Tests die het bereiken",
+  "running": "Bezig…",
+  "run": {
+    "one": "Uitvoeren",
+    "other": "Deze {count} uitvoeren"
+  },
+  "runHelp": "Voert deze tests uit met de testrunner van het project",
+  "trustFirst": "Tests draaien de code van het project: vertrouw eerst deze map",
+  "passedOutput": "Geslaagd: bekijk de uitvoer",
+  "failedOutput": "Mislukt: bekijk de uitvoer",
+  "waiting": "Wachten op de scan.",
+  "noGraph": "De aanroepgraaf wordt nog uitgezocht.",
+  "files": {
+    "one": "{count} bestand",
+    "other": "{count} bestanden"
+  },
+  "reaching": {
+    "one": "{count} test in {files} bereikt een gewijzigde functie.",
+    "other": "{count} tests in {files} bereiken een gewijzigde functie."
+  },
+  "noneReach": "Geen test bereikt een gewijzigde functie.",
+  "limits": "Alleen TypeScript- en JavaScript-tests; aanroepen via interfaces of callbacks worden niet gevolgd.",
+  "reaches": "bereikt {functions}",
+  "steps": {
+    "one": "{count} stap",
+    "other": "{count} stappen"
+  },
+  "more": "En nog {count}.",
+  "unreached": {
+    "one": "Geen test bereikt deze gewijzigde functie",
+    "other": "Geen test bereikt deze {count} gewijzigde functies"
+  },
+  "nothingRan": "Er is niets uitgevoerd.",
+  "noOutput": "(geen uitvoer)"
+}

@@ -1,0 +1,8 @@
+{
+  "noRelease": "Er is nog geen release gepubliceerd.",
+  "answered": "GitHub antwoordde {status}.",
+  "unreachable": "GitHub was niet bereikbaar.",
+  "newer": "Haunt {version} is uit",
+  "newerHelp": "Bekijk wat er nieuw is en download het van de releasepagina.",
+  "seeIt": "Bekijken"
+}

@@ -1,0 +1,30 @@
+{
+  "today": "today",
+  "yesterday": "yesterday",
+  "daysAgo": {
+    "one": "{count} day ago",
+    "other": "{count} days ago"
+  },
+  "monthsAgo": {
+    "one": "{count} month ago",
+    "other": "{count} months ago"
+  },
+  "title": "Who knows it",
+  "onlyOne": "wrote nearly all of it, and nobody else changed it this year: worth a second reviewer or some notes.",
+  "wrote": "Wrote the lines it has now",
+  "lines": {
+    "one": "{count} line",
+    "other": "{count} lines"
+  },
+  "skipped": {
+    "one": "{count} file not counted (new, or past the first 300).",
+    "other": "{count} files not counted (new, or past the first 300)."
+  },
+  "noLines": "No committed lines yet.",
+  "changed": "Changed it in the last year",
+  "nobody": "Nobody.",
+  "commits": {
+    "one": "{count} commit",
+    "other": "{count} commits"
+  }
+}

@@ -32,11 +32,7 @@ const depth = ref(2)
 /** How many steps of what it calls the path view shows below it. */
 const below = ref(1)
 const direction = ref<'both' | 'callers' | 'callees'>('both')
-const directions = [
-  { value: 'both', label: 'Callers and callees' },
-  { value: 'callers', label: 'Callers' },
-  { value: 'callees', label: 'Callees' }
-]
+const directions = computed(() => (['both', 'callers', 'callees'] as const).map(value => ({ value, label: t(`pages.calls.direction.${value}`) })))
 /** A safety limit: past this many functions in one column (three steps out of a much-called one), the rest are left out. */
 const MAX_COLUMN = 400
 /** The groups the viewer opened, by part and folder; a new function in the middle starts closed. */
@@ -69,11 +65,7 @@ function back(): void {
 /* The list on the left */
 type Tab = 'called' | 'entries' | 'recent'
 const tab = ref<Tab>('called')
-const tabs = [
-  { value: 'called', label: 'Most called' },
-  { value: 'entries', label: 'Entry points' },
-  { value: 'recent', label: 'Recent' }
-] as const
+const tabs = ['called', 'entries', 'recent'] as const
 const term = computed(() => search.value.trim().toLowerCase())
 const shown = (id: string) => {
   const found = index.value?.functions.get(id)
@@ -109,7 +101,7 @@ const paths = computed(() => {
   if (!at || !center.value || !scan.value?.calls || mode.value !== 'paths') return null
   const view = pathView(center.value, callersOf, calleesOf, { down: below.value, keep: shown })
   const elements: ElementDefinition[] = []
-  const rowLabel = (step: number) => step < 0 ? (step === -1 ? 'Called by' : `${-step} steps up`) : step === 0 ? '' : step === 1 ? 'Calls' : `${step} steps down`
+  const rowLabel = (step: number) => step < 0 ? (step === -1 ? t('pages.calls.calledBy') : t('pages.calls.stepsUp', { count: -step })) : step === 0 ? '' : step === 1 ? t('pages.calls.calls') : t('pages.calls.stepsDown', { count: step })
   for (const row of view.rows) {
     if (row.step !== 0) {
       const label = rowLabel(row.step)
@@ -141,12 +133,13 @@ const summary = computed(() => {
   if (!found || !center.value) return ''
   const who = name(center.value)
   const below = calleesOf(center.value).filter(shown).length
-  const calls = below ? ` It calls ${below} ${below === 1 ? 'function' : 'functions'}.` : ' It calls nothing in the scan.'
-  if (found.isEntry) return `${who} is an entry point: nothing in the scan calls it.${calls}`
-  if (found.cyclic) return `${who} is called only from inside a cycle (functions that call each other), never from an entry point; its direct callers are shown.${calls}`
+  const calls = below ? t('pages.calls.itCalls', { count: below }) : t('pages.calls.itCallsNothing')
+  if (found.isEntry) return `${t('pages.calls.isEntry', { name: who })} ${calls}`
+  if (found.cyclic) return `${t('pages.calls.inCycle', { name: who })} ${calls}`
   const entries = found.entries.length
-  const steps = found.shortest === found.longest ? `${found.shortest} ${found.shortest === 1 ? 'step' : 'steps'}` : `${found.shortest} to ${found.longest} steps`
-  return `${who} is reached from ${entries} ${entries === 1 ? 'entry point' : 'entry points'} in ${steps}${found.paths >= 12 ? ' (the 12 shortest paths shown)' : ''}.${calls}`
+  const steps = found.shortest === found.longest ? t('pages.calls.steps', { count: found.shortest }) : t('pages.calls.stepsRange', { shortest: found.shortest, longest: found.longest })
+  const reached = t(found.paths >= 12 ? 'pages.calls.reachedShortest' : 'pages.calls.reached', { name: who, count: entries, steps })
+  return `${reached} ${calls}`
 })
 
 /* Around: callers to the left, callees to the right */
@@ -203,7 +196,7 @@ const around = computed(() => {
       const first = at.functions.get(item.members[0]!)!
       const layer = at.parts.get(first.file.part)?.layer ?? 'unmapped'
       const label = item.kind === 'group'
-        ? `${shortPart(item.part!)}${item.folder ? ` · ${item.folder}` : ''}\n${item.members.length} functions`
+        ? `${shortPart(item.part!)}${item.folder ? ` · ${item.folder}` : ''}\n${t('pages.calls.groupFunctions', { count: item.members.length })}`
         : `${first.fn.name}\n${tailOf(first.file.path)}`
       const changed = item.members.some(id => changedById.value.has(id))
       const touched = item.members.some(id => affected.value.has(id))
@@ -256,19 +249,19 @@ const layout = { name: 'preset' as const, fit: true, padding: 40 }
       <div v-if="!term" class="flex gap-0.5 border-b border-default p-1.5">
         <button
           v-for="item in tabs"
-          :key="item.value"
+          :key="item"
           type="button"
           class="flex-1 rounded px-1.5 py-1 text-xs"
-          :class="tab === item.value ? 'bg-elevated font-medium text-highlighted' : 'text-muted hover:bg-elevated/60'"
-          @click="tab = item.value"
+          :class="tab === item ? 'bg-elevated font-medium text-highlighted' : 'text-muted hover:bg-elevated/60'"
+          @click="tab = item"
         >
-          {{ item.label }}
+          {{ t(`pages.calls.tab.${item}`) }}
         </button>
       </div>
-      <p v-else class="border-b border-default px-3 py-2 text-xs font-semibold tracking-wider text-muted uppercase">Matching functions</p>
-      <p v-if="!scan?.calls" class="p-3 text-xs text-muted">Waiting for the call graph.</p>
-      <p v-else-if="tab === 'entries' && !term" class="px-3 pt-2 text-label text-muted">Functions nothing calls that call others: where the code is entered.</p>
-      <p v-else-if="tab === 'recent' && !term && !choices.length" class="p-3 text-xs text-muted">The functions you put in the middle show here.</p>
+      <p v-else class="border-b border-default px-3 py-2 text-xs font-semibold tracking-wider text-muted uppercase">{{ t('pages.calls.matching') }}</p>
+      <p v-if="!scan?.calls" class="p-3 text-xs text-muted">{{ t('pages.calls.waiting') }}</p>
+      <p v-else-if="tab === 'entries' && !term" class="px-3 pt-2 text-label text-muted">{{ t('pages.calls.entriesHelp') }}</p>
+      <p v-else-if="tab === 'recent' && !term && !choices.length" class="p-3 text-xs text-muted">{{ t('pages.calls.recentEmpty') }}</p>
       <ul class="grid min-h-0 flex-1 content-start gap-0.5 overflow-auto p-1.5">
         <li v-for="choice in choices" :key="choice.id">
           <button
@@ -279,7 +272,7 @@ const layout = { name: 'preset' as const, fit: true, padding: 40 }
           >
             <span class="truncate font-mono text-xs text-highlighted">{{ choice.found.fn.name }}</span>
             <span class="truncate font-mono text-label text-muted">
-              {{ tailOf(choice.found.file.path) }}<template v-if="scan?.calls"> · {{ tab === 'entries' && !term ? `calls ${choice.callees}` : `called from ${choice.callers}` }}</template>
+              {{ tailOf(choice.found.file.path) }}<template v-if="scan?.calls"> · {{ tab === 'entries' && !term ? t('pages.calls.callsCount', { count: choice.callees }) : t('pages.calls.calledFrom', { count: choice.callers }) }}</template>
             </span>
           </button>
         </li>
@@ -288,9 +281,9 @@ const layout = { name: 'preset' as const, fit: true, padding: 40 }
 
     <div class="flex min-w-0 flex-1 flex-col">
       <div class="flex flex-wrap items-center gap-2 border-b border-default px-3 py-2">
-        <UButton icon="i-lucide-arrow-left" size="xs" color="neutral" variant="ghost" :disabled="!center" aria-label="Back" title="Back" @click="back" />
-        <nav class="flex min-w-0 items-center gap-1 text-sm" aria-label="Trail">
-          <button type="button" class="shrink-0 text-muted hover:text-default" @click="recenter(null)">Functions</button>
+        <UButton icon="i-lucide-arrow-left" size="xs" color="neutral" variant="ghost" :disabled="!center" :aria-label="t('pages.calls.back')" :title="t('pages.calls.back')" @click="back" />
+        <nav class="flex min-w-0 items-center gap-1 text-sm" :aria-label="t('pages.calls.trail')">
+          <button type="button" class="shrink-0 text-muted hover:text-default" @click="recenter(null)">{{ t('pages.calls.functions') }}</button>
           <template v-for="id in crumbs" :key="id">
             <UIcon name="i-lucide-chevron-right" class="size-3.5 shrink-0 text-dimmed" />
             <button type="button" class="min-w-0 truncate font-mono" :class="id === center ? 'font-medium text-highlighted' : 'text-muted hover:text-default'" @click="recenter(id)">{{ name(id) }}</button>
@@ -298,12 +291,12 @@ const layout = { name: 'preset' as const, fit: true, padding: 40 }
         </nav>
         <div class="ml-auto flex items-center gap-2">
           <UFieldGroup size="xs">
-            <UButton label="Paths" :color="mode === 'paths' ? 'primary' : 'neutral'" :variant="mode === 'paths' ? 'solid' : 'outline'" title="How the code reaches it, top to bottom" @click="mode = 'paths'" />
-            <UButton label="Around" :color="mode === 'around' ? 'primary' : 'neutral'" :variant="mode === 'around' ? 'solid' : 'outline'" title="Callers to the left, what it calls to the right" @click="mode = 'around'" />
+            <UButton :label="t('pages.calls.paths')" :color="mode === 'paths' ? 'primary' : 'neutral'" :variant="mode === 'paths' ? 'solid' : 'outline'" :title="t('pages.calls.pathsHelp')" @click="mode = 'paths'" />
+            <UButton :label="t('pages.calls.around')" :color="mode === 'around' ? 'primary' : 'neutral'" :variant="mode === 'around' ? 'solid' : 'outline'" :title="t('pages.calls.aroundHelp')" @click="mode = 'around'" />
           </UFieldGroup>
-          <USelect v-if="mode === 'around'" v-model="direction" :items="directions" size="xs" class="w-44" aria-label="Show" />
+          <USelect v-if="mode === 'around'" v-model="direction" :items="directions" size="xs" class="w-44" :aria-label="t('pages.calls.show')" />
           <div class="flex items-center gap-1.5 text-xs text-muted">
-            {{ mode === 'paths' ? 'Steps below' : 'Steps' }}
+            {{ mode === 'paths' ? t('pages.calls.stepsBelow') : t('pages.calls.stepsLabel') }}
             <UFieldGroup v-if="mode === 'paths'" size="xs">
               <UButton v-for="step in [1, 2]" :key="step" :label="String(step)" :color="below === step ? 'primary' : 'neutral'" :variant="below === step ? 'solid' : 'outline'" @click="below = step" />
             </UFieldGroup>
@@ -316,18 +309,18 @@ const layout = { name: 'preset' as const, fit: true, padding: 40 }
       <div class="flex flex-wrap items-center gap-3 border-b border-default px-3 py-1.5 text-xs text-muted empty:hidden">
         <span v-if="mode === 'paths' && summary">{{ summary }}</span>
         <template v-if="mode === 'around'">
-          <span v-if="around.grouped">{{ around.grouped }} functions grouped by part and folder: click a group to open it.</span>
-          <span v-if="around.hidden">{{ around.hidden }} more left out: over {{ MAX_COLUMN }} in a column.</span>
+          <span v-if="around.grouped">{{ t('pages.calls.grouped', { count: around.grouped }) }}</span>
+          <span v-if="around.hidden">{{ t('pages.calls.hidden', { count: around.hidden, max: MAX_COLUMN }) }}</span>
         </template>
         <span v-if="changedById.size" class="flex items-center gap-3">
-          <span class="flex items-center gap-1"><i class="size-2.5 rounded-sm bg-warning/60" />changed</span>
-          <span class="flex items-center gap-1"><i class="size-2.5 rounded-sm border border-dashed border-warning" />calls a changed one</span>
+          <span class="flex items-center gap-1"><i class="size-2.5 rounded-sm bg-warning/60" />{{ t('pages.calls.changed') }}</span>
+          <span class="flex items-center gap-1"><i class="size-2.5 rounded-sm border border-dashed border-warning" />{{ t('pages.calls.affected') }}</span>
         </span>
-        <span v-if="center" class="ml-auto">{{ mode === 'paths' ? 'Double border: an entry point · ' : '' }}click to inspect · double-click to centre · scroll to zoom</span>
+        <span v-if="center" class="ml-auto">{{ mode === 'paths' ? t('pages.calls.hintPaths') : t('pages.calls.hint') }}</span>
       </div>
       <div class="relative min-h-0 flex-1">
-        <p v-if="!scan?.calls" class="absolute inset-0 grid place-items-center text-muted">Working out the call graph…</p>
-        <p v-else-if="!center" class="absolute inset-0 grid place-items-center px-6 text-center text-muted">Pick or search for a function: Paths shows how the code reaches it from its entry points.</p>
+        <p v-if="!scan?.calls" class="absolute inset-0 grid place-items-center text-muted">{{ t('pages.calls.working') }}</p>
+        <p v-else-if="!center" class="absolute inset-0 grid place-items-center px-6 text-center text-muted">{{ t('pages.calls.pick') }}</p>
         <GraphView
           v-else
           :elements="elements"

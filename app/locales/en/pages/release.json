@@ -1,0 +1,21 @@
+{
+  "first": "(the first commit)",
+  "failed": "No release notes",
+  "readFailed": "The commits between the two could not be read.",
+  "copied": "Release notes copied",
+  "title": "Release notes",
+  "intro": "Commits between two tags, grouped by part, with what changed in each part's functions. Built from the history, without AI; edit before sharing.",
+  "from": "From",
+  "to": "To",
+  "again": "Make them again",
+  "make": "Make release notes",
+  "noTags": "This repository has no tags yet: pick HEAD and the first commit, or make a tag first.",
+  "count": {
+    "one": "{count} commit, merges left out. Markdown, yours to edit.",
+    "other": "{count} commits, merges left out. Markdown, yours to edit."
+  },
+  "countFromFirst": {
+    "one": "{count} commit, merges left out; from the first commit, the functions are not listed. Markdown, yours to edit.",
+    "other": "{count} commits, merges left out; from the first commit, the functions are not listed. Markdown, yours to edit."
+  }
+}

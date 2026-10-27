@@ -1,0 +1,32 @@
+{
+  "language": "Language",
+  "showTests": "Show test files",
+  "showTestsHelp": "Tests and fixtures in the layers, the canvas, calls and search.",
+  "editor": "Open functions in",
+  "customEditor": "Custom (HAUNT_EDITOR)",
+  "notFound": "{editor} (not found)",
+  "noEditor": "No editor found on your PATH.",
+  "times": "Commit times",
+  "timesAgo": "How long ago",
+  "timesDate": "Date and time",
+  "timesAgoHelp": "Such as 8 min or 3 d; hover for the date.",
+  "timesDateHelp": "The date and time of each commit.",
+  "order": "Commit order",
+  "orderTopology": "Branches together",
+  "orderDate": "By date",
+  "orderTopologyHelp": "A merged branch's commits stay under its merge.",
+  "orderDateHelp": "Newest first, one lane per open branch.",
+  "diffs": "Diffs",
+  "wrap": "Wrap long lines",
+  "ignoreSpace": "Ignore whitespace",
+  "ignoreSpaceHelp": "In commit diffs. Local changes always shows them, since lines are staged from it.",
+  "tabBefore": "A tab is",
+  "tabAfter": "spaces wide",
+  "textSize": "Text size",
+  "textSizeHelp": "The window's text; the canvas sizes its own names to its boxes.",
+  "size": {
+    "small": "Small",
+    "normal": "Normal",
+    "large": "Large"
+  }
+}

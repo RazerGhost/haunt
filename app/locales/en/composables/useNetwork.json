@@ -1,0 +1,51 @@
+{
+  "finishedAway": {
+    "fetch": "Fetching finished while Haunt was in the background",
+    "pull": "Pulling finished while Haunt was in the background",
+    "push": "Pushing finished while Haunt was in the background"
+  },
+  "lastFetchFailed": "The last fetch failed: see Fetch's tooltip.",
+  "finished": {
+    "fetch": "Fetching finished",
+    "pull": "Pulling finished",
+    "push": "Pushing finished"
+  },
+  "newCommits": {
+    "one": "{count} new commit on the remote branch",
+    "other": "{count} new commits on the remote branch"
+  },
+  "fetchedBackground": "Fetched in the background.",
+  "seeThem": "See them",
+  "gitAsks": "git asks",
+  "yes": "Yes",
+  "no": "No",
+  "promptHelp": "{prompt}. Haunt passes your answer to git and keeps nothing.",
+  "password": "Password or passphrase",
+  "answer": "Answer",
+  "send": "Send",
+  "fetchFailed": "Fetching did not finish",
+  "conflicts": "Pulling stopped on conflicts",
+  "conflictsHelp": "Resolve them, then continue (or abort to put everything back).",
+  "upToDate": "Already up to date",
+  "upToDateHelp": "{upstream} has nothing new.",
+  "theRemoteBranch": "The remote branch",
+  "yourBranch": "Your branch",
+  "mergeOrRebase": "Merge or rebase?",
+  "itsRemoteBranch": "its remote branch",
+  "divergedHelp": "Both {branch} and {upstream} have new commits. Rebase puts yours on top; merge joins them.",
+  "rebase": "Rebase",
+  "merge": "Merge",
+  "pullFailed": "Pulling did not finish",
+  "whichRemote": "Push to which remote?",
+  "whichRemoteHelp": "{name} has no remote branch yet; Haunt creates one with the same name.",
+  "thisBranch": "This branch",
+  "rejected": "The remote has commits you do not",
+  "rejectedHelp": "{upstream} has commits you do not. Pull first, or overwrite (only if it has not moved since your last fetch).",
+  "pullFirst": "Pull first",
+  "overwrite": "Overwrite",
+  "pushFailed": "Pushing did not finish",
+  "tagWhichRemote": "Push {name} to which remote?",
+  "severalRemotes": "This repository has several remotes.",
+  "tagPushed": "Pushed {name}",
+  "tagNotPushed": "{name} was not pushed"
+}

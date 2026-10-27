@@ -1,0 +1,73 @@
+{
+  "direction": {
+    "both": "Callers and callees",
+    "callers": "Callers",
+    "callees": "Callees"
+  },
+  "tab": {
+    "called": "Most called",
+    "entries": "Entry points",
+    "recent": "Recent"
+  },
+  "calledBy": "Called by",
+  "calls": "Calls",
+  "stepsUp": {
+    "one": "{count} step up",
+    "other": "{count} steps up"
+  },
+  "stepsDown": {
+    "one": "{count} step down",
+    "other": "{count} steps down"
+  },
+  "itCalls": {
+    "one": "It calls {count} function.",
+    "other": "It calls {count} functions."
+  },
+  "itCallsNothing": "It calls nothing in the scan.",
+  "isEntry": "{name} is an entry point: nothing in the scan calls it.",
+  "inCycle": "{name} is called only from inside a cycle (functions that call each other), never from an entry point; its direct callers are shown.",
+  "steps": {
+    "one": "{count} step",
+    "other": "{count} steps"
+  },
+  "stepsRange": "{shortest} to {longest} steps",
+  "reached": {
+    "one": "{name} is reached from {count} entry point in {steps}.",
+    "other": "{name} is reached from {count} entry points in {steps}."
+  },
+  "reachedShortest": {
+    "one": "{name} is reached from {count} entry point in {steps} (the 12 shortest paths shown).",
+    "other": "{name} is reached from {count} entry points in {steps} (the 12 shortest paths shown)."
+  },
+  "groupFunctions": {
+    "one": "{count} function",
+    "other": "{count} functions"
+  },
+  "matching": "Matching functions",
+  "waiting": "Waiting for the call graph.",
+  "entriesHelp": "Functions nothing calls that call others: where the code is entered.",
+  "recentEmpty": "The functions you put in the middle show here.",
+  "callsCount": "calls {count}",
+  "calledFrom": "called from {count}",
+  "back": "Back",
+  "trail": "Trail",
+  "functions": "Functions",
+  "paths": "Paths",
+  "pathsHelp": "How the code reaches it, top to bottom",
+  "around": "Around",
+  "aroundHelp": "Callers to the left, what it calls to the right",
+  "show": "Show",
+  "stepsBelow": "Steps below",
+  "stepsLabel": "Steps",
+  "grouped": {
+    "one": "{count} function grouped by part and folder: click a group to open it.",
+    "other": "{count} functions grouped by part and folder: click a group to open it."
+  },
+  "hidden": "{count} more left out: over {max} in a column.",
+  "changed": "changed",
+  "affected": "calls a changed one",
+  "hintPaths": "Double border: an entry point · click to inspect · double-click to centre · scroll to zoom",
+  "hint": "click to inspect · double-click to centre · scroll to zoom",
+  "working": "Working out the call graph…",
+  "pick": "Pick or search for a function: Paths shows how the code reaches it from its entry points."
+}

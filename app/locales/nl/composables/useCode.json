@@ -1,0 +1,13 @@
+{
+  "scanning": "Scannen",
+  "callGraph": "De aanroepgraaf uitzoeken",
+  "notScanned": "De repository kon niet worden gescand.",
+  "rescanningAfter": {
+    "rescan": "Opnieuw scannen op verzoek",
+    "trusted": "Opnieuw scannen nu deze map vertrouwd is",
+    "untrusted": "Opnieuw scannen nu deze map niet meer vertrouwd is"
+  },
+  "rescanningAfterFile": "Opnieuw scannen na een wijziging in {file}",
+  "editorNotOpened": "Kon de editor niet openen",
+  "tryAnotherEditor": "Probeer een andere editor."
+}

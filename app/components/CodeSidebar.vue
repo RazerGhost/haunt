@@ -9,12 +9,12 @@ const pins = usePins()
 
 const fn = computed(() => (typeof route.query.fn === 'string' ? route.query.fn : undefined))
 const views = computed(() => [
-  { label: 'Layers', icon: 'i-lucide-layers', what: 'What sits on what, part by part', to: { path: '/layers', query: { fn: fn.value } }, path: '/layers' },
-  { label: 'Canvas', icon: 'i-lucide-boxes', what: 'What sits in what, as boxes', to: { path: '/canvas', query: { fn: fn.value } }, path: '/canvas' },
-  { label: 'Calls', icon: 'i-lucide-git-fork', what: 'How a function is reached', to: { path: '/calls', query: { fn: fn.value } }, path: '/calls' },
-  { label: 'Imports', icon: 'i-lucide-network', what: 'Who imports whom', to: { path: '/imports' }, path: '/imports' },
-  { label: 'Unused', icon: 'i-lucide-ghost', what: 'What nothing uses', to: { path: '/unused' }, path: '/unused' },
-  { label: 'Routes', icon: 'i-lucide-route', what: 'The HTTP routes and their handlers', to: { path: '/routes' }, path: '/routes' }
+  { label: t('CodeSidebar.layers'), icon: 'i-lucide-layers', what: t('CodeSidebar.layersWhat'), to: { path: '/layers', query: { fn: fn.value } }, path: '/layers' },
+  { label: t('CodeSidebar.canvas'), icon: 'i-lucide-boxes', what: t('CodeSidebar.canvasWhat'), to: { path: '/canvas', query: { fn: fn.value } }, path: '/canvas' },
+  { label: t('CodeSidebar.calls'), icon: 'i-lucide-git-fork', what: t('CodeSidebar.callsWhat'), to: { path: '/calls', query: { fn: fn.value } }, path: '/calls' },
+  { label: t('CodeSidebar.imports'), icon: 'i-lucide-network', what: t('CodeSidebar.importsWhat'), to: { path: '/imports' }, path: '/imports' },
+  { label: t('CodeSidebar.unused'), icon: 'i-lucide-ghost', what: t('CodeSidebar.unusedWhat'), to: { path: '/unused' }, path: '/unused' },
+  { label: t('CodeSidebar.routes'), icon: 'i-lucide-route', what: t('CodeSidebar.routesWhat'), to: { path: '/routes' }, path: '/routes' }
 ])
 
 /** The parts by layer, in the layers' order, with their functions counted (test files as Settings says). */
@@ -52,20 +52,20 @@ const toggle = (id: string) => { shut.value = { ...shut.value, [id]: !shut.value
   </div>
 
   <section v-if="pins.pinned.value.length" class="grid grid-cols-[minmax(0,1fr)] gap-0.5">
-    <p class="flex items-center gap-1 px-2 text-label font-semibold tracking-wider text-muted uppercase"><UIcon name="i-lucide-pin" class="size-3" />Pinned</p>
+    <p class="flex items-center gap-1 px-2 text-label font-semibold tracking-wider text-muted uppercase"><UIcon name="i-lucide-pin" class="size-3" />{{ t('CodeSidebar.pinned') }}</p>
     <ul class="grid grid-cols-[minmax(0,1fr)]">
       <li v-for="pin in pins.pinned.value" :key="`${pin.path}#${pin.name}`" class="group flex items-center">
         <button
           type="button"
           class="flex min-w-0 flex-1 items-center gap-1.5 rounded py-1 pr-1 pl-5 text-left text-ui hover:bg-elevated disabled:cursor-default disabled:opacity-60"
           :disabled="!pin.found"
-          :title="pin.found ? `${pin.path}:${pin.found.fn.line}` : `${pin.name} is not in ${pin.path} any more`"
+          :title="pin.found ? `${pin.path}:${pin.found.fn.line}` : t('CodeSidebar.gone', { name: pin.name, path: pin.path })"
           @click="pin.found && select(pin.found.fn.id)"
         >
           <span class="min-w-0 truncate font-mono" :class="{ 'line-through': !pin.found }">{{ pin.name }}</span>
           <span class="min-w-0 truncate text-label text-muted">{{ tailOf(pin.path) }}</span>
         </button>
-        <button type="button" class="grid size-5 shrink-0 place-items-center rounded text-dimmed opacity-0 group-hover:opacity-100 hover:bg-elevated hover:text-highlighted" :aria-label="`Unpin ${pin.name}`" @click="pins.unpin(pin)">
+        <button type="button" class="grid size-5 shrink-0 place-items-center rounded text-dimmed opacity-0 group-hover:opacity-100 hover:bg-elevated hover:text-highlighted" :aria-label="t('CodeSidebar.unpin', { name: pin.name })" @click="pins.unpin(pin)">
           <UIcon name="i-lucide-x" class="size-3" />
         </button>
       </li>
@@ -73,7 +73,7 @@ const toggle = (id: string) => { shut.value = { ...shut.value, [id]: !shut.value
   </section>
 
   <p v-if="!scan" class="flex items-center gap-1.5 px-2 text-ui text-muted">
-    <UIcon v-if="status !== 'error'" name="i-lucide-loader-circle" class="size-3.5 animate-spin" />{{ message || 'Scanning' }}
+    <UIcon v-if="status !== 'error'" name="i-lucide-loader-circle" class="size-3.5 animate-spin" />{{ message || t('CodeSidebar.scanning') }}
   </p>
   <section v-for="layer in layers" :key="layer.id" class="grid grid-cols-[minmax(0,1fr)] gap-0.5">
     <button type="button" class="flex items-center gap-1 px-2 text-label font-semibold tracking-wider text-muted uppercase hover:text-default" :aria-expanded="!shut[layer.id]" @click="toggle(layer.id)">
@@ -88,7 +88,7 @@ const toggle = (id: string) => { shut.value = { ...shut.value, [id]: !shut.value
           :to="{ path: '/layers', query: { part: part.name } }"
           class="flex items-center gap-1.5 rounded py-1 pr-2 pl-5 text-ui hover:bg-elevated"
           :class="{ 'bg-elevated text-highlighted': partShown === part.name }"
-          :title="`${part.name} · ${part.functions} functions`"
+          :title="`${part.name} · ${t('CodeSidebar.functions', { count: part.functions })}`"
         >
           <span class="min-w-0 flex-1 truncate">{{ part.name }}</span>
           <span class="text-label text-muted tabular-nums">{{ part.functions }}</span>

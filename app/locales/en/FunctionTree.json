@@ -1,0 +1,15 @@
+{
+  "kind": {
+    "function": "function",
+    "arrow": "arrow function",
+    "method": "method",
+    "class": "class"
+  },
+  "where": "{name} (lines {from}–{to})",
+  "exported": "exp",
+  "calls": {
+    "one": "Called from {count} function, calls {out}",
+    "other": "Called from {count} functions, calls {out}"
+  },
+  "open": "Open {name} in the editor"
+}

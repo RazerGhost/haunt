@@ -1,0 +1,21 @@
+{
+  "untested": "Gelezen via tea voor Gitea, wat niet getest is.",
+  "aDraft": "een draft",
+  "checksAre": "checks {checks}",
+  "state": {
+    "open": "open",
+    "draft": "draft",
+    "merged": "gemerged",
+    "closed": "gesloten"
+  },
+  "checks": {
+    "passing": "geslaagd",
+    "failing": "mislukt",
+    "pending": "bezig"
+  },
+  "review": {
+    "approved": "goedgekeurd",
+    "changesRequested": "wijzigingen gevraagd",
+    "reviewRequired": "review nodig"
+  }
+}

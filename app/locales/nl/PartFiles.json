@@ -1,0 +1,19 @@
+{
+  "alsoUses": "Gebruikt ook {parts} uit de eigen laag.",
+  "folder": "Map",
+  "files": {
+    "one": "{count} bestand",
+    "other": "{count} bestanden"
+  },
+  "functions": {
+    "one": "{count} functie",
+    "other": "{count} functies"
+  },
+  "nested": "{count} genest",
+  "openFiles": "Bestanden open",
+  "lines": {
+    "one": "{count} regel",
+    "other": "{count} regels"
+  },
+  "noPart": "Geen onderdeel met de naam {part} in deze scan."
+}

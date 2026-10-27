@@ -1,0 +1,10 @@
+{
+  "scanning": "Scannen",
+  "hint": "Scroll om te zoomen, sleep om te verplaatsen. Klik op een functie om hem te openen, op een vak om in te zoomen. Wijs aan voor aanroepen.",
+  "hotspots": "Hotspots",
+  "hotspotsHelp": {
+    "one": "Kleur bestanden naar hoe vaak ze wijzigden in de laatste {count} dag",
+    "other": "Kleur bestanden naar hoe vaak ze wijzigden in de laatste {count} dagen"
+  },
+  "fit": "Passend"
+}

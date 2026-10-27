@@ -1,0 +1,11 @@
+{
+  "title": "Voorgestelde reviewers",
+  "onlyAdds": "De wijziging voegt alleen functies toe: niemand schreef hun regels eerder.",
+  "reading": "Lezen wie de regels schreef die het raakt…",
+  "onlyYou": "Alleen jij (of de auteurs van de wijziging zelf) schreef de regels die het raakt.",
+  "intro": "Wie de regels schreef die deze wijziging raakt, van vóór de wijziging.",
+  "lines": {
+    "one": "{count} regel",
+    "other": "{count} regels"
+  }
+}

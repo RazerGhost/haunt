@@ -1,0 +1,17 @@
+{
+  "test": "test",
+  "commits": {
+    "one": "{count} commit raakte dit bestand in de afgelopen 180 dagen",
+    "other": "{count} commits raakten dit bestand in de afgelopen 180 dagen"
+  },
+  "functions": {
+    "one": "{count} fn",
+    "other": "{count} fns"
+  },
+  "lines": {
+    "one": "{count} regel",
+    "other": "{count} regels"
+  },
+  "open": "Het bestand openen in de editor",
+  "none": "Geen functies: alleen types, schema's of data."
+}

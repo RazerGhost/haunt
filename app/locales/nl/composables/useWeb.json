@@ -1,0 +1,7 @@
+{
+  "openOn": "Openen op {host}",
+  "copyLink": "{host}-link kopiëren",
+  "copied": "Link gekopieerd",
+  "notCopied": "Kon de link niet kopiëren",
+  "notOpened": "Kon de pagina niet openen"
+}

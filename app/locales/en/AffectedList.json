@@ -1,0 +1,10 @@
+{
+  "none": "No function calls the changed ones.",
+  "noneYet": "No function calls the changed ones (the call graph is still being worked out).",
+  "steps": {
+    "one": "{count} step from a change",
+    "other": "{count} steps from a change"
+  },
+  "reaches": "reaches {name}",
+  "open": "Open {name} in the editor"
+}

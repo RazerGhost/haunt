@@ -1,0 +1,5 @@
+{
+  "title": "De eigen lagen van dit project worden niet getoond",
+  "description": "Ze staan in {path}, dat pas draait als de map vertrouwd is. Tot dan worden onderdelen gegroepeerd per workspace en map.",
+  "trust": "Deze map vertrouwen"
+}

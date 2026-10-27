@@ -1,0 +1,22 @@
+{
+  "allCommits": "Alle commits",
+  "noMerges": "Geen merges",
+  "mergesOnly": "Alleen merges",
+  "allBranches": "Alle branches",
+  "branch": "Branch",
+  "message": "Bericht",
+  "byMessage": "Filter op bericht",
+  "author": "Auteur",
+  "byAuthor": "Filter op auteur",
+  "path": "Bestand of map",
+  "byPath": "Filter op bestand of map",
+  "changed": "Tekst in wijzigingen",
+  "changedHelp": "Commits die deze tekst toevoegden of verwijderden",
+  "byChanged": "Filter op toegevoegde of verwijderde tekst",
+  "merges": "Merges",
+  "clear": "Wissen",
+  "pickHead": "Kies de commit waar je op staat",
+  "hint": "Ctrl-klik op een tweede commit om te vergelijken · ↑ ↓ om te bewegen",
+  "resize": "Sleep om de details groter of kleiner te maken",
+  "pick": "Kies een commit om te zien wat die wijzigde."
+}

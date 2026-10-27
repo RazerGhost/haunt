@@ -10,12 +10,12 @@ const { problem, load } = useAppSettings()
 const open = ref(false)
 type Section = 'general' | 'appearance' | 'git' | 'trust' | 'about'
 const section = ref<Section>('general')
-const sections: { value: Section, label: string, icon: string }[] = [
-  { value: 'general', label: 'General', icon: 'i-lucide-sliders-horizontal' },
-  { value: 'appearance', label: 'Appearance', icon: 'i-lucide-palette' },
-  { value: 'git', label: 'Git', icon: 'i-lucide-git-branch' },
-  { value: 'trust', label: 'Trusted folders', icon: 'i-lucide-shield-check' },
-  { value: 'about', label: 'About', icon: 'i-lucide-info' }
+const sections: { value: Section, icon: string }[] = [
+  { value: 'general', icon: 'i-lucide-sliders-horizontal' },
+  { value: 'appearance', icon: 'i-lucide-palette' },
+  { value: 'git', icon: 'i-lucide-git-branch' },
+  { value: 'trust', icon: 'i-lucide-shield-check' },
+  { value: 'about', icon: 'i-lucide-info' }
 ]
 defineShortcuts({ 'meta_,': () => { open.value = true } })
 watch(open, (now) => {
@@ -24,13 +24,13 @@ watch(open, (now) => {
 </script>
 
 <template>
-  <UTooltip :text="`Settings (${mac ? '⌘,' : 'Ctrl+,'})`">
-    <UButton icon="i-lucide-settings-2" color="neutral" variant="ghost" size="sm" aria-label="Settings" @click="open = true" />
+  <UTooltip :text="`${t('common.settings')} (${mac ? '⌘,' : 'Ctrl+,'})`">
+    <UButton icon="i-lucide-settings-2" color="neutral" variant="ghost" size="sm" :aria-label="t('common.settings')" @click="open = true" />
   </UTooltip>
-  <UModal v-model:open="open" title="Settings" :ui="{ content: 'max-w-3xl', body: 'p-0 sm:p-0' }">
+  <UModal v-model:open="open" :title="t('common.settings')" :ui="{ content: 'max-w-3xl', body: 'p-0 sm:p-0' }">
     <template #body>
       <div class="grid min-h-[26rem] grid-cols-[12rem_minmax(0,1fr)]">
-        <nav class="grid content-start gap-0.5 border-r border-default p-2" aria-label="Settings sections">
+        <nav class="grid content-start gap-0.5 border-r border-default p-2" :aria-label="t('SettingsMenu.sections')">
           <button
             v-for="item in sections"
             :key="item.value"
@@ -40,7 +40,7 @@ watch(open, (now) => {
             :aria-current="section === item.value ? 'page' : undefined"
             @click="section = item.value"
           >
-            <UIcon :name="item.icon" class="size-4 shrink-0 text-muted" />{{ item.label }}
+            <UIcon :name="item.icon" class="size-4 shrink-0 text-muted" />{{ t(`SettingsMenu.${item.value}`) }}
           </button>
         </nav>
 

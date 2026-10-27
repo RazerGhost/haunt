@@ -50,7 +50,7 @@ async function load(): Promise<void> {
     // The colours only while this diff is still the one shown.
     if (diff.value === view) tokens.value = coloured
   } catch (error) {
-    problem.value = errorMessage(error, 'The diff could not be read.')
+    problem.value = errorMessage(error, t('DiffView.readError'))
   }
 }
 watch(() => [props.from, props.to, props.path, props.oldPath, whole.value, ignoreSpace.value], () => void load(), { immediate: true })
@@ -123,21 +123,21 @@ const SIGN = { add: '+', del: '−', context: ' ' } as const
         <template v-if="props.oldPath && props.oldPath !== props.path"><span class="text-muted">{{ props.oldPath }} → </span></template>{{ props.path }}
       </span>
       <UIcon v-if="loading" name="i-lucide-loader-circle" class="size-3.5 animate-spin text-muted" />
-      <UButton label="History" icon="i-lucide-history" size="xs" color="neutral" variant="ghost" :to="{ path: '/history', query: { path: props.path, at: props.to } }" />
-      <UButton label="Blame" icon="i-lucide-user-round-search" size="xs" color="neutral" variant="ghost" :to="{ path: '/blame', query: { path: props.path, at: props.to } }" />
-      <UButton icon="i-lucide-copy" size="xs" color="neutral" variant="ghost" title="Copy the path" aria-label="Copy the path" @click="copyPath" />
+      <UButton :label="t('DiffView.history')" icon="i-lucide-history" size="xs" color="neutral" variant="ghost" :to="{ path: '/history', query: { path: props.path, at: props.to } }" />
+      <UButton :label="t('DiffView.blame')" icon="i-lucide-user-round-search" size="xs" color="neutral" variant="ghost" :to="{ path: '/blame', query: { path: props.path, at: props.to } }" />
+      <UButton icon="i-lucide-copy" size="xs" color="neutral" variant="ghost" :title="t('DiffView.copyPath')" :aria-label="t('DiffView.copyPath')" @click="copyPath" />
       <UButton v-if="webs.label.value" icon="i-lucide-external-link" size="xs" color="neutral" variant="ghost" :title="webs.label.value" :aria-label="webs.label.value" @click="webs.openFile(props.to, props.path)" />
       <UButton v-if="webs.copyLabel.value" icon="i-lucide-link" size="xs" color="neutral" variant="ghost" :title="webs.copyLabel.value" :aria-label="webs.copyLabel.value" @click="webs.copyFile(props.to, props.path)" />
-      <USwitch v-model="whole" label="Whole file" size="xs" />
+      <USwitch v-model="whole" :label="t('DiffView.wholeFile')" size="xs" />
       <UFieldGroup size="xs">
-        <UButton label="Unified" :color="split ? 'neutral' : 'primary'" :variant="split ? 'outline' : 'solid'" @click="split = false" />
-        <UButton label="Side by side" :color="split ? 'primary' : 'neutral'" :variant="split ? 'solid' : 'outline'" @click="split = true" />
+        <UButton :label="t('DiffView.unified')" :color="split ? 'neutral' : 'primary'" :variant="split ? 'outline' : 'solid'" @click="split = false" />
+        <UButton :label="t('DiffView.sideBySide')" :color="split ? 'primary' : 'neutral'" :variant="split ? 'solid' : 'outline'" @click="split = true" />
       </UFieldGroup>
     </div>
 
     <p v-if="problem" class="p-3 text-sm text-error">{{ problem }}</p>
-    <p v-else-if="diff?.binary" class="p-3 text-sm text-muted">A binary file: no lines to compare.</p>
-    <p v-else-if="diff && !diff.hunks.length" class="p-3 text-sm text-muted">No lines changed (the file was renamed or its mode changed).</p>
+    <p v-else-if="diff?.binary" class="p-3 text-sm text-muted">{{ t('DiffView.binary') }}</p>
+    <p v-else-if="diff && !diff.hunks.length" class="p-3 text-sm text-muted">{{ t('DiffView.noLines') }}</p>
 
     <div v-else-if="diff" class="min-h-0 flex-1 overflow-auto font-mono text-xs leading-[1.6]">
       <template v-if="!split">
@@ -146,7 +146,7 @@ const SIGN = { add: '+', del: '−', context: ' ' } as const
             <tr class="bg-elevated/60 text-muted">
               <td colspan="4" class="px-3 py-0.5 text-label">
                 <span class="text-dimmed">@@ −{{ hunk.oldStart }} +{{ hunk.newStart }} @@</span>
-                <button v-if="hunk.section && functionOf(hunk.section, hunk.newStart)" type="button" class="ml-2 text-default hover:underline" title="Open this function in the panel" @click="select(functionOf(hunk.section, hunk.newStart))">{{ hunk.section }}</button>
+                <button v-if="hunk.section && functionOf(hunk.section, hunk.newStart)" type="button" class="ml-2 text-default hover:underline" :title="t('DiffView.openFunction')" @click="select(functionOf(hunk.section, hunk.newStart))">{{ hunk.section }}</button>
                 <span v-else-if="hunk.section" class="ml-2 text-default">{{ hunk.section }}</span>
               </td>
             </tr>
@@ -165,7 +165,7 @@ const SIGN = { add: '+', del: '−', context: ' ' } as const
             <tr class="bg-elevated/60 text-muted">
               <td colspan="4" class="px-3 py-0.5 text-label">
                 <span class="text-dimmed">@@ −{{ hunk.oldStart }} +{{ hunk.newStart }} @@</span>
-                <button v-if="hunk.section && functionOf(hunk.section, hunk.newStart)" type="button" class="ml-2 text-default hover:underline" title="Open this function in the panel" @click="select(functionOf(hunk.section, hunk.newStart))">{{ hunk.section }}</button>
+                <button v-if="hunk.section && functionOf(hunk.section, hunk.newStart)" type="button" class="ml-2 text-default hover:underline" :title="t('DiffView.openFunction')" @click="select(functionOf(hunk.section, hunk.newStart))">{{ hunk.section }}</button>
                 <span v-else-if="hunk.section" class="ml-2 text-default">{{ hunk.section }}</span>
               </td>
             </tr>

@@ -1,0 +1,22 @@
+{
+  "layers": "Layers",
+  "layersWhat": "What sits on what, part by part",
+  "canvas": "Canvas",
+  "canvasWhat": "What sits in what, as boxes",
+  "calls": "Calls",
+  "callsWhat": "How a function is reached",
+  "imports": "Imports",
+  "importsWhat": "Who imports whom",
+  "unused": "Unused",
+  "unusedWhat": "What nothing uses",
+  "routes": "Routes",
+  "routesWhat": "The HTTP routes and their handlers",
+  "pinned": "Pinned",
+  "gone": "{name} is not in {path} any more",
+  "unpin": "Unpin {name}",
+  "scanning": "Scanning",
+  "functions": {
+    "one": "{count} function",
+    "other": "{count} functions"
+  }
+}

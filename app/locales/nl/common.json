@@ -1,0 +1,26 @@
+{
+  "cancel": "Annuleren",
+  "close": "Sluiten",
+  "open": "Openen",
+  "stop": "Stoppen",
+  "copy": "Kopiëren",
+  "undo": "Ongedaan maken",
+  "restore": "Terugzetten",
+  "tryAgain": "Probeer het opnieuw.",
+  "notSaved": "Niet opgeslagen",
+  "settings": "Instellingen",
+  "function": "Functie",
+  "files": {
+    "one": "{count} bestand",
+    "other": "{count} bestanden"
+  },
+  "parts": {
+    "one": "{count} onderdeel",
+    "other": "{count} onderdelen"
+  },
+  "functions": {
+    "one": "{count} functie",
+    "other": "{count} functies"
+  },
+  "fns": "{count} fn"
+}

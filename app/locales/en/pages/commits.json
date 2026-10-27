@@ -1,0 +1,22 @@
+{
+  "allCommits": "All commits",
+  "noMerges": "No merges",
+  "mergesOnly": "Merges only",
+  "allBranches": "All branches",
+  "branch": "Branch",
+  "message": "Message",
+  "byMessage": "Filter by message",
+  "author": "Author",
+  "byAuthor": "Filter by author",
+  "path": "File or folder",
+  "byPath": "Filter by file or folder",
+  "changed": "Text in changes",
+  "changedHelp": "Commits that added or removed this text",
+  "byChanged": "Filter by text added or removed",
+  "merges": "Merges",
+  "clear": "Clear",
+  "pickHead": "Pick the commit you are on",
+  "hint": "Ctrl-click a second commit to compare · ↑ ↓ to move",
+  "resize": "Drag to resize the details",
+  "pick": "Pick a commit to see what it changed."
+}

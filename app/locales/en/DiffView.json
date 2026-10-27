@@ -1,0 +1,12 @@
+{
+  "readError": "The diff could not be read.",
+  "history": "History",
+  "blame": "Blame",
+  "copyPath": "Copy the path",
+  "wholeFile": "Whole file",
+  "unified": "Unified",
+  "sideBySide": "Side by side",
+  "binary": "A binary file: no lines to compare.",
+  "noLines": "No lines changed (the file was renamed or its mode changed).",
+  "openFunction": "Open this function in the panel"
+}

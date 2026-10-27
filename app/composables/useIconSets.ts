@@ -70,10 +70,10 @@ export function useIconSets() {
       await haunt.saveIconSet(set, await response.text())
       register(set, JSON.parse(await haunt.iconSet(set)) as Collection)
       downloaded.value = new Set([...downloaded.value, set])
-      toast.add({ title: `Downloaded the ${set} icons`, description: 'Kept on this computer: they work offline from now on.', icon: 'i-lucide-cloud-download', color: 'success' })
+      toast.add({ title: t('composables.useIconSets.downloaded', { set }), description: t('composables.useIconSets.downloadedHelp'), icon: 'i-lucide-cloud-download', color: 'success' })
       return true
     } catch (error) {
-      failure.failed(`The ${set} icons were not downloaded`, error, 'Check the connection and try again.')
+      failure.failed(t('composables.useIconSets.notDownloaded', { set }), error, t('composables.useIconSets.checkConnection'))
       return false
     } finally {
       downloading.value = null
@@ -86,7 +86,7 @@ export function useIconSets() {
       next.delete(set)
       downloaded.value = next
     } catch (error) {
-      failure.failed(`The ${set} icons were not removed`, error, 'Try again.')
+      failure.failed(t('composables.useIconSets.notRemoved', { set }), error, t('common.tryAgain'))
     }
   }
   return { downloaded, downloading, download, remove }

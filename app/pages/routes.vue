@@ -26,7 +26,7 @@ async function load(): Promise<void> {
     routes.value = found
     problem.value = ''
   } catch (error) {
-    problem.value = errorMessage(error, 'The routes could not be read.')
+    problem.value = errorMessage(error, t('pages.routes.readFailed'))
   }
 }
 watch(repo, () => { routes.value = [] })
@@ -87,18 +87,18 @@ const colorOf = (method: string) => METHOD[method.split(',')[0]!.trim()] ?? 'neu
 <template>
   <div class="flex min-h-0 flex-1 flex-col">
     <div class="flex flex-wrap items-center gap-3 border-b border-default px-4 py-2">
-      <h1 class="text-sm font-semibold text-highlighted">Routes</h1>
+      <h1 class="text-sm font-semibold text-highlighted">{{ t('pages.routes.title') }}</h1>
       <span class="text-xs text-muted tabular-nums">{{ routes.length }}</span>
-      <UInput v-model="filter" icon="i-lucide-filter" placeholder="Filter by method, path, handler or file" size="xs" class="w-72" />
+      <UInput v-model="filter" icon="i-lucide-filter" :placeholder="t('pages.routes.filter')" size="xs" class="w-72" />
       <span class="flex-1" />
-      <UButton icon="i-lucide-refresh-cw" size="xs" color="neutral" variant="ghost" aria-label="Read the routes again" :loading="loading" @click="load" />
+      <UButton icon="i-lucide-refresh-cw" size="xs" color="neutral" variant="ghost" :aria-label="t('pages.routes.reload')" :loading="loading" @click="load" />
     </div>
     <div class="min-h-0 flex-1 overflow-auto px-4 py-3">
       <p v-if="problem" class="text-sm text-error">{{ problem }}</p>
-      <p v-else-if="!scan" class="text-sm text-muted">Scanning the code…</p>
+      <p v-else-if="!scan" class="text-sm text-muted">{{ t('pages.routes.scanning') }}</p>
       <div v-else-if="!routes.length && !loading" class="grid max-w-xl gap-1 text-sm text-muted">
-        <p class="font-medium text-highlighted">No routes found</p>
-        <p>Haunt finds routes written the way Hono and Express write them (<code>app.get('/path', handler)</code>, with <code>route()</code>, <code>use()</code> and <code>basePath()</code> prefixes) and WordPress's <code>register_rest_route</code>.</p>
+        <p class="font-medium text-highlighted">{{ t('pages.routes.none') }}</p>
+        <p>{{ t('pages.routes.noneHelp.before') }}<code>app.get('/path', handler)</code>{{ t('pages.routes.noneHelp.with') }} <code>route()</code>, <code>use()</code> {{ t('pages.routes.noneHelp.and') }} <code>basePath()</code> {{ t('pages.routes.noneHelp.prefixes') }} <code>register_rest_route</code>{{ t('pages.routes.noneHelp.after') }}</p>
       </div>
       <ul v-else class="grid gap-1">
         <li v-for="route in shown" :key="`${route.file}:${route.line}:${route.method}:${route.path}`" class="grid gap-1 rounded border border-default px-3 py-2">
@@ -107,7 +107,7 @@ const colorOf = (method: string) => METHOD[method.split(',')[0]!.trim()] ?? 'neu
             <span class="min-w-0 truncate font-mono text-sm text-highlighted" :title="route.path">{{ route.path }}</span>
             <UBadge v-for="item in route.middleware" :key="item" :label="item" size="sm" color="neutral" variant="outline" class="font-mono" />
             <span class="flex-1" />
-            <button type="button" class="font-mono text-label text-muted hover:underline" :title="`Open ${route.file} in the editor`" @click="open(route.file, route.line)">{{ route.file }}:{{ route.line }}</button>
+            <button type="button" class="font-mono text-label text-muted hover:underline" :title="t('pages.routes.open', { file: route.file })" @click="open(route.file, route.line)">{{ route.file }}:{{ route.line }}</button>
           </div>
           <div class="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-muted">
             <template v-if="handlerOf(route)">
@@ -119,8 +119,8 @@ const colorOf = (method: string) => METHOD[method.split(',')[0]!.trim()] ?? 'neu
               <button type="button" class="font-mono hover:text-default hover:underline" @click="select(id)">{{ name(id) }}</button>
             </template>
             <span class="flex-1" />
-            <UButton v-if="handlerOf(route) || route.calls.length" label="Call path" icon="i-lucide-git-fork" size="xs" color="neutral" variant="ghost" @click="paths(handlerOf(route) ?? route.calls[0]!)" />
-            <UButton label="Try it" icon="i-lucide-send" size="xs" color="neutral" variant="ghost" title="Send a request to your dev server" @click="tryIt(route)" />
+            <UButton v-if="handlerOf(route) || route.calls.length" :label="t('pages.routes.callPath')" icon="i-lucide-git-fork" size="xs" color="neutral" variant="ghost" @click="paths(handlerOf(route) ?? route.calls[0]!)" />
+            <UButton :label="t('pages.routes.tryIt')" icon="i-lucide-send" size="xs" color="neutral" variant="ghost" :title="t('pages.routes.tryItHelp')" @click="tryIt(route)" />
           </div>
         </li>
       </ul>

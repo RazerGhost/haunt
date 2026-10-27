@@ -1,0 +1,21 @@
+{
+  "currentBranch": "the current branch",
+  "checkOut": "Check out",
+  "newBranch": "New branch from here…",
+  "merge": "Merge into {name}…",
+  "copyName": "Copy the name",
+  "switchTo": "Switch to it",
+  "newTag": "New tag here…",
+  "worktree": "Open in worktree…",
+  "rename": "Rename…",
+  "delete": "Delete…",
+  "upstreamGone": "tracked {upstream}, which is gone",
+  "tracks": "tracks {upstream}",
+  "tracksNothing": "tracks no remote branch",
+  "mergeHere": "merge here",
+  "rebaseOnto": "rebase onto",
+  "gone": "gone",
+  "toPush": "{count} to push",
+  "toPull": "{count} to pull",
+  "pullTitle": "{pull}. Click to open it on the web."
+}

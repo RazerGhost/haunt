@@ -79,7 +79,7 @@ async function send(): Promise<void> {
     response.value = await haunt.sendRequest(repo.value, request.value)
   } catch (error) {
     response.value = null
-    failure.failed('No answer', error, 'The request could not be sent.')
+    failure.failed(t('TryIt.noAnswer'), error, t('TryIt.sendFailed'))
   } finally {
     sending.value = false
   }
@@ -101,9 +101,9 @@ async function save(): Promise<void> {
   try {
     const stored = { ...request.value, url: `{{baseUrl}}${path.value}` }
     const where = await haunt.saveRequest(repo.value, fileName.value, [['baseUrl', base.value]], stored)
-    toast.add({ title: 'Request saved', description: where, icon: 'i-lucide-save', color: 'success' })
+    toast.add({ title: t('TryIt.saved'), description: where, icon: 'i-lucide-save', color: 'success' })
   } catch (error) {
-    failure.failed('Not saved', error, 'The file could not be written.')
+    failure.failed(t('common.notSaved'), error, t('TryIt.saveFailed'))
   }
 }
 
@@ -129,41 +129,41 @@ const statusColor = computed(() => {
 </script>
 
 <template>
-  <USlideover v-model:open="open" :title="route ? `Try ${route.method} ${route.path}` : 'Try it'" description="A request to your dev server on this machine; nothing leaves it." :ui="{ content: 'max-w-4xl' }">
+  <USlideover v-model:open="open" :title="route ? t('TryIt.titleRoute', { route: `${route.method} ${route.path}` }) : t('TryIt.title')" :description="t('TryIt.description')" :ui="{ content: 'max-w-4xl' }">
     <template #body>
       <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_14rem]">
         <form class="grid content-start gap-3" @submit.prevent="send">
           <div class="flex gap-2">
-            <UInput v-model="method" class="w-24" :ui="{ base: 'font-mono uppercase' }" aria-label="Method" />
-            <UInput :model-value="base" class="w-56" :ui="{ base: 'font-mono' }" aria-label="Dev server address" title="Your dev server's address, kept for this repository" @update:model-value="(value: string) => base = value" />
-            <UInput v-model="path" class="min-w-0 flex-1" :ui="{ base: 'font-mono' }" aria-label="Path" />
+            <UInput v-model="method" class="w-24" :ui="{ base: 'font-mono uppercase' }" :aria-label="t('TryIt.method')" />
+            <UInput :model-value="base" class="w-56" :ui="{ base: 'font-mono' }" :aria-label="t('TryIt.address')" :title="t('TryIt.addressHelp')" @update:model-value="(value: string) => base = value" />
+            <UInput v-model="path" class="min-w-0 flex-1" :ui="{ base: 'font-mono' }" :aria-label="t('TryIt.path')" />
           </div>
-          <UTextarea v-model="headers" :rows="2" autoresize placeholder="Header: value, one per line" :ui="{ base: 'font-mono text-xs' }" aria-label="Headers" />
-          <UTextarea v-if="!['GET', 'HEAD'].includes(method.toUpperCase())" v-model="body" :rows="5" autoresize :maxrows="16" placeholder="Body" :ui="{ base: 'font-mono text-xs' }" aria-label="Body" />
+          <UTextarea v-model="headers" :rows="2" autoresize :placeholder="t('TryIt.headersPlaceholder')" :ui="{ base: 'font-mono text-xs' }" :aria-label="t('TryIt.headers')" />
+          <UTextarea v-if="!['GET', 'HEAD'].includes(method.toUpperCase())" v-model="body" :rows="5" autoresize :maxrows="16" :placeholder="t('TryIt.body')" :ui="{ base: 'font-mono text-xs' }" :aria-label="t('TryIt.body')" />
           <div class="flex gap-2">
-            <UButton type="submit" label="Send" icon="i-lucide-send" :loading="sending" />
-            <UButton :label="`Save in http/${fileName}`" icon="i-lucide-save" color="neutral" variant="outline" title="Kept in the repository as a .http file, to commit with the code" @click="save" />
+            <UButton type="submit" :label="t('TryIt.send')" icon="i-lucide-send" :loading="sending" />
+            <UButton :label="t('TryIt.save', { file: `http/${fileName}` })" icon="i-lucide-save" color="neutral" variant="outline" :title="t('TryIt.saveHelp')" @click="save" />
           </div>
           <section v-if="response" class="grid gap-2">
             <div class="flex items-center gap-2 text-sm">
               <UBadge :label="`${response.status} ${response.reason}`" :color="statusColor" variant="subtle" />
               <span class="text-xs text-muted tabular-nums">{{ response.ms }} ms</span>
-              <span v-if="response.truncated" class="text-xs text-warning">Only the first 2 MB are shown.</span>
+              <span v-if="response.truncated" class="text-xs text-warning">{{ t('TryIt.truncated') }}</span>
             </div>
             <details class="text-xs text-muted">
-              <summary class="cursor-pointer">{{ response.headers.length }} headers</summary>
+              <summary class="cursor-pointer">{{ t('TryIt.headerCount', { count: response.headers.length }) }}</summary>
               <ul class="mt-1 grid gap-0.5 font-mono">
                 <li v-for="([key, value], at) in response.headers" :key="at"><span class="text-default">{{ key }}:</span> {{ value }}</li>
               </ul>
             </details>
-            <pre class="max-h-96 overflow-auto rounded border border-default bg-elevated/40 p-2 font-mono text-xs whitespace-pre-wrap">{{ pretty || '(no body)' }}</pre>
+            <pre class="max-h-96 overflow-auto rounded border border-default bg-elevated/40 p-2 font-mono text-xs whitespace-pre-wrap">{{ pretty || t('TryIt.noBody') }}</pre>
           </section>
         </form>
         <aside class="grid content-start gap-1">
-          <h3 class="text-xs font-semibold tracking-wider text-muted uppercase">Goes through</h3>
-          <p v-if="!through.length" class="text-xs text-muted">Its handler is not a function the scan knows.</p>
+          <h3 class="text-xs font-semibold tracking-wider text-muted uppercase">{{ t('TryIt.through') }}</h3>
+          <p v-if="!through.length" class="text-xs text-muted">{{ t('TryIt.unknownHandler') }}</p>
           <button v-for="item in through" :key="item.id" type="button" class="truncate text-left font-mono text-xs hover:underline" :style="{ paddingLeft: `${item.depth * 12}px` }" :class="item.depth ? 'text-muted' : 'text-highlighted'" @click="select(item.id)">{{ name(item.id) }}</button>
-          <p class="mt-2 text-label text-muted">From the code as written: the path a request takes may branch.</p>
+          <p class="mt-2 text-label text-muted">{{ t('TryIt.branchNote') }}</p>
         </aside>
       </div>
     </template>

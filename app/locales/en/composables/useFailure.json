@@ -1,0 +1,10 @@
+{
+  "trustTitle": "Trust this folder?",
+  "trustDescription": "Haunt then also runs the folder's own code: its TypeScript and architecture script while scanning, and its git hooks and filters when writing. Pull and push run only in a trusted folder.",
+  "trustConfirm": "Trust it",
+  "notTrusted": "Not trusted",
+  "trusted": "This folder is trusted",
+  "tryNow": "Try again now.",
+  "fallback": "Git could not do that.",
+  "trustAction": "Trust this folder…"
+}

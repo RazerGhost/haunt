@@ -1,0 +1,3 @@
+{
+  "text": "Untrusted, Haunt only reads the files. Nothing from the folder runs, not even git hooks or filters."
+}

@@ -1,0 +1,10 @@
+{
+  "none": "Geen functie roept de gewijzigde aan.",
+  "noneYet": "Geen functie roept de gewijzigde aan (de aanroepgraaf wordt nog uitgezocht).",
+  "steps": {
+    "one": "{count} stap van een wijziging",
+    "other": "{count} stappen van een wijziging"
+  },
+  "reaches": "bereikt {name}",
+  "open": "Open {name} in de editor"
+}

@@ -1,0 +1,21 @@
+{
+  "first": "(de eerste commit)",
+  "failed": "Geen release notes",
+  "readFailed": "De commits tussen de twee konden niet worden gelezen.",
+  "copied": "Release notes gekopieerd",
+  "title": "Release notes",
+  "intro": "Commits tussen twee tags, gegroepeerd per onderdeel, met wat er in de functies van elk onderdeel veranderde. Gemaakt uit de geschiedenis, zonder AI; pas ze aan voor je ze deelt.",
+  "from": "Van",
+  "to": "Tot",
+  "again": "Opnieuw maken",
+  "make": "Release notes maken",
+  "noTags": "Deze repository heeft nog geen tags: kies HEAD en de eerste commit, of maak eerst een tag.",
+  "count": {
+    "one": "{count} commit, merges weggelaten. Markdown, aan te passen.",
+    "other": "{count} commits, merges weggelaten. Markdown, aan te passen."
+  },
+  "countFromFirst": {
+    "one": "{count} commit, merges weggelaten; vanaf de eerste commit staan de functies er niet bij. Markdown, aan te passen.",
+    "other": "{count} commits, merges weggelaten; vanaf de eerste commit staan de functies er niet bij. Markdown, aan te passen."
+  }
+}

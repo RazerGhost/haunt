@@ -1,0 +1,35 @@
+{
+  "newBranch": "Nieuwe branch hier…",
+  "newTag": "Nieuwe tag hier…",
+  "cherryPick": "Cherry-pick naar {branch}…",
+  "cherryPickCurrent": "Cherry-pick naar de huidige branch…",
+  "revert": "Revert…",
+  "undoCommit": "Deze commit ongedaan maken…",
+  "reset": "{branch} hierheen resetten…",
+  "resetCurrent": "De branch hierheen resetten…",
+  "rebase": "Interactieve rebase vanaf hier…",
+  "bisectGood": "Bisect: deze is goed…",
+  "copySha": "Kopieer de sha",
+  "copyMessage": "Kopieer het bericht",
+  "savePatch": "Opslaan als patch…",
+  "savePatches": "Deze en latere opslaan als patches…",
+  "readError": "De commits konden niet worden gelezen.",
+  "minutes": "{count} min",
+  "hours": "{count} u",
+  "days": "{count} d",
+  "noMatch": "Geen commits die aan de filters voldoen.",
+  "noCommits": "Nog geen commits.",
+  "localChanges": "Lokale wijzigingen",
+  "notCommitted": {
+    "one": "{count} bestand nog niet gecommit",
+    "other": "{count} bestanden nog niet gecommit"
+  },
+  "notCommittedOn": {
+    "one": "{count} bestand nog niet gecommit, op {branch}",
+    "other": "{count} bestanden nog niet gecommit, op {branch}"
+  },
+  "commits": "Commits",
+  "branch": "Branch",
+  "remoteBranch": "Remote branch",
+  "tag": "Tag"
+}

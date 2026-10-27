@@ -1,0 +1,9 @@
+{
+  "title": "What this folder would run",
+  "description": "Trusting this folder lets the code below run. Untrusted, Haunt only reads files.",
+  "reading": "Reading…",
+  "nothing": "Nothing: no hooks, architecture script or TypeScript of its own.",
+  "its": "Its {label}",
+  "truncated": "Only the first 64 KB are shown.",
+  "trust": "Trust this folder"
+}

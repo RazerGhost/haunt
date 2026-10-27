@@ -43,7 +43,7 @@ function answer(choice: string): void {
     </template>
     <template #footer>
       <div class="flex w-full flex-wrap justify-end gap-2">
-        <UButton label="Cancel" color="neutral" variant="ghost" @click="asking?.done(null)" />
+        <UButton :label="t('common.cancel')" color="neutral" variant="ghost" @click="asking?.done(null)" />
         <UButton
           v-for="(choice, at) in asking?.choices ?? []"
           :key="choice.value"

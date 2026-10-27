@@ -1,0 +1,22 @@
+{
+  "diverge": "When branches diverge",
+  "pull": {
+    "ask": "Ask",
+    "askHelp": "Haunt asks each time whether to rebase or merge.",
+    "rebase": "Rebase",
+    "rebaseHelp": "Your commits go on top of the remote ones, in a straight line.",
+    "merge": "Merge",
+    "mergeHelp": "A merge commit joins the two."
+  },
+  "fetch": "Fetch in the background",
+  "fetchHelp": "Keeps the Pull and Push counts current. Remotes that need a sign-in are skipped.",
+  "off": "Off",
+  "every": {
+    "one": "Every {count} minute",
+    "other": "Every {count} minutes"
+  },
+  "hostTools": "Pull request status",
+  "hostToolsHelp": "Shows each branch's pull request and checks via gh, glab or tea (Gitea untested). Uses your account; runs nothing from the repository.",
+  "signoff": "Sign off by default",
+  "signoffHelp": "Sign off is ticked in the commit box (adds a Signed-off-by line)."
+}

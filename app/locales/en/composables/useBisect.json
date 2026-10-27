@@ -1,0 +1,7 @@
+{
+  "fallback": "Git could not do that.",
+  "notStarted": "Bisecting did not start",
+  "notMarked": "Not marked",
+  "notCheckedOut": "Not checked out",
+  "notStopped": "Bisecting did not stop"
+}

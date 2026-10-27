@@ -1,0 +1,13 @@
+{
+  "fallback": "Dat lukte git niet.",
+  "saved": "Eerst bewaard: 30 dagen terug te halen.",
+  "discardedLines": {
+    "one": "{count} regel weggegooid",
+    "other": "{count} regels weggegooid"
+  },
+  "discardedFile": "{path} weggegooid",
+  "discardedFiles": {
+    "one": "{count} bestand weggegooid",
+    "other": "{count} bestanden weggegooid"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "language": "Taal",
+  "showTests": "Testbestanden tonen",
+  "showTestsHelp": "Tests en fixtures in de lagen, het canvas, de aanroepen en het zoeken.",
+  "editor": "Functies openen in",
+  "customEditor": "Eigen keuze (HAUNT_EDITOR)",
+  "notFound": "{editor} (niet gevonden)",
+  "noEditor": "Geen editor gevonden op je PATH.",
+  "times": "Tijden van commits",
+  "timesAgo": "Hoe lang geleden",
+  "timesDate": "Datum en tijd",
+  "timesAgoHelp": "Zoals 8 min of 3 d; wijs aan voor de datum.",
+  "timesDateHelp": "De datum en tijd van elke commit.",
+  "order": "Volgorde van commits",
+  "orderTopology": "Branches bij elkaar",
+  "orderDate": "Op datum",
+  "orderTopologyHelp": "De commits van een gemergede branch blijven onder hun merge.",
+  "orderDateHelp": "Nieuwste eerst, één baan per open branch.",
+  "diffs": "Diffs",
+  "wrap": "Lange regels afbreken",
+  "ignoreSpace": "Witruimte negeren",
+  "ignoreSpaceHelp": "In de diffs van commits. Lokale wijzigingen toont ze altijd, omdat je daar regels staget.",
+  "tabBefore": "Een tab is",
+  "tabAfter": "spaties breed",
+  "textSize": "Tekstgrootte",
+  "textSizeHelp": "De tekst van het venster; het canvas past de namen aan zijn vakken aan.",
+  "size": {
+    "small": "Klein",
+    "normal": "Normaal",
+    "large": "Groot"
+  }
+}

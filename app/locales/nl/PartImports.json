@@ -1,0 +1,28 @@
+{
+  "folderSize": "{files} · {functions}",
+  "folder": "Map",
+  "file": "Bestand",
+  "allParts": "Alle onderdelen",
+  "summary": {
+    "one": "{count} import tussen {nodes} mappen en bestanden",
+    "other": "{count} imports tussen {nodes} mappen en bestanden"
+  },
+  "cycles": {
+    "one": "{count} pijl in een kringloop",
+    "other": "{count} pijlen in een kringloop"
+  },
+  "typeOnly": "Imports van alleen types (gestreept)",
+  "scriptOnly": "Het architectuurscript geeft alleen imports tussen onderdelen.",
+  "empty": "Niets in deze map.",
+  "imports": "Imports",
+  "inCycle": "In een kringloop: deze mappen importeren elkaar bij runtime.",
+  "typesOnly": "alleen types",
+  "nodeSize": "{files} · {functions}",
+  "inside": "Naar binnen",
+  "side": {
+    "out": "Importeert uit ({count})",
+    "in": "Geïmporteerd door ({count})"
+  },
+  "title": "In {name}",
+  "help": "Pijlen tonen imports tussen mappen of bestanden, dikker bij meer. Wie importeert staat hoger, kringlopen zijn rood. Klik op een pijl voor de bestanden, op een map voor de imports; dubbelklik om naar binnen te gaan. Imports tussen onderdelen staan onder Alle onderdelen."
+}

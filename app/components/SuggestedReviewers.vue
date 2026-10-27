@@ -28,17 +28,17 @@ const total = computed(() => found.value?.reduce((sum, author) => sum + author.l
 
 <template>
   <section class="grid gap-1.5">
-    <h2 class="font-semibold text-highlighted">Suggested reviewers</h2>
-    <p v-if="!base || !spans.length" class="text-xs text-muted">The change only adds functions: nobody wrote their lines before.</p>
-    <p v-else-if="!found" class="text-xs text-muted">Reading who wrote the lines it touches…</p>
-    <p v-else-if="!found.length" class="text-xs text-muted">Only you (or the change's own authors) wrote the lines it touches.</p>
+    <h2 class="font-semibold text-highlighted">{{ t('SuggestedReviewers.title') }}</h2>
+    <p v-if="!base || !spans.length" class="text-xs text-muted">{{ t('SuggestedReviewers.onlyAdds') }}</p>
+    <p v-else-if="!found" class="text-xs text-muted">{{ t('SuggestedReviewers.reading') }}</p>
+    <p v-else-if="!found.length" class="text-xs text-muted">{{ t('SuggestedReviewers.onlyYou') }}</p>
     <template v-else>
-      <p class="text-xs text-muted">Who wrote the lines this change touches, before it.</p>
+      <p class="text-xs text-muted">{{ t('SuggestedReviewers.intro') }}</p>
       <ul class="grid gap-0.5">
         <li v-for="author in found.slice(0, 3)" :key="author.name" class="flex items-center gap-2 rounded px-2 py-0.5 text-xs">
           <UIcon name="i-lucide-user-round" class="size-3.5 shrink-0 text-muted" />
           <span class="min-w-0 flex-1 truncate text-highlighted">{{ author.name }}</span>
-          <span class="text-muted tabular-nums">{{ author.lines }} {{ author.lines === 1 ? 'line' : 'lines' }} · {{ Math.round(author.lines / total * 100) }}%</span>
+          <span class="text-muted tabular-nums">{{ t('SuggestedReviewers.lines', { count: author.lines }) }} · {{ Math.round(author.lines / total * 100) }}%</span>
         </li>
       </ul>
     </template>

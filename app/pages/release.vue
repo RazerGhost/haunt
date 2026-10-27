@@ -15,6 +15,7 @@ const toast = useToast()
 
 /** Newest first; tags made in the same second by their names, v1.10 after v1.9. */
 const tags = computed(() => [...refs.value?.tags ?? []].sort((a, b) => b.time - a.time || b.name.localeCompare(a.name, undefined, { numeric: true })))
+// The From choice with no older tag: the first commit (labelled in the window's language).
 const FIRST = '(the first commit)'
 const to = ref(typeof route.query.to === 'string' ? route.query.to : '')
 const from = ref('')
@@ -28,7 +29,7 @@ watch([tags, to], ([list]) => {
   }
 }, { immediate: true })
 const toItems = computed(() => ['HEAD', ...tags.value.map(tag => tag.name)])
-const fromItems = computed(() => [...tags.value.map(tag => tag.name), FIRST])
+const fromItems = computed(() => [...tags.value.map(tag => ({ label: tag.name, value: tag.name })), { label: t('pages.release.first'), value: FIRST }])
 
 const text = ref('')
 const loading = ref(false)
@@ -52,39 +53,39 @@ async function make(): Promise<void> {
       partOfPath: path => parts.get(path) ?? null
     })
   } catch (error) {
-    failure.failed('No release notes', error, 'The commits between the two could not be read.')
+    failure.failed(t('pages.release.failed'), error, t('pages.release.readFailed'))
   } finally {
     loading.value = false
   }
 }
 async function copy(): Promise<void> {
   await navigator.clipboard?.writeText(text.value)
-  toast.add({ title: 'Release notes copied', icon: 'i-lucide-copy', color: 'success' })
+  toast.add({ title: t('pages.release.copied'), icon: 'i-lucide-copy', color: 'success' })
 }
 </script>
 
 <template>
   <div class="mx-auto grid w-full max-w-3xl content-start gap-4 px-4 py-8">
     <div class="grid gap-1">
-      <h1 class="text-lg font-semibold text-highlighted">Release notes</h1>
-      <p class="text-sm text-muted">Commits between two tags, grouped by part, with what changed in each part's functions. Built from the history, without AI; edit before sharing.</p>
+      <h1 class="text-lg font-semibold text-highlighted">{{ t('pages.release.title') }}</h1>
+      <p class="text-sm text-muted">{{ t('pages.release.intro') }}</p>
     </div>
     <form class="flex flex-wrap items-end gap-3" @submit.prevent="make">
-      <UFormField label="From">
-        <USelectMenu v-model="from" :items="fromItems" class="w-52" :ui="{ base: 'font-mono' }" />
+      <UFormField :label="t('pages.release.from')">
+        <USelectMenu v-model="from" :items="fromItems" value-key="value" class="w-52" :ui="{ base: 'font-mono' }" />
       </UFormField>
-      <UFormField label="To">
+      <UFormField :label="t('pages.release.to')">
         <USelectMenu v-model="to" :items="toItems" class="w-52" :ui="{ base: 'font-mono' }" />
       </UFormField>
-      <UButton type="submit" :label="text ? 'Make them again' : 'Make release notes'" icon="i-lucide-scroll-text" :loading="loading" :disabled="!to" />
+      <UButton type="submit" :label="text ? t('pages.release.again') : t('pages.release.make')" icon="i-lucide-scroll-text" :loading="loading" :disabled="!to" />
     </form>
-    <p v-if="!tags.length" class="text-sm text-muted">This repository has no tags yet: pick HEAD and the first commit, or make a tag first.</p>
+    <p v-if="!tags.length" class="text-sm text-muted">{{ t('pages.release.noTags') }}</p>
     <template v-if="text">
       <div class="flex items-center gap-2">
-        <p class="flex-1 text-xs text-muted">{{ count }} {{ count === 1 ? 'commit' : 'commits' }}, merges left out{{ from === FIRST ? '; from the first commit, the functions are not listed' : '' }}. Markdown, yours to edit.</p>
-        <UButton label="Copy" icon="i-lucide-copy" size="sm" color="neutral" variant="outline" @click="copy" />
+        <p class="flex-1 text-xs text-muted">{{ from === FIRST ? t('pages.release.countFromFirst', { count }) : t('pages.release.count', { count }) }}</p>
+        <UButton :label="t('common.copy')" icon="i-lucide-copy" size="sm" color="neutral" variant="outline" @click="copy" />
       </div>
-      <UTextarea v-model="text" :rows="20" autoresize :maxrows="40" class="w-full" :ui="{ base: 'font-mono text-xs' }" aria-label="Release notes" />
+      <UTextarea v-model="text" :rows="20" autoresize :maxrows="40" class="w-full" :ui="{ base: 'font-mono text-xs' }" :aria-label="t('pages.release.title')" />
     </template>
   </div>
 </template>

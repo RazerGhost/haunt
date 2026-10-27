@@ -1,0 +1,19 @@
+{
+  "notUpdated": "De submodules zijn niet bijgewerkt",
+  "open": "Openen in eigen tab",
+  "clone": "Clonen en uitchecken",
+  "checkOut": "Vastgelegde commit uitchecken",
+  "copyAddress": "Adres kopiëren",
+  "title": "Submodules",
+  "updateHelp": "Alle op hun vastgelegde commit uitchecken, ontbrekende clonen",
+  "trustFirst": "Bijwerken cloont vanaf .gitmodules: vertrouw eerst deze map",
+  "update": "Submodules bijwerken",
+  "state": {
+    "current": "op de vastgelegde commit",
+    "moved": "op een andere commit dan vastgelegd",
+    "missing": "nog niet uitgecheckt"
+  },
+  "from": "Van {url}",
+  "notThere": "ontbreekt",
+  "moved": "verplaatst"
+}

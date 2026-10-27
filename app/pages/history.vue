@@ -28,7 +28,7 @@ async function load(fresh: boolean): Promise<void> {
     versions.value = fresh ? found.versions : [...versions.value, ...found.versions]
     more.value = found.more
   } catch (error) {
-    problem.value = errorMessage(error, 'The history could not be read.')
+    problem.value = errorMessage(error, t('pages.history.readError'))
   }
 }
 watch([path, repo], () => void load(true), { immediate: true })
@@ -68,23 +68,24 @@ function onScroll(event: Event): void {
 const when = (seconds: number) => times.value === 'date'
   ? new Date(seconds * 1000).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
   : new Date(seconds * 1000).toLocaleDateString()
-const STATUS: Record<FileVersion['status'], string> = { added: 'Added', modified: '', deleted: 'Deleted', renamed: 'Renamed', copied: 'Copied', type: 'Type changed' }
+// A version's badge, `pages.history.status.<status>`; a modified file has none.
+const badge = (status: FileVersion['status']) => status === 'modified' ? '' : t(`pages.history.status.${status}`)
 </script>
 
 <template>
-  <div v-if="!path" class="py-16 text-center text-muted">Pick a file: its history opens from a diff's header.</div>
+  <div v-if="!path" class="py-16 text-center text-muted">{{ t('pages.history.pickFile') }}</div>
   <div v-else class="grid h-full grid-cols-[22rem_minmax(0,1fr)]">
     <aside class="flex min-h-0 flex-col border-r border-default">
       <div class="flex items-center gap-2 border-b border-default px-3 py-2">
         <UIcon name="i-lucide-history" class="size-4 shrink-0 text-muted" />
         <span class="min-w-0 flex-1 truncate font-mono text-ui text-highlighted" :title="path">{{ path }}</span>
-        <UButton label="Blame" icon="i-lucide-user-round-search" size="xs" color="neutral" variant="ghost" :to="{ path: '/blame', query: { path } }" />
+        <UButton :label="t('pages.history.blame')" icon="i-lucide-user-round-search" size="xs" color="neutral" variant="ghost" :to="{ path: '/blame', query: { path } }" />
       </div>
       <div class="border-b border-default p-1.5">
-        <UInput v-model="filter" icon="i-lucide-filter" placeholder="Filter by message or author" size="xs" class="w-full" aria-label="Filter the history" />
+        <UInput v-model="filter" icon="i-lucide-filter" :placeholder="t('pages.history.filter')" size="xs" class="w-full" :aria-label="t('pages.history.filterLabel')" />
       </div>
       <p v-if="problem" class="p-3 text-ui text-error">{{ problem }}</p>
-      <p class="px-3 pt-1.5 text-label text-muted">Ctrl-click a second commit to compare the file between the two.</p>
+      <p class="px-3 pt-1.5 text-label text-muted">{{ t('pages.history.compareHint') }}</p>
       <ul class="min-h-0 flex-1 overflow-auto p-1" @scroll="onScroll">
         <li v-for="version in shownVersions" :key="version.commit.sha">
           <button
@@ -95,26 +96,26 @@ const STATUS: Record<FileVersion['status'], string> = { added: 'Added', modified
           >
             <span class="flex items-center gap-1.5">
               <span class="min-w-0 flex-1 truncate" :class="version === picked ? 'font-medium text-highlighted' : ''">{{ version.commit.subject }}</span>
-              <UBadge v-if="STATUS[version.status]" :label="STATUS[version.status]" size="sm" color="neutral" variant="subtle" />
+              <UBadge v-if="badge(version.status)" :label="badge(version.status)" size="sm" color="neutral" variant="subtle" />
             </span>
             <span class="flex gap-2 text-label text-muted">
               <span class="truncate">{{ version.commit.author }}</span>
               <span class="ml-auto shrink-0 tabular-nums">{{ when(version.commit.time) }}</span>
               <span class="shrink-0 font-mono">{{ version.commit.sha.slice(0, 7) }}</span>
             </span>
-            <span v-if="version.status === 'renamed'" class="truncate text-label text-dimmed">from {{ version.oldPath }}</span>
+            <span v-if="version.status === 'renamed'" class="truncate text-label text-dimmed">{{ t('pages.history.from', { path: version.oldPath ?? '' }) }}</span>
           </button>
         </li>
         <li v-if="loading" class="flex justify-center py-2"><UIcon name="i-lucide-loader-circle" class="size-4 animate-spin text-muted" /></li>
-        <li v-else-if="!versions.length && !problem" class="p-3 text-ui text-muted">No commit has this file yet.</li>
+        <li v-else-if="!versions.length && !problem" class="p-3 text-ui text-muted">{{ t('pages.history.noCommits') }}</li>
       </ul>
     </aside>
     <section v-if="picked" class="flex min-h-0 flex-col">
       <div class="flex items-center gap-2 border-b border-default px-3 py-1.5 text-xs text-muted">
-        <span class="min-w-0 flex-1 truncate">{{ compared && compared !== picked ? `${span!.from?.slice(0, 7)} → ${span!.to.slice(0, 7)}: the file between two commits` : picked.commit.subject }}</span>
-        <UButton v-if="compared && compared !== picked" label="Stop comparing" size="xs" color="neutral" variant="ghost" @click="pick(picked)" />
-        <UButton label="Blame at this commit" size="xs" color="neutral" variant="ghost" :to="{ path: '/blame', query: { path: picked.path, at: picked.commit.sha } }" />
-        <UButton label="Show the commit" size="xs" color="neutral" variant="ghost" :to="{ path: '/commits', query: { commit: picked.commit.sha } }" />
+        <span class="min-w-0 flex-1 truncate">{{ compared && compared !== picked ? t('pages.history.between', { from: span!.from?.slice(0, 7) ?? '', to: span!.to.slice(0, 7) }) : picked.commit.subject }}</span>
+        <UButton v-if="compared && compared !== picked" :label="t('pages.history.stopComparing')" size="xs" color="neutral" variant="ghost" @click="pick(picked)" />
+        <UButton :label="t('pages.history.blameAt')" size="xs" color="neutral" variant="ghost" :to="{ path: '/blame', query: { path: picked.path, at: picked.commit.sha } }" />
+        <UButton :label="t('pages.history.showCommit')" size="xs" color="neutral" variant="ghost" :to="{ path: '/commits', query: { commit: picked.commit.sha } }" />
       </div>
       <DiffView v-if="span" :key="`${span.from}:${span.to}`" :from="span.from" :to="span.to" :path="span.path" :old-path="span.oldPath" class="min-h-0 flex-1" />
     </section>

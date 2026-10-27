@@ -1,0 +1,7 @@
+{
+  "files": "Files",
+  "functions": "Functions",
+  "activity": "Activity",
+  "noActivity": "Haunt has not written to this repository since it started.",
+  "notRepository": "This folder is not in a git repository."
+}

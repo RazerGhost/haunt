@@ -25,7 +25,7 @@ watch([path, at, repo], async () => {
     const found = await ask.run(where => haunt.fileBlame(where, path.value, at.value))
     if (found !== undefined) blame.value = found
   } catch (error) {
-    problem.value = errorMessage(error, 'Blame could not be read.')
+    problem.value = errorMessage(error, t('pages.blame.readError'))
   }
 }, { immediate: true })
 
@@ -44,20 +44,20 @@ const when = (seconds: number) => times.value === 'date'
 </script>
 
 <template>
-  <div v-if="!path" class="py-16 text-center text-muted">Pick a file: blame opens from a diff's header or a file's history.</div>
+  <div v-if="!path" class="py-16 text-center text-muted">{{ t('pages.blame.pickFile') }}</div>
   <div v-else class="flex h-full flex-col">
     <div class="flex items-center gap-2 border-b border-default px-3 py-2">
       <UIcon name="i-lucide-user-round-search" class="size-4 shrink-0 text-muted" />
       <span class="min-w-0 truncate font-mono text-ui text-highlighted" :title="path">{{ path }}</span>
-      <span class="text-ui text-muted">{{ at ? `at ${at.endsWith('^') ? `the parent of ${at.slice(0, 7)}` : at.slice(0, 7)}` : 'as it is now' }}</span>
+      <span class="text-ui text-muted">{{ at ? at.endsWith('^') ? t('pages.blame.atParent', { sha: at.slice(0, 7) }) : t('pages.blame.at', { sha: at.slice(0, 7) }) : t('pages.blame.now') }}</span>
       <div class="ml-auto flex gap-1">
-        <UButton v-if="at" label="As it is now" size="xs" color="neutral" variant="ghost" :to="{ path: '/blame', query: { path } }" />
-        <UButton label="History" icon="i-lucide-history" size="xs" color="neutral" variant="ghost" :to="{ path: '/history', query: { path } }" />
+        <UButton v-if="at" :label="t('pages.blame.asNow')" size="xs" color="neutral" variant="ghost" :to="{ path: '/blame', query: { path } }" />
+        <UButton :label="t('pages.blame.history')" icon="i-lucide-history" size="xs" color="neutral" variant="ghost" :to="{ path: '/history', query: { path } }" />
       </div>
     </div>
     <div v-if="problem && /no such path/.test(problem)" class="grid justify-items-start gap-2 p-4 text-ui text-muted">
-      <p>The file was not there {{ at?.endsWith('^') ? 'before that commit: it was added, or moved there, by it' : 'at that commit' }}.</p>
-      <UButton label="Trace history" icon="i-lucide-history" size="xs" color="neutral" variant="outline" :to="{ path: '/history', query: { path } }" />
+      <p>{{ at?.endsWith('^') ? t('pages.blame.notThereBefore') : t('pages.blame.notThereAt') }}</p>
+      <UButton :label="t('pages.blame.trace')" icon="i-lucide-history" size="xs" color="neutral" variant="outline" :to="{ path: '/history', query: { path } }" />
     </div>
     <p v-else-if="problem" class="p-3 text-ui text-error">{{ problem }}</p>
     <div v-else-if="!blame" class="grid justify-items-center py-10"><UIcon name="i-lucide-loader-circle" class="size-5 animate-spin text-muted" /></div>
@@ -67,13 +67,13 @@ const when = (seconds: number) => times.value === 'date'
           <tr v-for="(line, index) in blame.lines" :key="index" :class="index > 0 && blame.lines[index - 1]!.sha !== line.sha ? 'border-t border-default/60' : ''">
             <td class="w-72 max-w-72 truncate px-2 align-top font-sans text-label text-muted select-none">
               <template v-if="index === 0 || blame.lines[index - 1]!.sha !== line.sha">
-                <span v-if="NOT_YET.test(line.sha)" class="text-warning">Not committed yet</span>
+                <span v-if="NOT_YET.test(line.sha)" class="text-warning">{{ t('pages.blame.notCommitted') }}</span>
                 <span v-else class="flex items-center gap-1">
                   <NuxtLink
                     :to="{ path: '/blame', query: { path, at: `${line.sha}^` } }"
                     class="grid size-4 shrink-0 place-items-center rounded hover:bg-elevated hover:text-highlighted"
-                    title="Blame before this commit: who changed these lines before it"
-                    aria-label="Blame before this commit"
+                    :title="t('pages.blame.beforeHelp')"
+                    :aria-label="t('pages.blame.before')"
                   ><UIcon name="i-lucide-undo-2" class="size-3" /></NuxtLink>
                   <NuxtLink :to="{ path: '/commits', query: { commit: line.sha } }" class="min-w-0 truncate hover:underline" :title="commits.get(line.sha)?.subject">
                     <span class="font-mono">{{ line.sha.slice(0, 7) }}</span>
@@ -88,7 +88,7 @@ const when = (seconds: number) => times.value === 'date'
           </tr>
         </tbody>
       </table>
-      <p v-if="blame.cut" class="p-3 text-ui text-muted">Only the first {{ blame.lines.length }} lines are shown.</p>
+      <p v-if="blame.cut" class="p-3 text-ui text-muted">{{ t('pages.blame.cut', { count: blame.lines.length }) }}</p>
     </div>
   </div>
 </template>

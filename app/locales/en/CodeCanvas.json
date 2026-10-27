@@ -1,0 +1,15 @@
+{
+  "kind": {
+    "part": "part",
+    "folder": "folder"
+  },
+  "lines": {
+    "one": "{count} line",
+    "other": "{count} lines"
+  },
+  "calls": {
+    "one": "{count} caller, calls {callees}",
+    "other": "{count} callers, calls {callees}"
+  },
+  "map": "Where you are: click or drag to move"
+}

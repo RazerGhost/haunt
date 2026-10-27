@@ -1,0 +1,14 @@
+{
+  "saveIn": "Patches opslaan in",
+  "saved": {
+    "one": "Patch opgeslagen",
+    "other": "{count} patches opgeslagen"
+  },
+  "notSaved": "Geen patch opgeslagen",
+  "notRead": "De patches konden niet gelezen worden",
+  "applyTitle": "Patches toepassen",
+  "filter": "Patches",
+  "committed": "Patches gecommit",
+  "applied": "Patches toegepast op de working tree",
+  "notApplied": "De patches zijn niet toegepast"
+}

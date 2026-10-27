@@ -1,0 +1,35 @@
+{
+  "newBranch": "New branch here…",
+  "newTag": "New tag here…",
+  "cherryPick": "Cherry-pick onto {branch}…",
+  "cherryPickCurrent": "Cherry-pick onto the current branch…",
+  "revert": "Revert…",
+  "undoCommit": "Undo this commit…",
+  "reset": "Reset {branch} to here…",
+  "resetCurrent": "Reset the branch to here…",
+  "rebase": "Interactive rebase from here…",
+  "bisectGood": "Bisect: this one is good…",
+  "copySha": "Copy the sha",
+  "copyMessage": "Copy the message",
+  "savePatch": "Save as a patch…",
+  "savePatches": "Save this and later as patches…",
+  "readError": "The commits could not be read.",
+  "minutes": "{count} min",
+  "hours": "{count} h",
+  "days": "{count} d",
+  "noMatch": "No commits match the filters.",
+  "noCommits": "No commits yet.",
+  "localChanges": "Local changes",
+  "notCommitted": {
+    "one": "{count} file not committed yet",
+    "other": "{count} files not committed yet"
+  },
+  "notCommittedOn": {
+    "one": "{count} file not committed yet, on {branch}",
+    "other": "{count} files not committed yet, on {branch}"
+  },
+  "commits": "Commits",
+  "branch": "Branch",
+  "remoteBranch": "Remote branch",
+  "tag": "Tag"
+}

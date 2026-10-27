@@ -1,0 +1,37 @@
+{
+  "notRead": "Het bestand kon niet gelezen worden.",
+  "moreLines": {
+    "one": "… nog {count} regel …",
+    "other": "… nog {count} regels …"
+  },
+  "resolved": "{path} is opgelost",
+  "notResolved": "Niet opgelost",
+  "markersTitle": "Er staan nog conflictmarkeringen",
+  "markersDescription": "Het bestand heeft nog regels met <<<<<<< en >>>>>>>. Toch als opgelost markeren?",
+  "markResolved": "Als opgelost markeren",
+  "nothing": "Niets op te lossen: er loopt geen merge, revert, cherry-pick of rebase.",
+  "allCommits": "Alle commits",
+  "conflicts": "Conflicten",
+  "noneLeft": "Geen conflicten meer. Ga verder in de balk hierboven om af te ronden.",
+  "openInEditor": "Openen in editor",
+  "takeOurs": "Alles van jou nemen ({name})",
+  "takeTheirs": "Alles van hen nemen ({name})",
+  "deletedOurs": "Jouw kant ({name}) heeft dit bestand verwijderd; die van hen heeft het gewijzigd. Kies een kant: het bestand, of de verwijdering.",
+  "deletedTheirs": "Hun kant ({name}) heeft dit bestand verwijderd; die van jou heeft het gewijzigd. Kies een kant: het bestand, of de verwijdering.",
+  "binary": "Een binair bestand: neem één kant in zijn geheel.",
+  "blocksLeft": {
+    "one": "{count} blok met een conflict: kies per blok het jouwe, het hunne of beide.",
+    "other": "{count} blokken met een conflict: kies per blok het jouwe, het hunne of beide."
+  },
+  "allChosen": "Elk blok is gekozen. Markeer het bestand als opgelost om het te stagen.",
+  "previous": "Vorig conflict",
+  "next": "Volgend conflict",
+  "editAsText": "Als tekst bewerken",
+  "yours": "Van jou",
+  "theirs": "Van hen",
+  "empty": "(niets)",
+  "useOurs": "Jouwe gebruiken",
+  "useTheirs": "Hunne gebruiken",
+  "useBoth": "Beide gebruiken",
+  "markAsResolved": "Als opgelost markeren"
+}

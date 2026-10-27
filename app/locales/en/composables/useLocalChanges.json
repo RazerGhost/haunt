@@ -1,0 +1,13 @@
+{
+  "fallback": "Git could not do that.",
+  "saved": "Saved first: it can be brought back for 30 days.",
+  "discardedLines": {
+    "one": "Discarded {count} line",
+    "other": "Discarded {count} lines"
+  },
+  "discardedFile": "Discarded {path}",
+  "discardedFiles": {
+    "one": "Discarded {count} file",
+    "other": "Discarded {count} files"
+  }
+}

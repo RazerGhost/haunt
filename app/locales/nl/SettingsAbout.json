@@ -1,0 +1,24 @@
+{
+  "version": "Versie",
+  "license": "Licentie",
+  "updateCheck": "Op updates controleren",
+  "updateCheckHelp": "Hooguit één keer per dag vraagt Haunt GitHub naar de nieuwste release. Verder wordt niets verstuurd.",
+  "checkNow": "Nu controleren",
+  "newer": "Haunt {version} is uit.",
+  "latest": "Dit is de nieuwste versie ({version}).",
+  "seeIt": "Bekijken",
+  "cache": "Cache",
+  "noCache": "Hier niet.",
+  "logs": "Logs",
+  "noLogs": "Zolang er aan Haunt gewerkt wordt, schrijft de scanner naar de console.",
+  "folderNotOpened": "Kon de map niet openen",
+  "cleared": {
+    "one": "{count} bewaarde aanroepgraaf verwijderd",
+    "other": "{count} bewaarde aanroepgrafen verwijderd"
+  },
+  "nothingToClear": "Er waren geen bewaarde aanroepgrafen",
+  "clearedHelp": "Elke repository rekent zijn aanroepgraaf opnieuw uit bij de volgende scan.",
+  "notCleared": "Niet gewist",
+  "clear": "Bewaarde aanroepgrafen wissen",
+  "clearHelp": "Aanroepgrafen worden bewaard zodat repositories meteen openen. Wissen maakt ruimte vrij; ze worden bij de volgende scan opnieuw uitgerekend."
+}

@@ -17,12 +17,11 @@ These cost little work but wait on someone else, so they start first.
 
 ## 2. Translations
 
-Before any new screens, so they are written with the lookup from the start rather than reworked later.
+The window's texts are in app/locales (English and Dutch), looked up by `t()` in app/utils/text.ts. What is left:
 
-- Every text in the window is English, written straight into the components. Move the texts into language files
-  behind a lookup, add Dutch, and a language setting. Choose between `@nuxtjs/i18n` (a new dependency) and a small
-  lookup helper of our own with JSON files; the second is the likely pick, since Haunt is a static app and would not
-  use the module's routing.
+- **Texts that come from Rust** are still English: errors, the operation banner's title, the undo notices, and the
+  trust labels and notes (repos.rs), which show up inside Dutch sentences. Send them as codes with values, as
+  shared/risk.ts now does, and word them in the window.
 
 ## 3. Repository manager
 

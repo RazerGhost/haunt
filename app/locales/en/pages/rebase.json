@@ -1,0 +1,42 @@
+{
+  "notRead": "The commits could not be read.",
+  "action": {
+    "pick": "Keep",
+    "reword": "Reword",
+    "squash": "Squash into the one above",
+    "fixup": "Fix up into the one above",
+    "drop": "Drop"
+  },
+  "noCommits": "There are no commits after that one on this branch.",
+  "allDropped": "Every commit would be dropped.",
+  "nothingAbove": "The first commit kept has nothing above it to go into.",
+  "needsMessage": "A reworded commit needs its new message.",
+  "confirmTitle": "Rebase {branch}?",
+  "thisBranch": "this branch",
+  "thisBranchStart": "This branch",
+  "rewrittenOnto": {
+    "one": "{count} commit is written again on top of {onto}.",
+    "other": "{count} commits are written again on top of {onto}."
+  },
+  "rewrittenOrder": {
+    "one": "{count} commit is written again in the new order.",
+    "other": "{count} commits are written again in the new order."
+  },
+  "dropped": {
+    "one": "{count} dropped (git's reflog still has it for a while).",
+    "other": "{count} dropped (git's reflog still has them for a while)."
+  },
+  "pushed": "They are on {remotes} already: pushing afterwards needs Overwrite.",
+  "rebase": "Rebase",
+  "stopped": "The rebase stopped on conflicts",
+  "stoppedHelp": "Resolve them, then continue (or abort to put the branch back).",
+  "rebased": "Rebased",
+  "notRebased": "Not rebased",
+  "title": "Interactive rebase",
+  "intro": "{branch} onto {onto}, oldest at the top. Move commits and pick what happens to each.",
+  "pushedAlert": "These commits are on {remotes}. After rebasing, push with Overwrite; others must catch up.",
+  "moveUp": "Move up",
+  "moveDown": "Move down",
+  "newMessage": "The new message",
+  "nothingChanged": "Nothing changed yet."
+}

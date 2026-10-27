@@ -1,0 +1,8 @@
+{
+  "guessed": "Op naam gekoppeld, zonder typechecker: waarschijnlijk, niet zeker",
+  "sites": {
+    "one": "{count} aanroepplek",
+    "other": "{count} aanroepplekken"
+  },
+  "open": "{name} openen in de editor"
+}

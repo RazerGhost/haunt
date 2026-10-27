@@ -1,0 +1,9 @@
+{
+  "title": "Wat deze map zou uitvoeren",
+  "description": "Als je deze map vertrouwt, mag de code hieronder draaien. Niet vertrouwd leest Haunt alleen bestanden.",
+  "reading": "Lezen…",
+  "nothing": "Niets: geen hooks, architectuurscript of eigen TypeScript.",
+  "its": "Zijn {label}",
+  "truncated": "Alleen de eerste 64 KB wordt getoond.",
+  "trust": "Deze map vertrouwen"
+}

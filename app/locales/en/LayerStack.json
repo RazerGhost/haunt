@@ -1,0 +1,12 @@
+{
+  "heat": {
+    "one": "{count} file change in the last 180 days",
+    "other": "{count} file changes in the last 180 days"
+  },
+  "layers": "Layers",
+  "bandSize": "{parts} · {functions}",
+  "tileSize": "{files} · {functions}",
+  "found": "{count} found",
+  "split": "{top} at file level, {nested} nested",
+  "fns": "{count} fns"
+}

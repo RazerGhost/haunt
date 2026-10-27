@@ -1,0 +1,19 @@
+{
+  "found": "Eerste slechte commit gevonden:",
+  "bisecting": "Bisect bezig",
+  "testing": "test {subject}",
+  "inPlay": {
+    "one": "{count} commit over",
+    "other": "{count} commits over"
+  },
+  "stepsLeft": {
+    "one": "nog ongeveer {count} stap",
+    "other": "nog ongeveer {count} stappen"
+  },
+  "good": "Goed",
+  "bad": "Slecht",
+  "skip": "Overslaan",
+  "skipHelp": "Deze is niet te testen: probeer een andere",
+  "seeIt": "Bekijken",
+  "stopHelp": "Terug naar de branch waar het begon"
+}

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ChangedFile } from '~~/shared/types'
-import { busyFiles, riskOf } from '~~/shared/risk'
+import { busyFiles, riskOf, type RiskReason } from '~~/shared/risk'
 import { testsReaching } from '~~/shared/testReach'
 
 /*
@@ -27,11 +27,24 @@ const risk = computed(() => {
 })
 const TESTS_READ = /\.(?:[cm]?[jt]sx?|vue|svelte|astro)$/
 const COLOR = { low: 'success', medium: 'warning', high: 'error' } as const
+
+/** A reason in words, in the window's language. */
+function said(reason: RiskReason): string {
+  switch (reason.kind) {
+    case 'callers': return t('RiskLine.callers', { count: reason.count })
+    case 'unreached': return t('RiskLine.unreached', { count: reason.of, unreached: reason.count })
+    case 'reached': return reason.partly && reason.count > 1 ? t('RiskLine.reachedPartly') : t('RiskLine.reached', { count: reason.count })
+    case 'unread': return t('RiskLine.unread', { count: reason.count })
+    case 'busy': return t('RiskLine.busy', { count: reason.count, name: reason.name, commits: reason.commits, days: reason.days })
+    case 'size': return t('RiskLine.size', { count: reason.count })
+  }
+}
+const reasons = computed(() => risk.value?.reasons.map(said) ?? [])
 </script>
 
 <template>
   <p v-if="risk && (risk.reasons.length || files.length)" class="flex min-w-0 items-center gap-2 text-xs">
-    <UBadge :label="`${risk.level} risk`" :color="COLOR[risk.level]" variant="subtle" size="sm" class="shrink-0" />
-    <span class="min-w-0 truncate text-muted" :title="`${risk.reasons.join('; ')}. Based on callers, tests and the last ${hotspots.days} days of changes: a hint for where to look first.`">{{ risk.reasons.join(' · ') || 'nothing calls it, and it touches no busy file' }}</span>
+    <UBadge :label="t(`RiskLine.level.${risk.level}`)" :color="COLOR[risk.level]" variant="subtle" size="sm" class="shrink-0" />
+    <span class="min-w-0 truncate text-muted" :title="t('RiskLine.hint', { reasons: reasons.join('; '), days: hotspots.days })">{{ reasons.join(' · ') || t('RiskLine.quiet') }}</span>
   </p>
 </template>

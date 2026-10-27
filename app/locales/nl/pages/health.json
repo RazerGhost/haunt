@@ -1,0 +1,40 @@
+{
+  "readFailed": "De gezondheid kon niet worden gelezen",
+  "title": "Gezondheid",
+  "intro": "Grootte van de geschiedenis, zware bestanden, kandidaten voor Git LFS en oude branches. Alleen lezen.",
+  "readAgain": "Opnieuw lezen",
+  "reading": "Elk object in de geschiedenis doorlopen…",
+  "size": "Grootte",
+  "packs": {
+    "one": "De hele geschiedenis op schijf, in {count} pack",
+    "other": "De hele geschiedenis op schijf, in {count} packs"
+  },
+  "looseBefore": {
+    "one": ", met {count} los object dat git bij de volgende opruimbeurt inpakt (",
+    "other": ", met {count} losse objecten die git bij de volgende opruimbeurt inpakt ("
+  },
+  "looseAfter": ")",
+  "packsAfter": ". Elke clone downloadt die.",
+  "largest": "Grootste bestanden in de geschiedenis",
+  "everyVersion": "Elke versie telt: een bestand dat vaak veranderde of lang geleden is verwijderd, weegt nog mee in elke clone.",
+  "deletedBefore": "{size} hiervan zijn bestanden die de laatste commit niet meer heeft; alleen de geschiedenis herschrijven (met ",
+  "deletedAfter": ") haalt ze eruit, en daarna moet iedereen opnieuw clonen.",
+  "deleted": "verwijderd",
+  "versions": {
+    "one": "{count} versie",
+    "other": "{count} versies"
+  },
+  "forLfs": "Voor Git LFS",
+  "inLfs": "De grote bestanden staan al in Git LFS.",
+  "noLfs": "Geen bestand is groot genoeg voor Git LFS.",
+  "lfsBefore": "Grote of binaire bestanden boven 256 KB worden in elke versie volledig opgeslagen; Git LFS slaat in plaats daarvan verwijzingen op. Om ze te verplaatsen: ",
+  "lfsMiddle": " met hun patroon, dan committen (en ",
+  "lfsAfter": " voor de versies die al in de geschiedenis staan).",
+  "old": "Oude branches",
+  "noOld": "Elke branch had een commit in de afgelopen {days} dagen.",
+  "oldCount": {
+    "one": "{count} branch heeft al {days} dagen geen commit gehad. Branches opruimen laat zien welke gemerged zijn en veilig weg kunnen.",
+    "other": "{count} branches hebben al {days} dagen geen commit gehad. Branches opruimen laat zien welke gemerged zijn en veilig weg kunnen."
+  },
+  "cleanUp": "Branches opruimen…"
+}

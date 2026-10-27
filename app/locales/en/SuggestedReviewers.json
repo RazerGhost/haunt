@@ -1,0 +1,11 @@
+{
+  "title": "Suggested reviewers",
+  "onlyAdds": "The change only adds functions: nobody wrote their lines before.",
+  "reading": "Reading who wrote the lines it touches…",
+  "onlyYou": "Only you (or the change's own authors) wrote the lines it touches.",
+  "intro": "Who wrote the lines this change touches, before it.",
+  "lines": {
+    "one": "{count} line",
+    "other": "{count} lines"
+  }
+}

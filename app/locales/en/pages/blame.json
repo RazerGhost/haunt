@@ -1,0 +1,16 @@
+{
+  "readError": "Blame could not be read.",
+  "pickFile": "Pick a file: blame opens from a diff's header or a file's history.",
+  "at": "at {sha}",
+  "atParent": "at the parent of {sha}",
+  "now": "as it is now",
+  "asNow": "As it is now",
+  "history": "History",
+  "notThereBefore": "The file was not there before that commit: it was added, or moved there, by it.",
+  "notThereAt": "The file was not there at that commit.",
+  "trace": "Trace history",
+  "notCommitted": "Not committed yet",
+  "beforeHelp": "Blame before this commit: who changed these lines before it",
+  "before": "Blame before this commit",
+  "cut": "Only the first {count} lines are shown."
+}

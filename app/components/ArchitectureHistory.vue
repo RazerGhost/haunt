@@ -25,7 +25,7 @@ async function load(): Promise<void> {
     const found = await ask.run(at => haunt.architectureHistory(at, COMMITS))
     if (found !== undefined) history.value = found
   } catch (error) {
-    problem.value = errorMessage(error, 'The history could not be read.')
+    problem.value = errorMessage(error, t('ArchitectureHistory.readError'))
   }
 }
 watch(repo, () => {
@@ -49,22 +49,22 @@ const peak = computed(() => Math.max(1, ...bars.value.map(bar => bar.after)))
 const changed = computed(() => bars.value.filter(bar => bar.addedBreaks || bar.removedBreaks).length)
 const when = (seconds: number) => times.value === 'date' ? new Date(seconds * 1000).toLocaleString() : new Date(seconds * 1000).toLocaleDateString()
 const tip = (bar: (typeof bars.value)[number]) => bar.skipped
-  ? `${bar.subject}\n${when(bar.time)}\nNot read: too many files (or a first commit).`
-  : `${bar.subject}\n${when(bar.time)}\n+${bar.addedBreaks} rule breaks, −${bar.removedBreaks}; ${bar.after} after it\n${bar.added} imports added, ${bar.removed} removed`
+  ? `${bar.subject}\n${when(bar.time)}\n${t('ArchitectureHistory.skipped')}`
+  : `${bar.subject}\n${when(bar.time)}\n${t('ArchitectureHistory.breaks', { added: bar.addedBreaks, removed: bar.removedBreaks, after: bar.after })}\n${t('ArchitectureHistory.imports', { count: bar.added, removed: bar.removed })}`
 </script>
 
 <template>
   <section class="grid gap-2 border-b border-default px-4 py-3">
     <div class="flex flex-wrap items-center gap-3">
-      <h2 class="text-sm font-semibold text-highlighted">Rule breaks over time</h2>
+      <h2 class="text-sm font-semibold text-highlighted">{{ t('ArchitectureHistory.title') }}</h2>
       <p class="min-w-0 flex-1 text-xs text-muted">
-        <template v-if="history">Last {{ bars.length }} commits: {{ changed }} changed the rule breaks. Up: added, down: removed; the line is the running total. Click a bar for its imports.</template>
-        <template v-else>Rule breaks added and removed by each of the last {{ COMMITS }} commits. Takes a moment.</template>
+        <template v-if="history">{{ t('ArchitectureHistory.summary', { count: bars.length, changed }) }}</template>
+        <template v-else>{{ t('ArchitectureHistory.intro', { count: COMMITS }) }}</template>
       </p>
-      <UButton :label="history ? 'Read again' : 'Count them'" icon="i-lucide-history" size="xs" color="neutral" variant="outline" :loading="loading" @click="load" />
+      <UButton :label="history ? t('ArchitectureHistory.readAgain') : t('ArchitectureHistory.count')" icon="i-lucide-history" size="xs" color="neutral" variant="outline" :loading="loading" @click="load" />
     </div>
     <UAlert v-if="problem" color="error" variant="subtle" icon="i-lucide-circle-alert" :description="problem" />
-    <p v-else-if="history && !history.judged" class="text-xs text-muted">No rules check imports here, so there is nothing to count.</p>
+    <p v-else-if="history && !history.judged" class="text-xs text-muted">{{ t('ArchitectureHistory.noRules') }}</p>
     <div v-else-if="history" class="relative h-28" :style="{ width: `min(100%, ${bars.length * 1.5}rem)` }">
       <svg class="absolute inset-0 h-full w-full overflow-visible" :viewBox="`0 0 ${bars.length * 10} 100`" preserveAspectRatio="none" aria-hidden="true">
         <line x1="0" :x2="bars.length * 10" y1="50" y2="50" class="stroke-(--ui-border)" stroke-width="0.5" vector-effect="non-scaling-stroke" />

@@ -1,0 +1,35 @@
+{
+  "title": "Bisect",
+  "intro": "Vind de commit die iets kapotmaakte. Haunt checkt commits uit tussen een goede en een slechte; markeer elke tot de eerste slechte commit gevonden is.",
+  "bad": "Slecht",
+  "badHelp": "Waar het kapot is: een branch, tag of commit. HEAD is waar je nu bent.",
+  "badHelpOn": "Waar het kapot is: een branch, tag of commit. HEAD is waar je nu bent ({branch}).",
+  "good": "Goed",
+  "goodHelp": "Waar het nog werkte, zoals de laatste release-tag. Of klik met rechts op een commit: “Bisect: deze is goed”.",
+  "functionFirst": "Eerst de commits van {name} testen",
+  "functionFirstHelp": "Test de commits die de gekozen functie raakten vóór de eigen keuzes van git.",
+  "pickFunction": "Kies een functie in het paneel om de commits voor te stellen die haar raakten.",
+  "start": "Bisect starten",
+  "firstBad": "De eerste slechte commit",
+  "seeIt": "Bekijken in de commitlijst",
+  "stopBisecting": "Bisect stoppen",
+  "stopHelp": "Terug naar de branch waar het begon",
+  "testingNow": "Nu getest",
+  "inPlay": {
+    "one": "{count} commit over",
+    "other": "{count} commits over"
+  },
+  "stepsLeft": {
+    "one": "nog ongeveer {count} stap",
+    "other": "nog ongeveer {count} stappen"
+  },
+  "tryIt": "Draai of probeer het zoals het nu is uitgecheckt, en zeg dan hoe het zich gedraagt.",
+  "markGood": "Goed: het werkt hier",
+  "markBad": "Slecht: het is hier kapot",
+  "markSkip": "Overslaan: niet te zeggen",
+  "touched": "Raakten {name} · {count} over",
+  "noneTouched": "Geen van de overgebleven commits raakte haar.",
+  "testing": "getest",
+  "testThis": "Deze testen",
+  "summary": "{good} als goed gemarkeerd, {skipped} overgeslagen. Stoppen brengt je terug naar de branch waar het begon."
+}

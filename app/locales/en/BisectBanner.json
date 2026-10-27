@@ -1,0 +1,19 @@
+{
+  "found": "Found the first bad commit:",
+  "bisecting": "Bisecting",
+  "testing": "testing {subject}",
+  "inPlay": {
+    "one": "{count} commit in play",
+    "other": "{count} commits in play"
+  },
+  "stepsLeft": {
+    "one": "about {count} step left",
+    "other": "about {count} steps left"
+  },
+  "good": "Good",
+  "bad": "Bad",
+  "skip": "Skip",
+  "skipHelp": "This one cannot be tested: try another",
+  "seeIt": "See it",
+  "stopHelp": "Back to the branch it started from"
+}

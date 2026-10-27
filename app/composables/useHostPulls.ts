@@ -61,14 +61,29 @@ export function useHostPulls() {
     if (repo.value) void haunt.openOnWeb(repo.value, pull.url).catch(() => {})
   }
   /** Said beside what tea answers: Gitea's support has not been tried against a real server. */
-  const untested = computed(() => (found.value?.tool === 'tea' ? ' Read through tea for Gitea, which is untested.' : ''))
+  const untested = computed(() => (found.value?.tool === 'tea' ? ` ${t('composables.useHostPulls.untested')}` : ''))
   return { found, enabled, byBranch, byNumber, openPull, untested }
+}
+
+// The words the tools answer with, in the window's language; one Haunt does not know stays as the tool said it.
+const WORDS = {
+  state: ['open', 'draft', 'merged', 'closed'],
+  checks: ['passing', 'failing', 'pending'],
+  review: ['approved', 'changes requested', 'review required']
+} as const
+function word(group: keyof typeof WORDS, value: string): string {
+  return (WORDS[group] as readonly string[]).includes(value) ? t(`composables.useHostPulls.${group}.${value.replace(/ (\w)/, (_, letter: string) => letter.toUpperCase())}`) : value
+}
+
+/** A pull request's state (open, draft, merged, closed) in words, for a badge. */
+export function pullState(pull: HostPull): string {
+  return word('state', pull.state)
 }
 
 /** A pull request's state and checks in words, for a tooltip. */
 export function describePull(pull: HostPull): string {
-  const parts = [`#${pull.number} ${pull.title}`, pull.state === 'draft' ? 'a draft' : pull.state]
-  if (pull.checks) parts.push(`checks ${pull.checks}`)
-  if (pull.review) parts.push(pull.review)
+  const parts = [`#${pull.number} ${pull.title}`, pull.state === 'draft' ? t('composables.useHostPulls.aDraft') : pullState(pull)]
+  if (pull.checks) parts.push(t('composables.useHostPulls.checksAre', { checks: word('checks', pull.checks) }))
+  if (pull.review) parts.push(word('review', pull.review))
   return parts.join(' · ')
 }

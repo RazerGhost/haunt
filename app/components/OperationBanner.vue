@@ -11,10 +11,10 @@ const left = computed(() => operation.value?.conflicted.length ?? 0)
     <UIcon name="i-lucide-git-merge" class="size-4 shrink-0 text-warning" />
     <p class="min-w-0 flex-1 truncate">
       <span class="font-medium text-highlighted">{{ operation.title }}</span>
-      <span class="text-muted"> · {{ left ? `${left} ${left === 1 ? 'file conflicts' : 'files conflict'}` : 'no conflicts left' }}</span>
+      <span class="text-muted"> · {{ left ? t('OperationBanner.conflicts', { count: left }) : t('OperationBanner.noConflicts') }}</span>
     </p>
-    <UButton v-if="left && route.path !== '/conflicts'" label="Resolve conflicts" size="xs" color="warning" to="/conflicts" />
-    <UButton v-if="!left" label="Continue" size="xs" color="primary" :loading="busy" @click="proceed" />
-    <UButton label="Abort" size="xs" color="neutral" variant="ghost" :disabled="busy" @click="abort" />
+    <UButton v-if="left && route.path !== '/conflicts'" :label="t('OperationBanner.resolve')" size="xs" color="warning" to="/conflicts" />
+    <UButton v-if="!left" :label="t('OperationBanner.continue')" size="xs" color="primary" :loading="busy" @click="proceed" />
+    <UButton :label="t('OperationBanner.abort')" size="xs" color="neutral" variant="ghost" :disabled="busy" @click="abort" />
   </div>
 </template>

@@ -43,7 +43,7 @@ export function startChanges(): void {
       problem.value = ''
       loading.value = false
     } catch (error) {
-      problem.value = errorMessage(error, 'The changes could not be read.')
+      problem.value = errorMessage(error, t('composables.useChanges.readFailed'))
       loading.value = false
     }
   }

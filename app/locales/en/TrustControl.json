@@ -1,0 +1,13 @@
+{
+  "trusted": "Trusted folder",
+  "untrusted": "Folder not trusted",
+  "nothing": "Nothing in this folder would run",
+  "runs": "This folder's own code runs in Haunt",
+  "reads": "Haunt only reads this folder",
+  "itRuns": "It runs:",
+  "wouldRun": "Trusted, it would also run:",
+  "its": "Its {label}",
+  "see": "See what they run…",
+  "stop": "Stop trusting this folder",
+  "ask": "Trust this folder…"
+}

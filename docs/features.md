@@ -54,9 +54,9 @@ Everything Haunt does, by part of the window. The [README](../README.md) has the
   installed, and can be loaded from coolLabs Fonts if you switch that on. Lucide icons come with Haunt; another set
   (Bootstrap, Phosphor, Tabler, Remix, Material, Heroicons, Iconoir) is downloaded once when you pick it, checked, and
   kept on your computer.
-- **Settings**: test files shown or not, the editor, diffs (wrapping, tab width, whitespace), commit times and order,
-  what a pull does when the branches went apart, fetching in the background, sign-off by default, pull request status,
-  the update check, and the trusted folders.
+- **Settings**: the language (English or Dutch; it starts as the system's), test files shown or not, the editor,
+  diffs (wrapping, tab width, whitespace), commit times and order, what a pull does when the branches went apart,
+  fetching in the background, sign-off by default, pull request status, the update check, and the trusted folders.
 
 ## Git
 

@@ -1,0 +1,16 @@
+{
+  "readError": "Blame kon niet worden gelezen.",
+  "pickFile": "Kies een bestand: blame opent vanuit de kop van een diff of de geschiedenis van een bestand.",
+  "at": "bij {sha}",
+  "atParent": "bij de ouder van {sha}",
+  "now": "zoals het nu is",
+  "asNow": "Zoals het nu is",
+  "history": "Geschiedenis",
+  "notThereBefore": "Het bestand bestond niet voor die commit: die commit heeft het toegevoegd of hierheen verplaatst.",
+  "notThereAt": "Het bestand bestond niet bij die commit.",
+  "trace": "Volg de geschiedenis",
+  "notCommitted": "Nog niet gecommit",
+  "beforeHelp": "Blame voor deze commit: wie deze regels daarvoor wijzigde",
+  "before": "Blame voor deze commit",
+  "cut": "Alleen de eerste {count} regels worden getoond."
+}

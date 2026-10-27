@@ -24,7 +24,7 @@ if (import.meta.client && !tauri()) {
     async invoke(command: string, args: object = {}) {
       const answer = await fetch(`/__haunt/call/${command}`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-haunt': '1' }, body: JSON.stringify(args) })
       const body = await answer.json().catch(() => null) as unknown
-      if (!answer.ok) throw (body as { message?: string } | null)?.message ?? `Haunt did not answer (${answer.status}).`
+      if (!answer.ok) throw (body as { message?: string } | null)?.message ?? t('utils.bridge.noAnswer', { status: answer.status })
       return body
     }
   }

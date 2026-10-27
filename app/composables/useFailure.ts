@@ -10,19 +10,19 @@ export function useFailure() {
 
   async function trust(): Promise<void> {
     const ok = await dialog.confirm({
-      title: 'Trust this folder?',
-      description: 'Haunt then also runs the folder\'s own code: its TypeScript and architecture script while scanning, and its git hooks and filters when writing. Pull and push run only in a trusted folder.',
-      confirm: 'Trust it'
+      title: t('composables.useFailure.trustTitle'),
+      description: t('composables.useFailure.trustDescription'),
+      confirm: t('composables.useFailure.trustConfirm')
     })
     if (!ok) return
     const problem = await setTrust(true)
     toast.add(problem
-      ? { title: 'Not trusted', description: problem, color: 'error', icon: 'i-lucide-circle-alert' }
-      : { title: 'This folder is trusted', description: 'Try again now.', icon: 'i-lucide-shield-check' })
+      ? { title: t('composables.useFailure.notTrusted'), description: problem, color: 'error', icon: 'i-lucide-circle-alert' }
+      : { title: t('composables.useFailure.trusted'), description: t('composables.useFailure.tryNow'), icon: 'i-lucide-shield-check' })
   }
 
   /** Shows `error` (or `fallback` when it says nothing) under `title`. */
-  function failed(title: string, error: unknown, fallback = 'Git could not do that.'): void {
+  function failed(title: string, error: unknown, fallback = t('composables.useFailure.fallback')): void {
     const description = errorMessage(error, fallback)
     const untrusted = /trusted folder|Trust this folder/i.test(description)
     toast.add({
@@ -32,8 +32,8 @@ export function useFailure() {
       icon: 'i-lucide-circle-alert',
       duration: 10_000,
       actions: [
-        ...untrusted ? [{ label: 'Trust this folder…', color: 'neutral' as const, variant: 'outline' as const, onClick: () => { void trust() } }] : [],
-        { label: 'Copy', color: 'neutral' as const, variant: 'ghost' as const, onClick: () => { void navigator.clipboard?.writeText(`${title}\n${description}`) } }
+        ...untrusted ? [{ label: t('composables.useFailure.trustAction'), color: 'neutral' as const, variant: 'outline' as const, onClick: () => { void trust() } }] : [],
+        { label: t('common.copy'), color: 'neutral' as const, variant: 'ghost' as const, onClick: () => { void navigator.clipboard?.writeText(`${title}\n${description}`) } }
       ]
     })
   }

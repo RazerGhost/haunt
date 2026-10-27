@@ -1,0 +1,6 @@
+{
+  "bytes": {
+    "one": "{count} byte",
+    "other": "{count} bytes"
+  }
+}

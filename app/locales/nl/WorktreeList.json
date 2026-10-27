@@ -1,0 +1,13 @@
+{
+  "open": "Openen in eigen tab",
+  "remove": "Verwijderen…",
+  "removeElsewhere": "Verwijderen… (vanuit een andere tab)",
+  "title": "Worktrees",
+  "newHelp": "Een branch uitchecken in een nieuwe worktree: een eigen map",
+  "new": "Nieuwe worktree",
+  "folderGone": "(map bestaat niet meer)",
+  "locked": "(vergrendeld)",
+  "detached": "{commit} (detached)",
+  "thisFolder": "deze map",
+  "prune": "Ontbrekende opruimen"
+}

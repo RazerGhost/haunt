@@ -1,0 +1,13 @@
+{
+  "scanning": "Scanning",
+  "callGraph": "Working out the call graph",
+  "notScanned": "The repository could not be scanned.",
+  "rescanningAfter": {
+    "rescan": "Rescanning after a rescan",
+    "trusted": "Rescanning after trusting this folder",
+    "untrusted": "Rescanning after no longer trusting this folder"
+  },
+  "rescanningAfterFile": "Rescanning after {file}",
+  "editorNotOpened": "Could not open the editor",
+  "tryAnotherEditor": "Try another editor."
+}

@@ -1,0 +1,15 @@
+{
+  "scanning": "Scannen",
+  "layers": "Lagen",
+  "hotspots": "Hotspots",
+  "hotspotsHelp": {
+    "one": "Kleur onderdelen naar wijzigingen in de laatste {count} dag",
+    "other": "Kleur onderdelen naar wijzigingen in de laatste {count} dagen"
+  },
+  "mapError": "De lagenkaart kon niet worden gelezen",
+  "found": {
+    "one": "{count} functie met een naam als “{term}”, in {files} bestanden",
+    "other": "{count} functies met een naam als “{term}”, in {files} bestanden"
+  },
+  "first150": "De eerste 150 bestanden staan hier. Verfijn de zoekopdracht voor de rest."
+}

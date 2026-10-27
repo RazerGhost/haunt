@@ -81,7 +81,7 @@ export function useLocalChanges() {
       if (answer !== null && typeof answer === 'object' && 'staged' in answer && repo.value === at) result.value = { status: answer as LocalStatus }
       return true
     } catch (error) {
-      problem.value = errorMessage(error, 'Git could not do that.')
+      problem.value = errorMessage(error, t('composables.useLocalChanges.fallback'))
       return false
     } finally {
       busy.value = false
@@ -97,10 +97,10 @@ export function useLocalChanges() {
     if (saved) {
       toast.add({
         title: what,
-        description: 'Saved first: it can be brought back for 30 days.',
+        description: t('composables.useLocalChanges.saved'),
         icon: 'i-lucide-undo-2',
         duration: 12000,
-        actions: [{ label: 'Undo', color: 'neutral', variant: 'outline', onClick: () => { void run(where => haunt.restore(where, saved.id)) } }]
+        actions: [{ label: t('common.undo'), color: 'neutral', variant: 'outline', onClick: () => { void run(where => haunt.restore(where, saved.id)) } }]
       })
     }
     return done
@@ -117,9 +117,9 @@ export function useLocalChanges() {
     stage: (paths: string[]) => run(at => haunt.stage(at, paths)),
     unstage: (paths: string[]) => run(at => haunt.unstage(at, paths)),
     lines: (path: string, picked: LineRef[], action: LinesAction) => action === 'discard'
-      ? discardWithUndo(`Discarded ${picked.length} ${picked.length === 1 ? 'line' : 'lines'}`, at => haunt.lines(at, path, picked, action))
+      ? discardWithUndo(t('composables.useLocalChanges.discardedLines', { count: picked.length }), at => haunt.lines(at, path, picked, action))
       : run(at => haunt.lines(at, path, picked, action)),
-    discard: (paths: string[]) => discardWithUndo(paths.length === 1 ? `Discarded ${paths[0]}` : `Discarded ${paths.length} files`, at => haunt.discard(at, paths)),
+    discard: (paths: string[]) => discardWithUndo(paths.length === 1 ? t('composables.useLocalChanges.discardedFile', { path: paths[0]! }) : t('composables.useLocalChanges.discardedFiles', { count: paths.length }), at => haunt.discard(at, paths)),
     restore: (id: string) => run(at => haunt.restore(at, id)),
     commit: (message: string, amend: boolean, signoff: boolean) => run(at => haunt.commitStaged(at, message, amend, signoff))
   }

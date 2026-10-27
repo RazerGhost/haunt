@@ -1,0 +1,10 @@
+{
+  "scanning": "Scanning",
+  "hint": "Scroll to zoom, drag to move. Click a function to open it, a box to zoom in. Hover for calls.",
+  "hotspots": "Hotspots",
+  "hotspotsHelp": {
+    "one": "Tint files by how often they changed in the last {count} day",
+    "other": "Tint files by how often they changed in the last {count} days"
+  },
+  "fit": "Fit"
+}

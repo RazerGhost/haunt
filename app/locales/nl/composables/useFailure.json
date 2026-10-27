@@ -1,0 +1,10 @@
+{
+  "trustTitle": "Deze map vertrouwen?",
+  "trustDescription": "Haunt voert dan ook de eigen code van de map uit: het TypeScript- en architectuurscript bij het scannen, en de git hooks en filters bij het schrijven. Pull en push werken alleen in een vertrouwde map.",
+  "trustConfirm": "Vertrouwen",
+  "notTrusted": "Niet vertrouwd",
+  "trusted": "Deze map wordt vertrouwd",
+  "tryNow": "Probeer het nu opnieuw.",
+  "fallback": "Dat lukte git niet.",
+  "trustAction": "Deze map vertrouwen…"
+}

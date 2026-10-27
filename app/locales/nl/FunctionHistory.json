@@ -1,0 +1,32 @@
+{
+  "moved": "Hierheen verplaatst vanuit {file}. Daarvoor de geschiedenis daar:",
+  "movedRenamed": "Hierheen verplaatst vanuit {file}, waar het {name} heette. Daarvoor de geschiedenis daar:",
+  "today": "vandaag",
+  "yesterday": "gisteren",
+  "daysAgo": {
+    "one": "{count} dag geleden",
+    "other": "{count} dagen geleden"
+  },
+  "monthsAgo": {
+    "one": "{count} maand geleden",
+    "other": "{count} maanden geleden"
+  },
+  "yearsAgo": {
+    "one": "{count} jaar geleden",
+    "other": "{count} jaar geleden"
+  },
+  "history": "Geschiedenis",
+  "noHistory": "Geen geschiedenis: het bestand staat niet in git.",
+  "lastChanged": "Laatst gewijzigd {ago} door",
+  "behaviour": "Laatst gewijzigd in werking",
+  "born": "Ontstaan in",
+  "authorLines": {
+    "one": "{name}: {count} regel",
+    "other": "{name}: {count} regels"
+  },
+  "seeCommit": "Bekijk in de commitlijst",
+  "cosmetic": "alleen witruimte of commentaar",
+  "all": "Alle {count} commits",
+  "mentioning": "Commits die {name} noemen",
+  "mentioningHelp": "Commits die deze naam toevoegden of verwijderden"
+}

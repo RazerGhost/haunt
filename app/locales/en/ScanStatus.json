@@ -1,0 +1,11 @@
+{
+  "loading": "Loading",
+  "scanning": "Scanning",
+  "live": "Live",
+  "problem": "Problem",
+  "noProject": "No project",
+  "scannedAt": "Live: scanned at {at} ({structure} s)",
+  "scannedAtCalls": "Live: scanned at {at} ({structure} s, calls {calls} s)",
+  "tooltip": "{details}. Click to rescan.",
+  "rescan": "{state}: rescan"
+}

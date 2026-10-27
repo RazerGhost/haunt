@@ -1,0 +1,7 @@
+{
+  "nothing": "Nothing to do with these two",
+  "currentBranch": "the current branch",
+  "nothingHelp": "Drop a branch on {current} to merge, or {current} on a branch to rebase.",
+  "merge": "Merge {from} into {into}",
+  "rebase": "Rebase {from} onto {onto}"
+}

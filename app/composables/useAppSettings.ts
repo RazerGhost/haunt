@@ -12,17 +12,17 @@ async function load(): Promise<void> {
   try {
     app.value = await haunt.appSettings()
   } catch (error) {
-    problem.value = errorMessage(error, 'The settings could not be read.')
+    problem.value = errorMessage(error, t('composables.useAppSettings.notRead'))
   }
 }
 
 /** Keeps the settings a change returns; a change that fails says so with `failed` and keeps the last ones. */
-async function save(change: Promise<AppSettings>, failed = 'Not saved'): Promise<boolean> {
+async function save(change: Promise<AppSettings>, failed = t('common.notSaved')): Promise<boolean> {
   try {
     app.value = await change
     return true
   } catch (error) {
-    useToast().add({ title: failed, description: errorMessage(error, 'Try again.'), color: 'error', icon: 'i-lucide-circle-alert' })
+    useToast().add({ title: failed, description: errorMessage(error, t('common.tryAgain')), color: 'error', icon: 'i-lucide-circle-alert' })
     return false
   }
 }

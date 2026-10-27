@@ -1,0 +1,34 @@
+{
+  "replaceTitle": "Bericht vervangen?",
+  "replaceDescription": "Het concept komt in de plaats van het onderwerp en de beschrijving die er nu staan.",
+  "replace": "Vervangen",
+  "noDraft": "Geen concept",
+  "stagedNotRead": "De gestagede wijzigingen konden niet gelezen worden.",
+  "hooksSkipped": {
+    "one": "De {hooks}-hook draait niet: deze map wordt niet vertrouwd.",
+    "other": "De {hooks}-hooks draaien niet: deze map wordt niet vertrouwd."
+  },
+  "notSigned": "De commit wordt niet ondertekend: ondertekenen werkt alleen in een vertrouwde map.",
+  "subject": "Onderwerp",
+  "subjectLabel": "Onderwerp van de commit",
+  "subjectLong": "Git raadt een onderwerp van hooguit 50 tekens aan",
+  "recent": "Recente onderwerpen",
+  "recentHelp": "Begin met een recent onderwerp",
+  "draft": "Concept maken",
+  "draftHelp": "Maak een bericht van de gestagede wijzigingen, per functie. Hier gemaakt, zonder AI.",
+  "description": "Beschrijving (optioneel)",
+  "descriptionLabel": "Beschrijving van de commit",
+  "longLines": {
+    "one": "{count} regel is langer dan 72 tekens; git raadt aan af te breken op 72.",
+    "other": "{count} regels zijn langer dan 72 tekens; git raadt aan af te breken op 72."
+  },
+  "amendPushed": "De laatste commit staat op {remotes}: na amenden moet je pushen met Overschrijven.",
+  "amend": "Amend",
+  "signOff": "Sign-off",
+  "amendLast": "Laatste commit amenden",
+  "commitFiles": {
+    "one": "{count} bestand committen",
+    "other": "{count} bestanden committen"
+  },
+  "commit": "Committen"
+}

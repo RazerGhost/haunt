@@ -30,7 +30,7 @@ async function load(): Promise<void> {
     if (found !== undefined) pulls.value = found
     problem.value = ''
   } catch (error) {
-    problem.value = errorMessage(error, 'The pull requests could not be read.')
+    problem.value = errorMessage(error, t('pages.pulls.readFailed'))
   }
 }
 watch([repo, gitChanged('refs')], () => repo.value && void load(), { immediate: true })
@@ -41,15 +41,15 @@ async function fetchThem(one: number | null = null): Promise<void> {
   try {
     const done = await haunt.fetchPullRequests(repo.value, null, one)
     toast.add({
-      title: one ? `Fetched #${one}` : `Fetched ${done.fetched} pull ${done.fetched === 1 ? 'request' : 'requests'} from ${done.remote}`,
-      description: one || done.total <= done.fetched ? undefined : `The newest ${done.fetched} of ${done.total}. Fetch an older one by its number.`,
+      title: one ? t('pages.pulls.fetchedOne', { number: one }) : t('pages.pulls.fetched', { count: done.fetched, remote: done.remote }),
+      description: one || done.total <= done.fetched ? undefined : t('pages.pulls.newestOf', { count: done.fetched, total: done.total }),
       icon: 'i-lucide-git-pull-request',
       color: 'success'
     })
     await load()
     if (one) choose(pulls.value?.find(pull => pull.number === one) ?? null)
   } catch (error) {
-    failure.failed('The pull requests were not fetched', error, 'The pull requests could not be fetched.')
+    failure.failed(t('pages.pulls.notFetched'), error, t('pages.pulls.fetchFailed'))
   } finally {
     fetching.value = false
   }
@@ -91,15 +91,15 @@ const when = (seconds: number) => times.value === 'date'
   <div class="grid h-full min-h-0 grid-cols-[18rem_minmax(0,1fr)]">
     <aside class="flex min-h-0 flex-col border-r border-default">
       <div class="grid gap-2 border-b border-default p-3">
-        <UButton :label="pulls?.length ? 'Fetch again' : 'Fetch pull requests'" icon="i-lucide-cloud-download" size="sm" :loading="fetching" block @click="fetchThem()" />
+        <UButton :label="pulls?.length ? t('pages.pulls.fetchAgain') : t('pages.pulls.fetchPulls')" icon="i-lucide-cloud-download" size="sm" :loading="fetching" block @click="fetchThem()" />
         <form class="flex gap-1.5" @submit.prevent="fetchNumber">
-          <UInput v-model="number" size="xs" placeholder="An older one: #123" class="flex-1" aria-label="Pull request number" />
-          <UButton type="submit" label="Fetch" size="xs" color="neutral" variant="outline" :disabled="!number.trim() || fetching" />
+          <UInput v-model="number" size="xs" :placeholder="t('pages.pulls.numberPlaceholder')" class="flex-1" :aria-label="t('pages.pulls.number')" />
+          <UButton type="submit" :label="t('pages.pulls.fetch')" size="xs" color="neutral" variant="outline" :disabled="!number.trim() || fetching" />
         </form>
-        <p class="text-label text-muted">Fetched as refs, no account needed. Titles and comments are on the host; here you see each one's commits.</p>
+        <p class="text-label text-muted">{{ t('pages.pulls.note') }}</p>
       </div>
       <UAlert v-if="problem" class="m-3" color="error" variant="subtle" icon="i-lucide-circle-alert" :description="problem" />
-      <p v-else-if="pulls && !pulls.length" class="p-4 text-sm text-muted">No pull requests fetched yet.</p>
+      <p v-else-if="pulls && !pulls.length" class="p-4 text-sm text-muted">{{ t('pages.pulls.none') }}</p>
       <ul v-else class="min-h-0 flex-1 overflow-auto p-1">
         <li v-for="pull in pulls ?? []" :key="keyOf(pull)">
           <button
@@ -111,9 +111,9 @@ const when = (seconds: number) => times.value === 'date'
             <span class="flex items-center gap-1.5 text-ui">
               <span class="font-mono font-semibold text-highlighted">#{{ pull.number }}</span>
               <span class="min-w-0 flex-1 truncate">{{ byNumber.get(pull.number)?.title ?? pull.subject }}</span>
-              <UBadge v-if="byNumber.get(pull.number)" :label="byNumber.get(pull.number)!.state" size="sm" color="neutral" variant="subtle" :title="describePull(byNumber.get(pull.number)!)" />
+              <UBadge v-if="byNumber.get(pull.number)" :label="pullState(byNumber.get(pull.number)!)" size="sm" color="neutral" variant="subtle" :title="describePull(byNumber.get(pull.number)!)" />
             </span>
-            <span class="truncate text-label text-muted">{{ pull.author }} · {{ when(pull.time) }} · {{ pull.commits }} {{ pull.commits === 1 ? 'commit' : 'commits' }}<template v-if="pull.remote !== 'origin'"> · {{ pull.remote }}</template></span>
+            <span class="truncate text-label text-muted">{{ pull.author }} · {{ when(pull.time) }} · {{ t('pages.pulls.commits', { count: pull.commits }) }}<template v-if="pull.remote !== 'origin'"> · {{ pull.remote }}</template></span>
           </button>
         </li>
       </ul>
@@ -124,14 +124,14 @@ const when = (seconds: number) => times.value === 'date'
         <div class="min-w-0 flex-1">
           <h1 class="truncate text-sm font-semibold text-highlighted">#{{ chosen.number }} · {{ chosen.subject }}</h1>
           <p class="truncate text-xs text-muted">
-            {{ chosen.commits }} {{ chosen.commits === 1 ? 'commit' : 'commits' }} by {{ chosen.author }}<template v-if="chosen.baseLabel">, compared with where it left {{ chosen.baseLabel }}</template><template v-else>; no main branch to compare it with, so its newest commit is shown</template>.
+            {{ chosen.baseLabel ? t('pages.pulls.compared', { count: chosen.commits, author: chosen.author, base: chosen.baseLabel }) : t('pages.pulls.noBase', { count: chosen.commits, author: chosen.author }) }}
           </p>
         </div>
-        <UButton label="In the commit list" icon="i-lucide-git-commit-vertical" size="xs" color="neutral" variant="outline" :to="{ path: '/commits', query: { from: chosen.reference, commit: chosen.sha } }" />
-        <UButton label="New branch from it…" icon="i-lucide-git-branch-plus" size="xs" color="neutral" variant="outline" @click="refActions.newBranch({ rev: chosen.sha, label: `#${chosen.number}` })" />
+        <UButton :label="t('pages.pulls.inCommitList')" icon="i-lucide-git-commit-vertical" size="xs" color="neutral" variant="outline" :to="{ path: '/commits', query: { from: chosen.reference, commit: chosen.sha } }" />
+        <UButton :label="t('pages.pulls.newBranch')" icon="i-lucide-git-branch-plus" size="xs" color="neutral" variant="outline" @click="refActions.newBranch({ rev: chosen.sha, label: `#${chosen.number}` })" />
       </div>
       <div v-if="commits.length > 1" class="flex items-center gap-1 overflow-x-auto border-b border-default px-4 py-1.5">
-        <UButton label="All its changes" size="xs" :color="alone ? 'neutral' : 'primary'" :variant="alone ? 'ghost' : 'soft'" @click="look(null)" />
+        <UButton :label="t('pages.pulls.allChanges')" size="xs" :color="alone ? 'neutral' : 'primary'" :variant="alone ? 'ghost' : 'soft'" @click="look(null)" />
         <UButton
           v-for="commit in commits"
           :key="commit.sha"
@@ -155,7 +155,7 @@ const when = (seconds: number) => times.value === 'date'
       />
     </section>
     <div v-else class="grid place-items-center p-8 text-center text-sm text-muted">
-      <p>{{ pulls?.length ? 'Pick a pull request to review it.' : 'Fetch pull requests to review them without switching branch.' }}</p>
+      <p>{{ pulls?.length ? t('pages.pulls.pick') : t('pages.pulls.fetchToReview') }}</p>
     </div>
   </div>
 </template>

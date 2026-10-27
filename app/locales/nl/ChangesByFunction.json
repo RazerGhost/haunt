@@ -1,0 +1,47 @@
+{
+  "sinceMain": "Sinds main",
+  "uncommitted": "Alleen niet gecommit",
+  "compareWithMenu": "Vergelijk met…",
+  "compareWith": "Vergelijk met",
+  "ref": "Branch, tag of commit",
+  "compare": "Vergelijk",
+  "comparedWith": "Vergeleken met",
+  "aheadBehind": {
+    "one": "{count} commit voor, {behind} achter",
+    "other": "{count} commits voor, {behind} achter"
+  },
+  "review": "Review",
+  "stepsBefore": "Aanroepers tot",
+  "stepsAfter": "stappen ver",
+  "readError": "De wijzigingen konden niet worden gelezen",
+  "notRepo": "Deze map staat niet in een git-repository.",
+  "nothingSince": "Niets gewijzigd sinds {base}.",
+  "followsAlong": "Sla een bestand op of kies hierboven een andere vergelijking; deze weergave volgt mee.",
+  "functionsIn": {
+    "one": "{count} functie in {files}",
+    "other": "{count} functies in {files}"
+  },
+  "files": {
+    "one": "{count} bestand",
+    "other": "{count} bestanden"
+  },
+  "affected": {
+    "one": "{count} aanroeper kan geraakt worden",
+    "other": "{count} aanroepers kunnen geraakt worden"
+  },
+  "otherFiles": {
+    "one": "{count} ander bestand gewijzigd (geen code die Haunt leest)",
+    "other": "{count} andere bestanden gewijzigd (geen code die Haunt leest)"
+  },
+  "status": {
+    "added": "nieuw",
+    "modified": "gewijzigd",
+    "deleted": "verwijderd",
+    "renamed": "hernoemd"
+  },
+  "impact": "Wat kan breken",
+  "impactHelp": {
+    "one": "Functies die een gewijzigde functie aanroepen, tot {count} stap ver, dichtstbijzijnde eerst. Aanroepen via interfaces of markup tellen niet mee.",
+    "other": "Functies die een gewijzigde functie aanroepen, tot {count} stappen ver, dichtstbijzijnde eerst. Aanroepen via interfaces of markup tellen niet mee."
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "notByFunction": "Not worked out by function",
+  "previewNotRead": "The preview could not be read.",
+  "title": "Apply patches",
+  "introBefore": "Patch files from",
+  "introAfter": "or a plain diff. Haunt previews their changes by function on a copy; nothing changes until you apply. To make one, right-click a commit: Save as a patch.",
+  "choose": "Choose patch files…",
+  "chooseOther": "Choose other files…",
+  "readAgain": "Read them again",
+  "patches": {
+    "one": "{count} patch, in this order",
+    "other": "{count} patches, in this order"
+  },
+  "noAuthor": "no author: a plain diff",
+  "files": {
+    "one": "{count} file",
+    "other": "{count} files"
+  },
+  "doesNotApply": "They do not apply to the last commit, so nothing can be applied yet.",
+  "whatChanges": "What they change",
+  "commit": "Commit them",
+  "commitHelp": "git am: each patch becomes a commit on the current branch, with its own message and author",
+  "applyOnly": "Only change the files",
+  "applyOnlyHelp": "git apply: the changes land in the working tree, to look at and commit yourself"
+}

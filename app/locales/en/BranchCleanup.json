@@ -1,0 +1,21 @@
+{
+  "deleted": {
+    "one": "Deleted {count} branch",
+    "other": "Deleted {count} branches"
+  },
+  "notDeleted": "Not deleted: {names}.",
+  "reflog": "git keeps their commits for a while in its reflog.",
+  "title": "Clean up branches",
+  "description": "Merged branches, and branches whose remote is gone.",
+  "nothing": "Nothing to clean up.",
+  "merged": "merged",
+  "goneOnly": {
+    "one": "remote gone · {count} commit only here",
+    "other": "remote gone · {count} commits only here"
+  },
+  "gone": "remote gone",
+  "delete": {
+    "one": "Delete {count} branch",
+    "other": "Delete {count} branches"
+  }
+}

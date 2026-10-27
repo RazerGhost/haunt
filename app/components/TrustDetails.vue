@@ -34,21 +34,21 @@ async function trust(): Promise<void> {
 </script>
 
 <template>
-  <UModal v-model:open="open" :ui="{ content: 'max-w-3xl' }" title="What this folder would run" description="Trusting this folder lets the code below run. Untrusted, Haunt only reads files.">
+  <UModal v-model:open="open" :ui="{ content: 'max-w-3xl' }" :title="t('TrustDetails.title')" :description="t('TrustDetails.description')">
     <template #body>
-      <p v-if="loading" class="text-sm text-muted">Reading…</p>
-      <p v-else-if="!texts.length" class="text-sm text-muted">Nothing: no hooks, architecture script or TypeScript of its own.</p>
+      <p v-if="loading" class="text-sm text-muted">{{ t('TrustDetails.reading') }}</p>
+      <p v-else-if="!texts.length" class="text-sm text-muted">{{ t('TrustDetails.nothing') }}</p>
       <div v-else class="grid gap-4">
         <section v-for="item in texts" :key="item.path" class="grid gap-1.5">
           <div class="flex items-baseline gap-2">
-            <h3 class="text-sm font-medium text-highlighted">Its {{ item.label }}</h3>
+            <h3 class="text-sm font-medium text-highlighted">{{ t('TrustDetails.its', { label: item.label }) }}</h3>
             <code class="min-w-0 truncate text-xs text-muted">{{ item.path }}</code>
           </div>
           <p class="text-xs text-muted">{{ item.note }}</p>
           <div v-if="item.text" class="max-h-72 overflow-auto rounded border border-default bg-elevated/40 p-2">
             <CodeLines :path="pathFor(item)" :text="item.text" />
           </div>
-          <p v-if="item.truncated" class="text-xs text-warning">Only the first 64 KB are shown.</p>
+          <p v-if="item.truncated" class="text-xs text-warning">{{ t('TrustDetails.truncated') }}</p>
         </section>
       </div>
     </template>
@@ -56,8 +56,8 @@ async function trust(): Promise<void> {
       <div class="flex w-full items-center gap-2">
         <p v-if="problem" class="flex-1 text-xs text-error">{{ problem }}</p>
         <span v-else class="flex-1" />
-        <UButton label="Close" color="neutral" variant="ghost" @click="open = false" />
-        <UButton v-if="info && !info.trusted" label="Trust this folder" icon="i-lucide-shield-check" :disabled="loading" @click="trust" />
+        <UButton :label="t('common.close')" color="neutral" variant="ghost" @click="open = false" />
+        <UButton v-if="info && !info.trusted" :label="t('TrustDetails.trust')" icon="i-lucide-shield-check" :disabled="loading" @click="trust" />
       </div>
     </template>
   </UModal>

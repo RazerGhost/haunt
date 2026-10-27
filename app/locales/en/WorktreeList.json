@@ -1,0 +1,13 @@
+{
+  "open": "Open in its tab",
+  "remove": "Remove…",
+  "removeElsewhere": "Remove… (from another tab)",
+  "title": "Worktrees",
+  "newHelp": "Check a branch out in a new worktree: a folder of its own",
+  "new": "New worktree",
+  "folderGone": "(its folder is gone)",
+  "locked": "(locked)",
+  "detached": "{commit} (detached)",
+  "thisFolder": "this folder",
+  "prune": "Prune missing"
+}

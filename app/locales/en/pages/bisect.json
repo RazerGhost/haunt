@@ -1,0 +1,35 @@
+{
+  "title": "Bisect",
+  "intro": "Find the commit that broke something. Haunt checks out commits between a good and a bad one; mark each until the first bad commit is found.",
+  "bad": "Bad",
+  "badHelp": "Where it is broken: a branch, tag or commit. HEAD is where you are.",
+  "badHelpOn": "Where it is broken: a branch, tag or commit. HEAD is where you are ({branch}).",
+  "good": "Good",
+  "goodHelp": "Where it still worked, such as the last release tag. Or right-click a commit: “Bisect: this one is good”.",
+  "functionFirst": "Test {name}'s commits first",
+  "functionFirstHelp": "Tests the commits that touched the picked function before git's own picks.",
+  "pickFunction": "Pick a function in the panel to suggest the commits that touched it.",
+  "start": "Start bisecting",
+  "firstBad": "The first bad commit",
+  "seeIt": "See it in the commit list",
+  "stopBisecting": "Stop bisecting",
+  "stopHelp": "Back to the branch it started from",
+  "testingNow": "Testing now",
+  "inPlay": {
+    "one": "{count} commit in play",
+    "other": "{count} commits in play"
+  },
+  "stepsLeft": {
+    "one": "about {count} step left",
+    "other": "about {count} steps left"
+  },
+  "tryIt": "Run or try it as it is checked out now, then say how it behaves.",
+  "markGood": "Good: it works here",
+  "markBad": "Bad: it is broken here",
+  "markSkip": "Skip: cannot tell",
+  "touched": "Touched {name} · {count} in play",
+  "noneTouched": "None of the commits still in play touched it.",
+  "testing": "testing",
+  "testThis": "Test this one",
+  "summary": "{good} marked good, {skipped} skipped. Stop takes you back to the branch it started from."
+}

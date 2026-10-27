@@ -1,0 +1,55 @@
+{
+  "summary": {
+    "one": "{count} import tussen onderdelen",
+    "other": "{count} imports tussen onderdelen"
+  },
+  "newBreaks": {
+    "one": "{count} nieuwe regelbreuk",
+    "other": "{count} nieuwe regelbreuken"
+  },
+  "breaksCount": {
+    "one": "{count} regelbreuk",
+    "other": "{count} regelbreuken"
+  },
+  "known": "{count} bekend (voorlopig geaccepteerd)",
+  "cycles": {
+    "one": "{count} kringloop bij runtime",
+    "other": "{count} kringlopen bij runtime"
+  },
+  "overTime": "In de tijd",
+  "typeOnly": "Imports van alleen types (gestreept)",
+  "onlyBreaks": "Alleen regelbreuken",
+  "rulesError": "De laagregels konden niet worden gelezen",
+  "noParts": "Geen onderdelen om te tekenen.",
+  "imports": "Imports",
+  "typesOnly": "alleen types",
+  "breaks": {
+    "layer": "breekt laagregel",
+    "door": "breekt ingangsregel"
+  },
+  "accepted": "voorlopig geaccepteerd",
+  "part": "Onderdeel",
+  "inside": "Naar binnen",
+  "filesAndFunctions": "Bestanden en functies",
+  "side": {
+    "out": "Gebruikt ({count})",
+    "in": "Gebruikt door ({count})"
+  },
+  "title": "Imports tussen onderdelen",
+  "config": {
+    "before": "Regels uit",
+    "afterConfig": ": een onderdeel mag lagere lagen gebruiken, en onderdelen van de eigen laag die staan in",
+    "afterUses": "; met",
+    "after": ", alleen via die bestanden. Onderdelen waar geen regel bij past, staan erboven en worden niet gecontroleerd."
+  },
+  "script": {
+    "before": "Regels uit het architectuurscript dat genoemd wordt in",
+    "after": "(het draait omdat de map vertrouwd is). Onderdelen die het niet noemt, staan erboven en worden niet gecontroleerd."
+  },
+  "none": {
+    "before": "Pijlen tonen imports tussen onderdelen. Voeg een",
+    "after": "toe om ze aan je eigen lagen te toetsen (zie de README van Haunt)."
+  },
+  "help": "Klik op een pijl voor de bestanden, op een onderdeel voor wat het gebruikt; dubbelklik om naar binnen te gaan. Tests zijn weggelaten.",
+  "runtimeCycles": "Kringlopen bij runtime"
+}

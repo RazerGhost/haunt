@@ -1,0 +1,31 @@
+{
+  "kind": {
+    "dead": {
+      "label": "Nothing uses them",
+      "what": "Not exported, and no call, reference or template mention the scan can see: likely dead.",
+      "empty": "Every function that is not exported is used."
+    },
+    "unreferenced": {
+      "label": "Exported, unused here",
+      "what": "Exported, but nothing in the scan uses them: dead, or used from outside (a tool or script).",
+      "empty": "Every export is used somewhere in the scan."
+    },
+    "export": {
+      "label": "Used only in their file",
+      "what": "Exported, but used only in the file that exports them: the export can go.",
+      "empty": "No export is used only in its own file."
+    }
+  },
+  "hint": "A hint, not a verdict. Left out: tests, methods, default exports, framework-loaded files and entry exports.",
+  "waiting": "Waiting for the scan.",
+  "working": "Working out the calls and uses…",
+  "show": "Show {name} in the panel",
+  "open": "Open {place} in the editor",
+  "looking": "Looking…",
+  "failed": "Could not tell.",
+  "never": "No other file ever mentioned it.",
+  "lastTitle": "The last commit where another file mentioned {name}",
+  "last": "Last mentioned elsewhere: {subject} · {date}",
+  "when": "When?",
+  "whenHelp": "Roughly when its last use went: the last commit where another file mentioned it"
+}

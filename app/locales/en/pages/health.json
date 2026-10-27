@@ -1,0 +1,40 @@
+{
+  "readFailed": "The health could not be read",
+  "title": "Health",
+  "intro": "History size, heavy files, Git LFS candidates and old branches. Read-only.",
+  "readAgain": "Read again",
+  "reading": "Going through every object in the history…",
+  "size": "Size",
+  "packs": {
+    "one": "The whole history on disk, in {count} pack",
+    "other": "The whole history on disk, in {count} packs"
+  },
+  "looseBefore": {
+    "one": ", with {count} loose object git packs at its next cleanup (",
+    "other": ", with {count} loose objects git packs at its next cleanup ("
+  },
+  "looseAfter": ")",
+  "packsAfter": ". Every clone downloads it.",
+  "largest": "Largest files in the history",
+  "everyVersion": "Every version counts: a file changed often or deleted long ago still weighs on every clone.",
+  "deletedBefore": "{size} of these are files the last commit no longer has; only rewriting the history (with ",
+  "deletedAfter": ") takes them out, and everyone then clones again.",
+  "deleted": "deleted",
+  "versions": {
+    "one": "{count} version",
+    "other": "{count} versions"
+  },
+  "forLfs": "For Git LFS",
+  "inLfs": "The large files are in Git LFS already.",
+  "noLfs": "No file is big enough to need Git LFS.",
+  "lfsBefore": "Large or binary files over 256 KB are stored whole in every version; Git LFS stores pointers instead. To move them: ",
+  "lfsMiddle": " with their pattern, then commit (and ",
+  "lfsAfter": " for the versions already in the history).",
+  "old": "Old branches",
+  "noOld": "Every branch had a commit in the last {days} days.",
+  "oldCount": {
+    "one": "{count} branch has had no commit in {days} days. Clean up branches shows which are merged and safe to delete.",
+    "other": "{count} branches have had no commit in {days} days. Clean up branches shows which are merged and safe to delete."
+  },
+  "cleanUp": "Clean up branches…"
+}

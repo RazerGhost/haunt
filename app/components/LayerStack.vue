@@ -37,16 +37,16 @@ function tint(name: string): Record<string, string> {
 }
 function heatTitle(name: string): string {
   const hot = props.heat?.get(name)
-  return hot ? ` · ${hot.commits} file changes in the last 180 days` : ''
+  return hot ? ` · ${t('LayerStack.heat', { count: hot.commits })}` : ''
 }
 </script>
 
 <template>
-  <section v-if="!props.compact" class="grid gap-1.5" aria-label="Layers">
+  <section v-if="!props.compact" class="grid gap-1.5" :aria-label="t('LayerStack.layers')">
     <div v-for="band in bands" :key="band.layer.id" class="grid gap-2.5 sm:grid-cols-[9rem_1fr]" :style="{ '--c': layerColor(band.layer.id) }">
       <div class="flex flex-col justify-center rounded-r-md border-l-4 border-(--c) bg-elevated/50 px-2.5 py-1.5">
         <span class="text-xs font-semibold tracking-wider text-(--c) uppercase">{{ band.layer.label }}</span>
-        <span class="text-xs text-muted tabular-nums">{{ band.tiles.length }} parts · {{ band.total }} fns</span>
+        <span class="text-xs text-muted tabular-nums">{{ t('LayerStack.bandSize', { parts: t('common.parts', { count: band.tiles.length }), functions: t('common.fns', { count: band.total }) }) }}</span>
       </div>
       <div class="flex min-w-0 flex-wrap gap-1.5">
         <button
@@ -65,9 +65,9 @@ function heatTitle(name: string): string {
             <ChangeBadge :counts="counts.get(tile.name)" />
           </span>
           <span class="text-label text-muted tabular-nums">
-            {{ tile.files }} files · {{ tile.functions }} fns<template v-if="searching"> · <b class="text-highlighted">{{ tile.hits }} found</b></template>
+            {{ t('LayerStack.tileSize', { files: t('common.files', { count: tile.files }), functions: t('common.fns', { count: tile.functions }) }) }}<template v-if="searching"> · <b class="text-highlighted">{{ t('LayerStack.found', { count: tile.hits }) }}</b></template>
           </span>
-          <span class="flex h-1 overflow-hidden rounded-full bg-elevated" :title="`${tile.topLevel} at file level, ${tile.functions - tile.topLevel} nested`">
+          <span class="flex h-1 overflow-hidden rounded-full bg-elevated" :title="t('LayerStack.split', { top: tile.topLevel, nested: tile.functions - tile.topLevel })">
             <i class="block h-full bg-(--c)" :style="{ width: `${tile.functions ? tile.topLevel / tile.functions * 100 : 0}%` }" />
             <i class="block h-full bg-(--c) opacity-40" :style="{ width: `${tile.functions ? (tile.functions - tile.topLevel) / tile.functions * 100 : 0}%` }" />
           </span>
@@ -76,11 +76,11 @@ function heatTitle(name: string): string {
     </div>
   </section>
 
-  <nav v-else class="grid gap-3" aria-label="Layers">
+  <nav v-else class="grid gap-3" :aria-label="t('LayerStack.layers')">
     <section v-for="band in bands" :key="band.layer.id" class="grid gap-0.5" :style="{ '--c': layerColor(band.layer.id) }">
       <h3 class="flex items-baseline justify-between border-l-2 border-(--c) px-2 py-0.5">
         <span class="text-label font-semibold tracking-wider text-(--c) uppercase">{{ band.layer.label }}</span>
-        <span class="text-label text-muted tabular-nums">{{ band.total }} fns</span>
+        <span class="text-label text-muted tabular-nums">{{ t('LayerStack.fns', { count: band.total }) }}</span>
       </h3>
       <button
         v-for="tile in band.tiles"
@@ -97,7 +97,7 @@ function heatTitle(name: string): string {
           <span class="truncate font-mono text-xs" :class="props.selectedPart === tile.name ? 'font-semibold text-highlighted' : ''">{{ short(tile.name) }}</span>
           <span class="flex shrink-0 items-center gap-1.5">
             <ChangeBadge :counts="counts.get(tile.name)" />
-            <span class="text-label text-muted tabular-nums">{{ searching ? `${tile.hits} found` : tile.functions }}</span>
+            <span class="text-label text-muted tabular-nums">{{ searching ? t('LayerStack.found', { count: tile.hits }) : tile.functions }}</span>
           </span>
         </span>
         <span class="flex h-0.5 overflow-hidden rounded-full bg-elevated">

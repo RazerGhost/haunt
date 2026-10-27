@@ -1,0 +1,51 @@
+{
+  "finishedAway": {
+    "fetch": "Fetchen is klaar terwijl Haunt op de achtergrond stond",
+    "pull": "Pullen is klaar terwijl Haunt op de achtergrond stond",
+    "push": "Pushen is klaar terwijl Haunt op de achtergrond stond"
+  },
+  "lastFetchFailed": "De laatste fetch is mislukt: zie de tooltip van Fetch.",
+  "finished": {
+    "fetch": "Fetchen is klaar",
+    "pull": "Pullen is klaar",
+    "push": "Pushen is klaar"
+  },
+  "newCommits": {
+    "one": "{count} nieuwe commit op de remote branch",
+    "other": "{count} nieuwe commits op de remote branch"
+  },
+  "fetchedBackground": "Op de achtergrond gefetcht.",
+  "seeThem": "Bekijken",
+  "gitAsks": "git vraagt",
+  "yes": "Ja",
+  "no": "Nee",
+  "promptHelp": "{prompt}. Haunt geeft je antwoord door aan git en bewaart niets.",
+  "password": "Wachtwoord of passphrase",
+  "answer": "Antwoord",
+  "send": "Versturen",
+  "fetchFailed": "Fetchen is niet afgerond",
+  "conflicts": "Pullen gestopt op conflicten",
+  "conflictsHelp": "Los ze op en ga dan verder (of breek af om alles terug te zetten).",
+  "upToDate": "Al up-to-date",
+  "upToDateHelp": "{upstream} heeft niets nieuws.",
+  "theRemoteBranch": "De remote branch",
+  "yourBranch": "Je branch",
+  "mergeOrRebase": "Mergen of rebasen?",
+  "itsRemoteBranch": "de remote branch",
+  "divergedHelp": "Zowel {branch} als {upstream} heeft nieuwe commits. Rebase zet die van jou erbovenop; merge voegt ze samen.",
+  "rebase": "Rebase",
+  "merge": "Merge",
+  "pullFailed": "Pullen is niet afgerond",
+  "whichRemote": "Naar welke remote pushen?",
+  "whichRemoteHelp": "{name} heeft nog geen remote branch; Haunt maakt er een met dezelfde naam.",
+  "thisBranch": "Deze branch",
+  "rejected": "De remote heeft commits die jij niet hebt",
+  "rejectedHelp": "{upstream} heeft commits die jij niet hebt. Eerst pullen, of overschrijven (alleen als hij sinds je laatste fetch niet is veranderd).",
+  "pullFirst": "Eerst pullen",
+  "overwrite": "Overschrijven",
+  "pushFailed": "Pushen is niet afgerond",
+  "tagWhichRemote": "{name} naar welke remote pushen?",
+  "severalRemotes": "Deze repository heeft meerdere remotes.",
+  "tagPushed": "{name} gepusht",
+  "tagNotPushed": "{name} is niet gepusht"
+}

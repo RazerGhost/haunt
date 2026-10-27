@@ -1,0 +1,21 @@
+{
+  "readError": "De geschiedenis kon niet worden gelezen.",
+  "status": {
+    "added": "Nieuw",
+    "deleted": "Verwijderd",
+    "renamed": "Hernoemd",
+    "copied": "Gekopieerd",
+    "type": "Type gewijzigd"
+  },
+  "pickFile": "Kies een bestand: de geschiedenis opent vanuit de kop van een diff.",
+  "blame": "Blame",
+  "filter": "Filter op bericht of auteur",
+  "filterLabel": "Filter de geschiedenis",
+  "compareHint": "Ctrl-klik op een tweede commit om het bestand tussen de twee te vergelijken.",
+  "from": "van {path}",
+  "noCommits": "Nog geen commit heeft dit bestand.",
+  "between": "{from} → {to}: het bestand tussen twee commits",
+  "stopComparing": "Stop met vergelijken",
+  "blameAt": "Blame bij deze commit",
+  "showCommit": "Toon de commit"
+}

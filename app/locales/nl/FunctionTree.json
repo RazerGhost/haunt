@@ -1,0 +1,15 @@
+{
+  "kind": {
+    "function": "functie",
+    "arrow": "pijlfunctie",
+    "method": "methode",
+    "class": "klasse"
+  },
+  "where": "{name} (regels {from}–{to})",
+  "exported": "exp",
+  "calls": {
+    "one": "Aangeroepen vanuit {count} functie, roept {out} aan",
+    "other": "Aangeroepen vanuit {count} functies, roept {out} aan"
+  },
+  "open": "{name} openen in de editor"
+}

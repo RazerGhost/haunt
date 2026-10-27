@@ -1,0 +1,8 @@
+{
+  "guessed": "Matched by name, without a type checker: likely, not certain",
+  "sites": {
+    "one": "{count} call site",
+    "other": "{count} call sites"
+  },
+  "open": "Open {name} in the editor"
+}

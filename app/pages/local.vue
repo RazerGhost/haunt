@@ -12,14 +12,14 @@ const when = (seconds: number) => new Date(seconds * 1000).toLocaleTimeString()
   <div class="flex h-full flex-col">
     <div class="flex items-center gap-2 border-b border-default px-3 py-1.5">
       <UFieldGroup size="xs">
-        <UButton label="Files" icon="i-lucide-files" :color="view === 'files' ? 'primary' : 'neutral'" :variant="view === 'files' ? 'solid' : 'outline'" @click="view = 'files'" />
-        <UButton label="Functions" icon="i-lucide-braces" :color="view === 'functions' ? 'primary' : 'neutral'" :variant="view === 'functions' ? 'solid' : 'outline'" @click="view = 'functions'" />
+        <UButton :label="t('pages.local.files')" icon="i-lucide-files" :color="view === 'files' ? 'primary' : 'neutral'" :variant="view === 'files' ? 'solid' : 'outline'" @click="view = 'files'" />
+        <UButton :label="t('pages.local.functions')" icon="i-lucide-braces" :color="view === 'functions' ? 'primary' : 'neutral'" :variant="view === 'functions' ? 'solid' : 'outline'" @click="view = 'functions'" />
       </UFieldGroup>
       <UPopover :content="{ align: 'end' }">
-        <UButton label="Activity" icon="i-lucide-history" size="xs" color="neutral" variant="ghost" class="ml-auto" />
+        <UButton :label="t('pages.local.activity')" icon="i-lucide-history" size="xs" color="neutral" variant="ghost" class="ml-auto" />
         <template #content>
           <div class="grid max-h-96 w-[32rem] gap-2 overflow-y-auto p-3 text-xs">
-            <p v-if="!activity.length" class="text-muted">Haunt has not written to this repository since it started.</p>
+            <p v-if="!activity.length" class="text-muted">{{ t('pages.local.noActivity') }}</p>
             <div v-for="(entry, at) in activity" :key="at" class="grid gap-0.5">
               <div class="flex items-center gap-2">
                 <UIcon :name="entry.ok ? 'i-lucide-check' : 'i-lucide-x'" class="size-3.5 shrink-0" :class="entry.ok ? 'text-success' : 'text-error'" />
@@ -35,7 +35,7 @@ const when = (seconds: number) => new Date(seconds * 1000).toLocaleTimeString()
     <div v-if="view === 'files' && notRepository" class="grid flex-1 place-items-center p-8 text-center text-muted">
       <div class="grid justify-items-center gap-2">
         <UIcon name="i-lucide-git-branch" class="size-6" />
-        <p>This folder is not in a git repository.</p>
+        <p>{{ t('pages.local.notRepository') }}</p>
       </div>
     </div>
     <LocalChanges v-else-if="view === 'files'" />

@@ -45,13 +45,13 @@ export function useRefActions() {
   /** A new branch at `at` (a branch, tag or commit; HEAD when null), switched to when asked. */
   async function newBranch(at: { rev: string, label: string } | null = null): Promise<void> {
     const answer = await dialog.prompt({
-      title: 'New branch',
-      description: at ? `From ${at.label}.` : 'From the commit you are on.',
-      input: { label: 'Name', value: '', placeholder: 'feature/name' },
-      checkbox: { label: 'Switch to it', value: true },
-      confirm: 'Create branch'
+      title: t('composables.useRefActions.newBranch'),
+      description: at ? t('composables.useRefActions.from', { name: at.label }) : t('composables.useRefActions.fromHere'),
+      input: { label: t('composables.useRefActions.name'), value: '', placeholder: 'feature/name' },
+      checkbox: { label: t('composables.useRefActions.switchToIt'), value: true },
+      confirm: t('composables.useRefActions.createBranch')
     })
-    if (answer) await run('The branch was not created', where => haunt.createBranch(where, answer.text, at?.rev ?? null, answer.checked))
+    if (answer) await run(t('composables.useRefActions.branchNotCreated'), where => haunt.createBranch(where, answer.text, at?.rev ?? null, answer.checked))
   }
 
   /** Switches to a branch (a remote one through a local branch that tracks it), asking about local changes first. */
@@ -59,22 +59,22 @@ export function useRefActions() {
     let mode: 'carry' | 'stash' = 'carry'
     if (localChanges.value) {
       const chosen = await dialog.choose({
-        title: `Switch to ${name}?`,
-        description: `You have ${localChanges.value} ${localChanges.value === 1 ? 'file' : 'files'} with local changes.`,
+        title: t('composables.useRefActions.switchTitle', { name }),
+        description: t('composables.useRefActions.switchChanges', { count: localChanges.value }),
         choices: [
-          { label: 'Take them along', value: 'carry', color: 'primary' },
-          { label: 'Stash them first', value: 'stash' }
+          { label: t('composables.useRefActions.carry'), value: 'carry', color: 'primary' },
+          { label: t('composables.useRefActions.stashFirst'), value: 'stash' }
         ]
       })
       if (!chosen) return
       mode = chosen
     }
-    await run(`Haunt did not switch to ${name}`, where => haunt.switchBranch(where, name, mode))
+    await run(t('composables.useRefActions.notSwitched', { name }), where => haunt.switchBranch(where, name, mode))
   }
 
   async function renameBranch(name: string): Promise<void> {
-    const answer = await dialog.prompt({ title: `Rename ${name}`, input: { label: 'New name', value: name }, confirm: 'Rename' })
-    if (answer && answer.text !== name) await run('The branch was not renamed', where => haunt.renameBranch(where, name, answer.text))
+    const answer = await dialog.prompt({ title: t('composables.useRefActions.renameTitle', { name }), input: { label: t('composables.useRefActions.newName'), value: name }, confirm: t('composables.useRefActions.rename') })
+    if (answer && answer.text !== name) await run(t('composables.useRefActions.branchNotRenamed'), where => haunt.renameBranch(where, name, answer.text))
   }
 
   /** Deletes a branch; one with commits no other branch has only after saying how many would be lost. */
@@ -86,60 +86,60 @@ export function useRefActions() {
       lost = await haunt.unmerged(at, name)
     } catch { /* asked below as if merged; Rust checks again */ }
     const ok = await dialog.confirm({
-      title: `Delete ${name}?`,
+      title: t('composables.useRefActions.deleteTitle', { name }),
       description: lost
-        ? `${lost === 1 ? 'One commit' : `${lost} commits`} on it ${lost === 1 ? 'is' : 'are'} on no other branch or tag. Git keeps ${lost === 1 ? 'it' : 'them'} for a while in its reflog, but Haunt cannot show ${lost === 1 ? 'it' : 'them'} after this.`
-        : 'Its commits are on other branches too: nothing is lost.',
-      confirm: 'Delete branch',
+        ? t('composables.useRefActions.lost', { count: lost })
+        : t('composables.useRefActions.nothingLost'),
+      confirm: t('composables.useRefActions.deleteBranch'),
       danger: lost > 0
     })
-    if (ok) await run('The branch was not deleted', where => haunt.deleteBranch(where, name, lost > 0))
+    if (ok) await run(t('composables.useRefActions.branchNotDeleted'), where => haunt.deleteBranch(where, name, lost > 0))
   }
 
   async function stash(): Promise<void> {
     const answer = await dialog.prompt({
-      title: 'Stash local changes',
-      input: { label: 'Message', value: '', placeholder: 'What you were doing (optional)', required: false },
-      checkbox: { label: 'Untracked files too', value: true },
-      confirm: 'Stash'
+      title: t('composables.useRefActions.stashTitle'),
+      input: { label: t('composables.useRefActions.message'), value: '', placeholder: t('composables.useRefActions.messagePlaceholder'), required: false },
+      checkbox: { label: t('composables.useRefActions.untracked'), value: true },
+      confirm: t('composables.useRefActions.stash')
     })
-    if (answer) await run('Nothing was stashed', where => haunt.stash(where, answer.text || null, answer.checked))
+    if (answer) await run(t('composables.useRefActions.notStashed'), where => haunt.stash(where, answer.text || null, answer.checked))
   }
 
-  const applyStash = (index: number, pop: boolean) => run(pop ? 'The stash was not popped' : 'The stash was not applied', where => haunt.applyStash(where, index, pop))
+  const applyStash = (index: number, pop: boolean) => run(pop ? t('composables.useRefActions.notPopped') : t('composables.useRefActions.notApplied'), where => haunt.applyStash(where, index, pop))
 
   async function dropStash(index: number, message: string): Promise<void> {
-    const ok = await dialog.confirm({ title: 'Drop this stash?', description: `${message}. It is kept for 30 days and can be restored from Stashes.`, confirm: 'Drop', danger: true })
-    if (!ok || !await run('The stash was not dropped', where => haunt.dropStash(where, index))) return
+    const ok = await dialog.confirm({ title: t('composables.useRefActions.dropTitle'), description: t('composables.useRefActions.dropHelp', { message }), confirm: t('composables.useRefActions.drop'), danger: true })
+    if (!ok || !await run(t('composables.useRefActions.notDropped'), where => haunt.dropStash(where, index))) return
     const at = repo.value
     const kept = at ? await haunt.droppedStashes(at).then(list => list[0]).catch(() => undefined) : undefined
     if (kept) {
       toast.add({
-        title: 'Stash dropped',
-        description: `${message}. Kept for 30 days.`,
+        title: t('composables.useRefActions.dropped'),
+        description: t('composables.useRefActions.droppedHelp', { message }),
         icon: 'i-lucide-archive-x',
         duration: 12000,
-        actions: [{ label: 'Undo', color: 'neutral', variant: 'outline', onClick: () => { void restoreStash(kept.id) } }]
+        actions: [{ label: t('common.undo'), color: 'neutral', variant: 'outline', onClick: () => { void restoreStash(kept.id) } }]
       })
     }
   }
 
-  const restoreStash = (id: string) => run('The stash was not brought back', where => haunt.restoreStash(where, id))
+  const restoreStash = (id: string) => run(t('composables.useRefActions.notRestored'), where => haunt.restoreStash(where, id))
 
   async function newTag(at: { rev: string, label: string } | null = null): Promise<void> {
     const answer = await dialog.prompt({
-      title: 'New tag',
-      description: at ? `On ${at.label}.` : 'On the commit you are on.',
-      input: { label: 'Name', value: '', placeholder: 'v1.2.0' },
-      note: { label: 'Message (optional)', value: '', placeholder: 'Makes an annotated tag' },
-      confirm: 'Create tag'
+      title: t('composables.useRefActions.newTag'),
+      description: at ? t('composables.useRefActions.on', { name: at.label }) : t('composables.useRefActions.onHere'),
+      input: { label: t('composables.useRefActions.name'), value: '', placeholder: 'v1.2.0' },
+      note: { label: t('composables.useRefActions.tagMessage'), value: '', placeholder: t('composables.useRefActions.tagMessagePlaceholder') },
+      confirm: t('composables.useRefActions.createTag')
     })
-    if (answer) await run('The tag was not created', where => haunt.createTag(where, answer.text, at?.rev ?? null, answer.note || null))
+    if (answer) await run(t('composables.useRefActions.tagNotCreated'), where => haunt.createTag(where, answer.text, at?.rev ?? null, answer.note || null))
   }
 
   async function deleteTag(name: string): Promise<void> {
-    const ok = await dialog.confirm({ title: `Delete the tag ${name}?`, description: 'Only here: a tag already pushed stays on the remote.', confirm: 'Delete tag', danger: true })
-    if (ok) await run('The tag was not deleted', where => haunt.deleteTag(where, name))
+    const ok = await dialog.confirm({ title: t('composables.useRefActions.deleteTagTitle', { name }), description: t('composables.useRefActions.deleteTagHelp'), confirm: t('composables.useRefActions.deleteTag'), danger: true })
+    if (ok) await run(t('composables.useRefActions.tagNotDeleted'), where => haunt.deleteTag(where, name))
   }
 
   return { busy, dropped, loadDropped, newBranch, switchTo, renameBranch, deleteBranch, stash, applyStash, dropStash, restoreStash, newTag, deleteTag }

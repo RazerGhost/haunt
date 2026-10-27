@@ -1,0 +1,21 @@
+{
+  "deleted": {
+    "one": "{count} branch verwijderd",
+    "other": "{count} branches verwijderd"
+  },
+  "notDeleted": "Niet verwijderd: {names}.",
+  "reflog": "git bewaart hun commits nog een tijd in de reflog.",
+  "title": "Branches opruimen",
+  "description": "Gemergede branches, en branches waarvan de remote weg is.",
+  "nothing": "Niets op te ruimen.",
+  "merged": "gemerged",
+  "goneOnly": {
+    "one": "remote weg · {count} commit alleen hier",
+    "other": "remote weg · {count} commits alleen hier"
+  },
+  "gone": "remote weg",
+  "delete": {
+    "one": "{count} branch verwijderen",
+    "other": "{count} branches verwijderen"
+  }
+}

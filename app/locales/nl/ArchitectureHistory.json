@@ -1,0 +1,15 @@
+{
+  "readError": "De geschiedenis kon niet worden gelezen.",
+  "skipped": "Niet gelezen: te veel bestanden (of een eerste commit).",
+  "breaks": "+{added} regelovertredingen, −{removed}; {after} erna",
+  "imports": {
+    "one": "{count} import toegevoegd, {removed} verwijderd",
+    "other": "{count} imports toegevoegd, {removed} verwijderd"
+  },
+  "title": "Regelovertredingen door de tijd",
+  "summary": "Laatste {count} commits: {changed} veranderden de regelovertredingen. Omhoog: toegevoegd, omlaag: verwijderd; de lijn is het lopende totaal. Klik op een balk voor de imports.",
+  "intro": "Regelovertredingen toegevoegd en verwijderd door elk van de laatste {count} commits. Dit duurt even.",
+  "readAgain": "Opnieuw lezen",
+  "count": "Tellen",
+  "noRules": "Geen regels controleren hier imports, dus er valt niets te tellen."
+}

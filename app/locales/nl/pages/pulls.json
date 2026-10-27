@@ -1,0 +1,35 @@
+{
+  "readFailed": "De pull requests konden niet worden gelezen.",
+  "fetchedOne": "#{number} opgehaald",
+  "fetched": {
+    "one": "{count} pull request opgehaald van {remote}",
+    "other": "{count} pull requests opgehaald van {remote}"
+  },
+  "newestOf": "De nieuwste {count} van {total}. Haal een oudere op met zijn nummer.",
+  "notFetched": "De pull requests zijn niet opgehaald",
+  "fetchFailed": "De pull requests konden niet worden opgehaald.",
+  "fetchAgain": "Opnieuw ophalen",
+  "fetchPulls": "Pull requests ophalen",
+  "numberPlaceholder": "Een oudere: #123",
+  "number": "Nummer van de pull request",
+  "fetch": "Ophalen",
+  "note": "Opgehaald als refs, geen account nodig. Titels en opmerkingen staan op de host; hier zie je de commits van elke pull request.",
+  "none": "Nog geen pull requests opgehaald.",
+  "commits": {
+    "one": "{count} commit",
+    "other": "{count} commits"
+  },
+  "compared": {
+    "one": "{count} commit van {author}, vergeleken met waar hij van {base} afging.",
+    "other": "{count} commits van {author}, vergeleken met waar hij van {base} afging."
+  },
+  "noBase": {
+    "one": "{count} commit van {author}; geen hoofdbranch om mee te vergelijken, dus zie je de nieuwste commit.",
+    "other": "{count} commits van {author}; geen hoofdbranch om mee te vergelijken, dus zie je de nieuwste commit."
+  },
+  "inCommitList": "In de commitlijst",
+  "newBranch": "Nieuwe branch hiervandaan…",
+  "allChanges": "Alle wijzigingen",
+  "pick": "Kies een pull request om te reviewen.",
+  "fetchToReview": "Haal pull requests op om ze te reviewen zonder van branch te wisselen."
+}

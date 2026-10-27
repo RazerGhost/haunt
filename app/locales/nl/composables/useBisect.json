@@ -1,0 +1,7 @@
+{
+  "fallback": "Dat lukte git niet.",
+  "notStarted": "Bisect is niet gestart",
+  "notMarked": "Niet gemarkeerd",
+  "notCheckedOut": "Niet uitgecheckt",
+  "notStopped": "Bisect is niet gestopt"
+}

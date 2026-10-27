@@ -30,7 +30,9 @@ type Status = 'loading' | 'scanning' | 'ready' | 'error' | 'no-root'
 const structure = shallowRef<Scan | null>(null)
 const calls = shallowRef<Calls | null>(null)
 const status = ref<Status>('loading')
-const message = ref('')
+/** What the scan is doing, said in the window's language when it is read (so it follows a change of language). */
+const said = shallowRef<() => string>(() => '')
+const message = computed(() => said.value())
 const search = ref('')
 
 /** The scan with its call graph. After a save the last call graph stays until the new one is in, rather than an
@@ -75,6 +77,14 @@ const byCalls = computed(() => {
 
 const index = computed<ScanIndex | null>(() => (byStructure.value ? { ...byStructure.value, ...byCalls.value } : null))
 
+/** Rust names why it scans again in English: the start, a rescan, trust changing, or the file that changed. */
+const REASONS: Record<string, string> = { 'a rescan': 'rescan', 'trusting this folder': 'trusted', 'no longer trusting this folder': 'untrusted' }
+function rescanning(reason: string): string {
+  if (reason === 'start') return t('composables.useCode.scanning')
+  const known = REASONS[reason]
+  return known ? t(`composables.useCode.rescanningAfter.${known}`) : t('composables.useCode.rescanningAfterFile', { file: reason })
+}
+
 export function countFunctions(items: FunctionNode[]): number {
   return items.reduce((sum, fn) => sum + 1 + countFunctions(fn.children), 0)
 }
@@ -97,12 +107,12 @@ export function startCode(): void {
       structure.value = found
       if (status.value === 'loading' || status.value === 'error') {
         status.value = 'scanning'
-        message.value = 'Working out the call graph'
+        said.value = () => t('composables.useCode.callGraph')
       }
       void loadCalls()
     } catch (error) {
       status.value = 'error'
-      message.value = errorMessage(error, 'The repository could not be scanned.')
+      said.value = () => errorMessage(error, t('composables.useCode.notScanned'))
     }
   }
 
@@ -113,7 +123,7 @@ export function startCode(): void {
       calls.value = found
       if (found.scannedAt === structure.value?.scannedAt) {
         status.value = 'ready'
-        message.value = ''
+        said.value = () => ''
       }
     } catch { /* the next news reads them again */ }
   }
@@ -127,11 +137,11 @@ export function startCode(): void {
     search.value = ''
     if (now) {
       status.value = 'loading'
-      message.value = 'Scanning'
+      said.value = () => t('composables.useCode.scanning')
       void loadStructure()
     } else {
       status.value = info.value ? 'no-root' : 'loading'
-      message.value = ''
+      said.value = () => ''
     }
   }, { immediate: true })
   watch(info, (now) => {
@@ -141,19 +151,21 @@ export function startCode(): void {
   onNews((news) => {
     if (news.type === 'scanning') {
       status.value = 'scanning'
-      message.value = news.reason === 'start' ? 'Scanning' : `Rescanning after ${news.reason}`
+      const reason = news.reason
+      said.value = () => rescanning(reason)
     } else if (news.type === 'scan') {
       if (!news.complete) {
         if (news.scannedAt !== structure.value?.scannedAt) void loadStructure()
         status.value = 'scanning'
-        message.value = 'Working out the call graph'
+        said.value = () => t('composables.useCode.callGraph')
       } else {
         if (news.scannedAt !== structure.value?.scannedAt) void loadStructure()
         else void loadCalls()
       }
     } else if (news.type === 'error') {
       status.value = 'error'
-      message.value = news.message
+      const text = news.message
+      said.value = () => text
     }
   })
 }
@@ -183,7 +195,7 @@ export function useCode() {
     try {
       await haunt.openFile(repo.value, editor.value, path, line)
     } catch (error) {
-      toast.add({ title: 'Could not open the editor', description: errorMessage(error, 'Try another editor.'), color: 'error', icon: 'i-lucide-circle-alert' })
+      toast.add({ title: t('composables.useCode.editorNotOpened'), description: errorMessage(error, t('composables.useCode.tryAnotherEditor')), color: 'error', icon: 'i-lucide-circle-alert' })
     }
   }
 

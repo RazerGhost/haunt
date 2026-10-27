@@ -1,0 +1,25 @@
+{
+  "pickedLines": {
+    "one": "{count} gekozen regel van {path}",
+    "other": "{count} gekozen regels van {path}"
+  },
+  "files": {
+    "one": "{count} bestand",
+    "other": "{count} bestanden"
+  },
+  "unstaged": "Niet gestaged",
+  "stageAll": "Alles stagen",
+  "discardAll": "Alles weggooien",
+  "discard": "Weggooien",
+  "stage": "Stagen",
+  "nothingUnstaged": "Niets ongestaged.",
+  "staged": "Gestaged",
+  "unstageAll": "Alles unstagen",
+  "unstage": "Unstagen",
+  "nothingStaged": "Niets gestaged.",
+  "recentlyDiscarded": "Onlangs weggegooid",
+  "noChanges": "Geen lokale wijzigingen.",
+  "discardTitle": "Deze wijzigingen weggooien?",
+  "discardDescription": "{what}. Ze blijven 30 dagen bewaard in Onlangs weggegooid.",
+  "keep": "Houden"
+}

@@ -44,13 +44,13 @@ const hits = computed(() => found.value.reduce((sum, file) => sum + matchesSearc
 <template>
   <div v-if="!scan" class="grid justify-items-center gap-2 py-16 text-muted">
     <UIcon v-if="status !== 'error'" name="i-lucide-loader-circle" class="size-5 animate-spin" />
-    <p>{{ message || 'Scanning' }}</p>
+    <p>{{ message || t('pages.layers.scanning') }}</p>
   </div>
   <div v-else :class="wide ? 'flex h-full' : 'grid gap-5 px-4 py-5'">
     <aside v-if="wide" class="flex w-72 shrink-0 flex-col border-r border-default">
       <div class="flex items-center justify-between border-b border-default px-3 py-2">
-        <span class="text-xs font-semibold tracking-wider text-muted uppercase">Layers</span>
-        <USwitch v-model="hotspots" label="Hotspots" size="xs" :title="`Tint parts by changes in the last ${days} days`" />
+        <span class="text-xs font-semibold tracking-wider text-muted uppercase">{{ t('pages.layers.layers') }}</span>
+        <USwitch v-model="hotspots" :label="t('pages.layers.hotspots')" size="xs" :title="t('pages.layers.hotspotsHelp', { count: days })" />
       </div>
       <div class="min-h-0 flex-1 overflow-auto p-2">
         <LayerStack compact :selected-part="term ? null : part" :heat="heat" @select="choose" />
@@ -58,20 +58,20 @@ const hits = computed(() => found.value.reduce((sum, file) => sum + matchesSearc
     </aside>
     <template v-else>
       <div class="flex justify-end">
-        <USwitch v-model="hotspots" label="Hotspots" size="xs" :title="`Tint parts by changes in the last ${days} days`" />
+        <USwitch v-model="hotspots" :label="t('pages.layers.hotspots')" size="xs" :title="t('pages.layers.hotspotsHelp', { count: days })" />
       </div>
       <LayerStack :selected-part="term ? null : part" :heat="heat" @select="choose" />
     </template>
 
     <div :class="wide ? 'grid min-w-0 flex-1 content-start gap-5 overflow-auto p-5' : 'contents'">
       <TrustLayersNote />
-      <UAlert v-if="scan.architectureError" color="warning" variant="subtle" icon="i-lucide-triangle-alert" title="The layer map could not be read" :description="scan.architectureError" />
+      <UAlert v-if="scan.architectureError" color="warning" variant="subtle" icon="i-lucide-triangle-alert" :title="t('pages.layers.mapError')" :description="scan.architectureError" />
       <section v-if="term" class="grid gap-3">
-        <h2 class="text-lg font-semibold text-highlighted">{{ hits }} functions named like “{{ search.trim() }}”, in {{ found.length }} files</h2>
+        <h2 class="text-lg font-semibold text-highlighted">{{ t('pages.layers.found', { count: hits, term: search.trim(), files: found.length }) }}</h2>
         <div class="grid grid-cols-[repeat(auto-fill,minmax(min(22rem,100%),1fr))] items-start gap-2.5">
           <FileCard v-for="file in found.slice(0, 150)" :key="file.path" :file="file" :label="file.path" :term="term" open />
         </div>
-        <p v-if="found.length > 150" class="text-sm text-muted">Showing the first 150 files. Narrow the search to see the rest.</p>
+        <p v-if="found.length > 150" class="text-sm text-muted">{{ t('pages.layers.first150') }}</p>
       </section>
       <PartFiles v-else :part="part" :class="wide ? '' : 'rounded-lg border border-default p-4'" />
     </div>

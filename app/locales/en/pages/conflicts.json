@@ -1,0 +1,37 @@
+{
+  "notRead": "The file could not be read.",
+  "moreLines": {
+    "one": "… {count} more line …",
+    "other": "… {count} more lines …"
+  },
+  "resolved": "{path} is resolved",
+  "notResolved": "Not resolved",
+  "markersTitle": "Conflict markers are left",
+  "markersDescription": "The file still has <<<<<<< and >>>>>>> lines. Mark it resolved anyway?",
+  "markResolved": "Mark resolved",
+  "nothing": "Nothing to resolve: no merge, revert, cherry-pick or rebase is going on.",
+  "allCommits": "All commits",
+  "conflicts": "Conflicts",
+  "noneLeft": "No conflicts left. Continue in the banner above to finish.",
+  "openInEditor": "Open in editor",
+  "takeOurs": "Take all of yours ({name})",
+  "takeTheirs": "Take all of theirs ({name})",
+  "deletedOurs": "Your side ({name}) deleted this file; theirs changed it. Take one side: the file, or its deletion.",
+  "deletedTheirs": "Their side ({name}) deleted this file; yours changed it. Take one side: the file, or its deletion.",
+  "binary": "A binary file: take one side whole.",
+  "blocksLeft": {
+    "one": "{count} block conflicts: pick yours, theirs or both for each.",
+    "other": "{count} blocks conflict: pick yours, theirs or both for each."
+  },
+  "allChosen": "Every block is chosen. Mark the file resolved to stage it.",
+  "previous": "Previous conflict",
+  "next": "Next conflict",
+  "editAsText": "Edit as text",
+  "yours": "Yours",
+  "theirs": "Theirs",
+  "empty": "(nothing)",
+  "useOurs": "Use yours",
+  "useTheirs": "Use theirs",
+  "useBoth": "Use both",
+  "markAsResolved": "Mark as resolved"
+}

@@ -1,0 +1,21 @@
+{
+  "currentBranch": "de huidige branch",
+  "checkOut": "Uitchecken",
+  "newBranch": "Nieuwe branch vanaf hier…",
+  "merge": "Mergen in {name}…",
+  "copyName": "Naam kopiëren",
+  "switchTo": "Ernaar wisselen",
+  "newTag": "Nieuwe tag hier…",
+  "worktree": "Openen in worktree…",
+  "rename": "Hernoemen…",
+  "delete": "Verwijderen…",
+  "upstreamGone": "volgde {upstream}, maar die is weg",
+  "tracks": "volgt {upstream}",
+  "tracksNothing": "volgt geen remote branch",
+  "mergeHere": "hier mergen",
+  "rebaseOnto": "rebasen op",
+  "gone": "weg",
+  "toPush": "{count} te pushen",
+  "toPull": "{count} te pullen",
+  "pullTitle": "{pull}. Klik om hem op het web te openen."
+}

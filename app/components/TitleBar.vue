@@ -18,33 +18,33 @@ async function profiles(change: () => Promise<typeof info.value>, what: string):
     info.value = await change()
     picking.value = false
   } catch (error) {
-    failure.failed(what, error, 'The profiles did not change.')
+    failure.failed(what, error, t('TitleBar.profilesUnchanged'))
   }
 }
 async function newProfile(): Promise<void> {
   const answer = await dialog.prompt({
-    title: 'New profile',
-    description: 'A profile has its own tabs and recent list, to keep work, personal and client projects apart. It starts empty.',
-    input: { label: 'Name', value: '', placeholder: 'Work' },
-    confirm: 'Create and switch'
+    title: t('TitleBar.newProfile'),
+    description: t('TitleBar.newProfileHelp'),
+    input: { label: t('TitleBar.name'), value: '', placeholder: t('TitleBar.namePlaceholder') },
+    confirm: t('TitleBar.createAndSwitch')
   })
-  if (answer?.text.trim()) await profiles(() => haunt.newProfile(answer.text.trim()), 'The profile was not made')
+  if (answer?.text.trim()) await profiles(() => haunt.newProfile(answer.text.trim()), t('TitleBar.profileNotMade'))
 }
 async function renameProfile(): Promise<void> {
   const current = info.value?.profile ?? ''
-  const answer = await dialog.prompt({ title: `Rename ${current}`, input: { label: 'New name', value: current }, confirm: 'Rename' })
-  if (answer?.text.trim()) await profiles(() => haunt.renameProfile(current, answer.text.trim()), 'The profile was not renamed')
+  const answer = await dialog.prompt({ title: t('TitleBar.renameTitle', { name: current }), input: { label: t('TitleBar.newName'), value: current }, confirm: t('TitleBar.rename') })
+  if (answer?.text.trim()) await profiles(() => haunt.renameProfile(current, answer.text.trim()), t('TitleBar.profileNotRenamed'))
 }
 async function deleteProfile(name: string): Promise<void> {
-  const ok = await dialog.confirm({ title: `Delete the profile ${name}?`, description: 'Its tabs and recent list go; the folders themselves stay where they are.', confirm: 'Delete', danger: true })
-  if (ok) await profiles(() => haunt.deleteProfile(name), 'The profile was not deleted')
+  const ok = await dialog.confirm({ title: t('TitleBar.deleteTitle', { name }), description: t('TitleBar.deleteHelp'), confirm: t('TitleBar.delete'), danger: true })
+  if (ok) await profiles(() => haunt.deleteProfile(name), t('TitleBar.profileNotDeleted'))
 }
 const profileMenu = computed(() => [
-  others.value.map(name => ({ label: name, icon: 'i-lucide-user-round', onSelect: () => profiles(() => haunt.switchProfile(name), 'The profile did not switch') })),
+  others.value.map(name => ({ label: name, icon: 'i-lucide-user-round', onSelect: () => profiles(() => haunt.switchProfile(name), t('TitleBar.profileNotSwitched')) })),
   [
-    { label: 'New profile…', icon: 'i-lucide-user-round-plus', onSelect: newProfile },
-    { label: `Rename ${info.value?.profile ?? ''}…`, icon: 'i-lucide-pencil', onSelect: renameProfile },
-    ...others.value.length ? [{ label: 'Delete a profile', icon: 'i-lucide-trash-2', children: others.value.map(name => ({ label: name, color: 'error' as const, onSelect: () => deleteProfile(name) })) }] : []
+    { label: t('TitleBar.newProfileMenu'), icon: 'i-lucide-user-round-plus', onSelect: newProfile },
+    { label: t('TitleBar.renameMenu', { name: info.value?.profile ?? '' }), icon: 'i-lucide-pencil', onSelect: renameProfile },
+    ...others.value.length ? [{ label: t('TitleBar.deleteProfile'), icon: 'i-lucide-trash-2', children: others.value.map(name => ({ label: name, color: 'error' as const, onSelect: () => deleteProfile(name) })) }] : []
   ]
 ])
 defineShortcuts({ meta_shift_t: () => { void reopenClosed() } })
@@ -54,11 +54,11 @@ const openMenu = computed(() => {
   const recent = (info.value?.recent ?? []).filter(path => !(info.value?.tabs ?? []).includes(path)).slice(0, 8)
   const last = closed.value.at(-1)
   return [
-    [{ label: 'Open a repository…', icon: 'i-lucide-folder-open', onSelect: () => { picking.value = true } }],
-    ...last ? [[{ label: `Reopen ${name(last)}`, icon: 'i-lucide-rotate-ccw', kbds: ['meta', 'shift', 't'], onSelect: () => { void reopenClosed() } }]] : [],
+    [{ label: t('TitleBar.openRepository'), icon: 'i-lucide-folder-open', onSelect: () => { picking.value = true } }],
+    ...last ? [[{ label: t('TitleBar.reopen', { name: name(last) }), icon: 'i-lucide-rotate-ccw', kbds: ['meta', 'shift', 't'], onSelect: () => { void reopenClosed() } }]] : [],
     ...recent.length ? [recent.map(path => ({ label: name(path), suffix: path, icon: 'i-lucide-folder-git-2', onSelect: () => { void chooseRoot(path) } }))] : [],
     // The first extra profile starts here; after that the profile menu has it too.
-    ...others.value.length ? [] : [[{ label: 'New profile…', icon: 'i-lucide-user-round-plus', onSelect: newProfile }]]
+    ...others.value.length ? [] : [[{ label: t('TitleBar.newProfileMenu'), icon: 'i-lucide-user-round-plus', onSelect: newProfile }]]
   ]
 })
 const { inApp, mac } = useDesktop()
@@ -85,7 +85,7 @@ async function setLook(path: string, change: { pinned?: boolean, color?: string 
   try {
     info.value = await haunt.setTabLook(path, { ...now, ...change })
   } catch (error) {
-    failure.failed('The tab did not change', error)
+    failure.failed(t('TitleBar.tabUnchanged'), error)
   }
 }
 
@@ -100,28 +100,28 @@ function tabMenu(path: string) {
   return [
     [
       pinned(path)
-        ? { label: 'Unpin', icon: 'i-lucide-pin-off', onSelect: () => setLook(path, { pinned: false }) }
-        : { label: 'Pin', icon: 'i-lucide-pin', onSelect: () => setLook(path, { pinned: true }) },
+        ? { label: t('TitleBar.unpin'), icon: 'i-lucide-pin-off', onSelect: () => setLook(path, { pinned: false }) }
+        : { label: t('TitleBar.pin'), icon: 'i-lucide-pin', onSelect: () => setLook(path, { pinned: true }) },
       {
-        label: 'Colour',
+        label: t('TitleBar.colour'),
         icon: 'i-lucide-palette',
         children: [
-          { label: 'None', type: 'checkbox' as const, checked: !color, onSelect: () => setLook(path, { color: '' }) },
-          ...COLORS.map(name => ({ label: name[0]!.toUpperCase() + name.slice(1), type: 'checkbox' as const, checked: color === name, onSelect: () => setLook(path, { color: name }) }))
+          { label: t('TitleBar.none'), type: 'checkbox' as const, checked: !color, onSelect: () => setLook(path, { color: '' }) },
+          ...COLORS.map(name => ({ label: t(`TitleBar.colours.${name}`), type: 'checkbox' as const, checked: color === name, onSelect: () => setLook(path, { color: name }) }))
         ]
       }
     ],
     [
-      ...pinned(path) ? [] : [{ label: 'Close', icon: 'i-lucide-x', onSelect: () => closeTab(path) }],
-      { label: 'Close the others', icon: 'i-lucide-copy-x', disabled: !rest.length, onSelect: () => closeAll(rest) },
-      { label: 'Close those to the right', icon: 'i-lucide-arrow-right-to-line', disabled: !right.length, onSelect: () => closeAll(right) }
+      ...pinned(path) ? [] : [{ label: t('common.close'), icon: 'i-lucide-x', onSelect: () => closeTab(path) }],
+      { label: t('TitleBar.closeOthers'), icon: 'i-lucide-copy-x', disabled: !rest.length, onSelect: () => closeAll(rest) },
+      { label: t('TitleBar.closeRight'), icon: 'i-lucide-arrow-right-to-line', disabled: !right.length, onSelect: () => closeAll(right) }
     ],
     [
       ...others.value.length
-        ? [{ label: 'Move to profile', icon: 'i-lucide-user-round', children: others.value.map(name => ({ label: name, onSelect: () => profiles(() => haunt.moveTab(path, name), 'The tab was not moved') })) }]
+        ? [{ label: t('TitleBar.moveToProfile'), icon: 'i-lucide-user-round', children: others.value.map(name => ({ label: name, onSelect: () => profiles(() => haunt.moveTab(path, name), t('TitleBar.tabNotMoved')) })) }]
         : [],
-      { label: 'Show in the file manager', icon: 'i-lucide-folder-open', onSelect: () => reveal(path) },
-      { label: 'Open a terminal here', icon: 'i-lucide-square-terminal', onSelect: () => openTerminal(path) }
+      { label: t('TitleBar.reveal'), icon: 'i-lucide-folder-open', onSelect: () => reveal(path) },
+      { label: t('TitleBar.terminal'), icon: 'i-lucide-square-terminal', onSelect: () => openTerminal(path) }
     ]
   ]
 }
@@ -129,14 +129,14 @@ async function openTerminal(path: string): Promise<void> {
   try {
     await haunt.terminalTab(path)
   } catch (error) {
-    toast.add({ title: 'Could not open a terminal', description: errorMessage(error, 'Try again.'), color: 'error', icon: 'i-lucide-circle-alert' })
+    toast.add({ title: t('TitleBar.terminalFailed'), description: errorMessage(error, t('common.tryAgain')), color: 'error', icon: 'i-lucide-circle-alert' })
   }
 }
 async function reveal(path: string): Promise<void> {
   try {
     await haunt.revealTab(path)
   } catch (error) {
-    toast.add({ title: 'Could not open the folder', description: errorMessage(error, 'Try again.'), color: 'error', icon: 'i-lucide-circle-alert' })
+    toast.add({ title: t('TitleBar.revealFailed'), description: errorMessage(error, t('common.tryAgain')), color: 'error', icon: 'i-lucide-circle-alert' })
   }
 }
 
@@ -166,14 +166,14 @@ function show(path: string): void {
       <button
         type="button"
         class="mt-1.5 mr-1 mb-1 flex max-w-36 items-center gap-1 self-center rounded-md px-2 py-1 text-xs text-muted hover:bg-elevated hover:text-highlighted"
-        :title="`Profile: ${info?.profile}. Switch, add, rename or delete profiles`"
+        :title="t('TitleBar.profileHelp', { name: info?.profile ?? '' })"
       >
         <UIcon name="i-lucide-user-round" class="size-3.5 shrink-0" />
         <span class="truncate font-medium">{{ info?.profile }}</span>
         <UIcon name="i-lucide-chevron-down" class="size-3 shrink-0" />
       </button>
     </UDropdownMenu>
-    <nav class="flex min-w-0 items-end gap-0.5 pt-1.5" aria-label="Open repositories">
+    <nav class="flex min-w-0 items-end gap-0.5 pt-1.5" :aria-label="t('TitleBar.openRepositories')">
       <UContextMenu v-for="tab in tabs" :key="tab.path" :items="tabMenu(tab.path)">
       <div
         class="group flex h-full items-center gap-1 rounded-t-md border border-b-0 text-sm"
@@ -185,13 +185,13 @@ function show(path: string): void {
         @dragover.prevent
         @drop.prevent="dropOn(tab.path)"
       >
-        <button type="button" class="flex min-w-0 flex-1 items-center gap-1.5 text-left" :title="tab.pinned ? `${tab.label} (pinned): ${tab.path}` : tab.path" :aria-label="tab.pinned ? tab.label : undefined" :aria-current="tab.active ? 'page' : undefined" @click="show(tab.path)" @auxclick.middle="tab.pinned || closeTab(tab.path)">
+        <button type="button" class="flex min-w-0 flex-1 items-center gap-1.5 text-left" :title="tab.pinned ? t('TitleBar.pinnedTitle', { name: tab.label, path: tab.path }) : tab.path" :aria-label="tab.pinned ? tab.label : undefined" :aria-current="tab.active ? 'page' : undefined" @click="show(tab.path)" @auxclick.middle="tab.pinned || closeTab(tab.path)">
           <UIcon
             :name="tab.worktree ? 'i-lucide-git-fork' : 'i-lucide-folder-git-2'"
             class="size-3.5 shrink-0"
             :class="tab.color ? '' : tab.active ? 'text-highlighted' : 'text-dimmed'"
             :style="tab.color ? { color: SHADES[tab.color] } : undefined"
-            :title="tab.worktree ? 'A worktree: a branch in its own folder' : undefined"
+            :title="tab.worktree ? t('TitleBar.worktree') : undefined"
           />
           <span v-if="!tab.pinned" class="truncate">{{ tab.label }}</span>
         </button>
@@ -200,7 +200,7 @@ function show(path: string): void {
           type="button"
           class="grid size-5 shrink-0 place-items-center rounded text-dimmed hover:bg-accented hover:text-highlighted focus-visible:opacity-100"
           :class="tab.active ? '' : 'opacity-0 group-hover:opacity-100'"
-          :aria-label="`Close ${tab.label}`"
+          :aria-label="t('TitleBar.closeTab', { name: tab.label })"
           @click="closeTab(tab.path)"
         >
           <UIcon name="i-lucide-x" class="size-3" />
@@ -212,8 +212,8 @@ function show(path: string): void {
           type="button"
           class="mb-1 ml-1 grid size-7 place-items-center rounded-md text-muted hover:bg-elevated hover:text-highlighted"
           :class="{ 'bg-elevated text-highlighted': picking }"
-          aria-label="Open a repository"
-          title="Open a repository, a recent one, or the tab closed last"
+          :aria-label="t('TitleBar.openRepositoryLabel')"
+          :title="t('TitleBar.openHelp')"
         >
           <UIcon name="i-lucide-plus" class="size-4" />
         </button>

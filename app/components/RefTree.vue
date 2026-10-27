@@ -53,7 +53,7 @@ const actions = useRefActions()
 const undo = useOperation()
 const webs = useWeb()
 const { current } = useRefs()
-const into = () => current.value?.name ?? 'the current branch'
+const into = () => current.value?.name ?? t('RefTree.currentBranch')
 const drag = useRefDrag()
 const worktrees = useWorktrees()
 const isCurrent = (ref: Leaf) => isBranch(ref) && ref.current
@@ -63,30 +63,30 @@ function menu(ref: Leaf) {
   const from = { rev: name, label: name }
   if (!isBranch(ref)) {
     return [[
-      { label: 'Check out', icon: 'i-lucide-git-branch', onSelect: () => actions.switchTo(name) },
-      { label: 'New branch from here…', icon: 'i-lucide-git-branch-plus', onSelect: () => actions.newBranch(from) },
-      { label: `Merge into ${into()}…`, icon: 'i-lucide-git-merge', onSelect: () => undo.merge(name) },
+      { label: t('RefTree.checkOut'), icon: 'i-lucide-git-branch', onSelect: () => actions.switchTo(name) },
+      { label: t('RefTree.newBranch'), icon: 'i-lucide-git-branch-plus', onSelect: () => actions.newBranch(from) },
+      { label: t('RefTree.merge', { name: into() }), icon: 'i-lucide-git-merge', onSelect: () => undo.merge(name) },
       // A remote branch's name on the remote is its name without the remote's.
       ...webs.label.value && props.prefix ? [{ label: webs.label.value, icon: 'i-lucide-external-link', onSelect: () => webs.openBranch(name.slice(props.prefix!.length)) }] : [],
       ...webs.copyLabel.value && props.prefix ? [{ label: webs.copyLabel.value, icon: 'i-lucide-link', onSelect: () => webs.copyBranch(name.slice(props.prefix!.length)) }] : [],
-      { label: 'Copy the name', icon: 'i-lucide-copy', onSelect: () => navigator.clipboard?.writeText(name) }
+      { label: t('RefTree.copyName'), icon: 'i-lucide-copy', onSelect: () => navigator.clipboard?.writeText(name) }
     ]]
   }
   const remoteName = ref.upstream?.split('/').slice(1).join('/')
   return [
     [
-      ...ref.current ? [] : [{ label: 'Switch to it', icon: 'i-lucide-git-branch', onSelect: () => actions.switchTo(name) }],
-      { label: 'New branch from here…', icon: 'i-lucide-git-branch-plus', onSelect: () => actions.newBranch(from) },
-      { label: 'New tag here…', icon: 'i-lucide-tag', onSelect: () => actions.newTag(from) },
-      ...ref.current ? [] : [{ label: 'Open in worktree…', icon: 'i-lucide-git-fork', onSelect: () => worktrees.add(name) }],
-      ...ref.current ? [] : [{ label: `Merge into ${into()}…`, icon: 'i-lucide-git-merge', onSelect: () => undo.merge(name) }],
+      ...ref.current ? [] : [{ label: t('RefTree.switchTo'), icon: 'i-lucide-git-branch', onSelect: () => actions.switchTo(name) }],
+      { label: t('RefTree.newBranch'), icon: 'i-lucide-git-branch-plus', onSelect: () => actions.newBranch(from) },
+      { label: t('RefTree.newTag'), icon: 'i-lucide-tag', onSelect: () => actions.newTag(from) },
+      ...ref.current ? [] : [{ label: t('RefTree.worktree'), icon: 'i-lucide-git-fork', onSelect: () => worktrees.add(name) }],
+      ...ref.current ? [] : [{ label: t('RefTree.merge', { name: into() }), icon: 'i-lucide-git-merge', onSelect: () => undo.merge(name) }],
       ...webs.label.value && remoteName ? [{ label: webs.label.value, icon: 'i-lucide-external-link', onSelect: () => webs.openBranch(remoteName) }] : [],
       ...webs.copyLabel.value && remoteName ? [{ label: webs.copyLabel.value, icon: 'i-lucide-link', onSelect: () => webs.copyBranch(remoteName) }] : []
     ],
     [
-      { label: 'Copy the name', icon: 'i-lucide-copy', onSelect: () => navigator.clipboard?.writeText(name) },
-      { label: 'Rename…', icon: 'i-lucide-pencil', onSelect: () => actions.renameBranch(name) },
-      ...ref.current ? [] : [{ label: 'Delete…', icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: () => actions.deleteBranch(name) }]
+      { label: t('RefTree.copyName'), icon: 'i-lucide-copy', onSelect: () => navigator.clipboard?.writeText(name) },
+      { label: t('RefTree.rename'), icon: 'i-lucide-pencil', onSelect: () => actions.renameBranch(name) },
+      ...ref.current ? [] : [{ label: t('RefTree.delete'), icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: () => actions.deleteBranch(name) }]
     ]
   ]
 }
@@ -96,7 +96,7 @@ function switchTo(ref: Leaf): void {
 function tip(ref: Leaf): string {
   const when = new Date(ref.time * 1000).toLocaleDateString()
   if (!isBranch(ref)) return `${ref.subject} · ${when}`
-  const tracking = ref.gone ? `tracked ${ref.upstream}, which is gone` : ref.upstream ? `tracks ${ref.upstream}` : 'tracks no remote branch'
+  const tracking = ref.gone ? t('RefTree.upstreamGone', { upstream: ref.upstream ?? '' }) : ref.upstream ? t('RefTree.tracks', { upstream: ref.upstream }) : t('RefTree.tracksNothing')
   return `${ref.subject} · ${when} · ${tracking}`
 }
 </script>
@@ -133,17 +133,17 @@ function tip(ref: Leaf): string {
         <UIcon v-if="isBranch(leaf.ref) && leaf.ref.current" name="i-lucide-check" class="size-3.5 shrink-0 text-highlighted" />
         <UIcon v-else name="i-lucide-git-branch" class="size-3.5 shrink-0 text-dimmed" />
         <span class="min-w-0 flex-1 truncate" :class="isBranch(leaf.ref) && leaf.ref.current ? 'font-semibold text-highlighted' : ''">{{ leaf.label }}</span>
-        <span v-if="drag.over.value === full(leaf.ref) && drag.hint(full(leaf.ref), isCurrent(leaf.ref))" class="shrink-0 text-label text-primary">{{ isCurrent(leaf.ref) ? 'merge here' : 'rebase onto' }}</span>
+        <span v-if="drag.over.value === full(leaf.ref) && drag.hint(full(leaf.ref), isCurrent(leaf.ref))" class="shrink-0 text-label text-primary">{{ isCurrent(leaf.ref) ? t('RefTree.mergeHere') : t('RefTree.rebaseOnto') }}</span>
         <template v-if="isBranch(leaf.ref)">
-          <span v-if="leaf.ref.gone" class="text-label text-warning">gone</span>
-          <span v-if="leaf.ref.ahead" class="font-mono text-label text-muted tabular-nums" :title="`${leaf.ref.ahead} to push`">↑{{ leaf.ref.ahead }}</span>
-          <span v-if="leaf.ref.behind" class="font-mono text-label text-muted tabular-nums" :title="`${leaf.ref.behind} to pull`">↓{{ leaf.ref.behind }}</span>
+          <span v-if="leaf.ref.gone" class="text-label text-warning">{{ t('RefTree.gone') }}</span>
+          <span v-if="leaf.ref.ahead" class="font-mono text-label text-muted tabular-nums" :title="t('RefTree.toPush', { count: leaf.ref.ahead })">↑{{ leaf.ref.ahead }}</span>
+          <span v-if="leaf.ref.behind" class="font-mono text-label text-muted tabular-nums" :title="t('RefTree.toPull', { count: leaf.ref.behind })">↓{{ leaf.ref.behind }}</span>
           <button
             v-if="hostPulls.byBranch.value.get(leaf.ref.name)"
             type="button"
             class="flex items-center gap-0.5 font-mono text-label tabular-nums hover:underline"
             :class="['open', 'draft'].includes(hostPulls.byBranch.value.get(leaf.ref.name)!.state) ? CHECKS[hostPulls.byBranch.value.get(leaf.ref.name)!.checks ?? ''] ?? 'text-muted' : 'text-dimmed'"
-            :title="`${describePull(hostPulls.byBranch.value.get(leaf.ref.name)!)}. Click to open it on the web.${hostPulls.untested.value}`"
+            :title="`${t('RefTree.pullTitle', { pull: describePull(hostPulls.byBranch.value.get(leaf.ref.name)!) })}${hostPulls.untested.value}`"
             @click.stop.prevent="hostPulls.openPull(hostPulls.byBranch.value.get(leaf.ref.name)!)"
           >
             <UIcon name="i-lucide-git-pull-request" class="size-3" />{{ hostPulls.byBranch.value.get(leaf.ref.name)!.number }}

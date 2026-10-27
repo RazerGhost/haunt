@@ -1,0 +1,21 @@
+{
+  "readError": "The history could not be read.",
+  "status": {
+    "added": "Added",
+    "deleted": "Deleted",
+    "renamed": "Renamed",
+    "copied": "Copied",
+    "type": "Type changed"
+  },
+  "pickFile": "Pick a file: its history opens from a diff's header.",
+  "blame": "Blame",
+  "filter": "Filter by message or author",
+  "filterLabel": "Filter the history",
+  "compareHint": "Ctrl-click a second commit to compare the file between the two.",
+  "from": "from {path}",
+  "noCommits": "No commit has this file yet.",
+  "between": "{from} → {to}: the file between two commits",
+  "stopComparing": "Stop comparing",
+  "blameAt": "Blame at this commit",
+  "showCommit": "Show the commit"
+}

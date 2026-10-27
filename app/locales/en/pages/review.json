@@ -1,0 +1,25 @@
+{
+  "readError": "The branch's changes could not be read.",
+  "title": "Review {branch}",
+  "titleThis": "Review this branch",
+  "summary": {
+    "one": "Against {base}: {count} changed function, {seen} seen. ← → or J K to go through them.",
+    "other": "Against {base}: {count} changed functions, {seen} seen. ← → or J K to go through them."
+  },
+  "reading": "Reading the changes…",
+  "previous": "Previous function",
+  "next": "Next function",
+  "seen": "Seen",
+  "markSeen": "Mark seen",
+  "noFunctions": "This branch changes no functions since {base}.",
+  "status": {
+    "added": "added",
+    "changed": "changed",
+    "removed": "removed",
+    "moved": "moved"
+  },
+  "from": "from {name} in {path}",
+  "calledBy": "Called by {count}",
+  "noCallers": "Nothing in the scan calls it.",
+  "fileSince": "The file since {base} (committed)"
+}

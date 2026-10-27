@@ -1,0 +1,45 @@
+{
+  "stopped": "Tests stopped",
+  "passed": "Tests passed",
+  "failed": "Tests failed",
+  "testsIn": {
+    "one": "{count} test in {folder}",
+    "other": "{count} tests in {folder}"
+  },
+  "didNotRun": "The tests did not run",
+  "couldNotRun": "The tests could not run.",
+  "title": "Tests that reach it",
+  "running": "Running…",
+  "run": {
+    "one": "Run it",
+    "other": "Run these {count}"
+  },
+  "runHelp": "Runs these tests with the project's test runner",
+  "trustFirst": "Tests run the project's code: trust this folder first",
+  "passedOutput": "Passed: see the output",
+  "failedOutput": "Failed: see the output",
+  "waiting": "Waiting for the scan.",
+  "noGraph": "The call graph is still being worked out.",
+  "files": {
+    "one": "{count} file",
+    "other": "{count} files"
+  },
+  "reaching": {
+    "one": "{count} test in {files} reaches a changed function.",
+    "other": "{count} tests in {files} reach a changed function."
+  },
+  "noneReach": "No test reaches a changed function.",
+  "limits": "TypeScript and JavaScript tests only; calls through interfaces or callbacks are not followed.",
+  "reaches": "reaches {functions}",
+  "steps": {
+    "one": "{count} step",
+    "other": "{count} steps"
+  },
+  "more": "And {count} more.",
+  "unreached": {
+    "one": "No test reaches this changed function",
+    "other": "No test reaches these {count} changed functions"
+  },
+  "nothingRan": "Nothing ran.",
+  "noOutput": "(no output)"
+}

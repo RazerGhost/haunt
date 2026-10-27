@@ -36,7 +36,7 @@ async function load(): Promise<void> {
     other.value = found.second
     rangeFiles.value = found.files
   } catch (error) {
-    problem.value = errorMessage(error, 'The commit could not be read.')
+    problem.value = errorMessage(error, t('CommitDetails.readError'))
   }
 }
 watch(() => [props.sha, props.compare], () => void load(), { immediate: true })
@@ -51,13 +51,14 @@ const span = computed(() => {
   return { from: detail.value.parents[0] ?? null, to: detail.value.sha, files: detail.value.files }
 })
 
+// Each lens's label is `CommitDetails.lens.<value>`.
 const LENSES = [
-  { value: 'files', label: 'Files', icon: 'i-lucide-file-diff' },
-  { value: 'functions', label: 'Functions', icon: 'i-lucide-braces' },
-  { value: 'impact', label: 'What could break', icon: 'i-lucide-triangle-alert' },
-  { value: 'map', label: 'Map', icon: 'i-lucide-layers' },
-  { value: 'calls', label: 'Calls', icon: 'i-lucide-git-fork' },
-  { value: 'architecture', label: 'Architecture', icon: 'i-lucide-network' }
+  { value: 'files', icon: 'i-lucide-file-diff' },
+  { value: 'functions', icon: 'i-lucide-braces' },
+  { value: 'impact', icon: 'i-lucide-triangle-alert' },
+  { value: 'map', icon: 'i-lucide-layers' },
+  { value: 'calls', icon: 'i-lucide-git-fork' },
+  { value: 'architecture', icon: 'i-lucide-network' }
 ] as const
 type Lens = (typeof LENSES)[number]['value']
 // The lens is kept per repository (each tab comes back to its own).
@@ -102,7 +103,7 @@ watch([span, lens, () => !!scan.value], async ([now, current, scanned]) => {
     changes.value = found
     changesLoading.value = false
   } catch (error) {
-    changesProblem.value = errorMessage(error, 'The changes could not be read.')
+    changesProblem.value = errorMessage(error, t('CommitDetails.changesError'))
     changesLoading.value = false
   }
 }, { immediate: true })
@@ -172,33 +173,33 @@ async function copy(text: string): Promise<void> {
       <header class="grid max-h-40 shrink-0 gap-1 overflow-auto border-b border-default px-4 py-2">
         <template v-if="other">
           <p class="text-sm font-medium text-highlighted">
-            Comparing <span class="font-mono">{{ span.from?.slice(0, 7) }}</span> → <span class="font-mono">{{ span.to.slice(0, 7) }}</span>
+            {{ t('CommitDetails.comparing') }} <span class="font-mono">{{ span.from?.slice(0, 7) }}</span> → <span class="font-mono">{{ span.to.slice(0, 7) }}</span>
           </p>
-          <p class="text-xs text-muted">{{ span.files.length }} files changed between the two commits.<template v-if="!props.alone"> Ctrl-click another commit to compare with it instead.</template></p>
+          <p class="text-xs text-muted">{{ t('CommitDetails.filesBetween', { count: span.files.length }) }}<template v-if="!props.alone"> {{ t('CommitDetails.compareOther') }}</template></p>
         </template>
         <template v-else>
           <div class="flex items-start gap-2">
             <p class="min-w-0 flex-1 text-sm font-medium text-highlighted">{{ detail.subject }}</p>
-            <UButton :label="detail.sha.slice(0, 7)" icon="i-lucide-copy" size="xs" color="neutral" variant="ghost" class="font-mono" title="Copy the full commit id" @click="copy(detail.sha)" />
+            <UButton :label="detail.sha.slice(0, 7)" icon="i-lucide-copy" size="xs" color="neutral" variant="ghost" class="font-mono" :title="t('CommitDetails.copyId')" @click="copy(detail.sha)" />
           </div>
           <p v-if="detail.body" class="max-h-16 overflow-auto text-xs whitespace-pre-wrap text-muted">{{ detail.body }}</p>
           <p class="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted">
             <span :title="detail.email">{{ detail.author }}</span>
             <span>{{ new Date(detail.time * 1000).toLocaleString() }}</span>
-            <span v-if="detail.committer !== detail.author">committed by {{ detail.committer }}</span>
+            <span v-if="detail.committer !== detail.author">{{ t('CommitDetails.committedBy', { name: detail.committer }) }}</span>
             <span v-if="detail.parents.length" class="flex items-center gap-1">
-              {{ detail.parents.length > 1 ? 'parents' : 'parent' }}
+              {{ t('CommitDetails.parents', { count: detail.parents.length }) }}
               <button v-for="parent in detail.parents" :key="parent" type="button" class="font-mono text-default hover:underline" @click="emit('select', parent)">{{ parent.slice(0, 7) }}</button>
             </span>
-            <span v-else>the first commit</span>
-            <span v-if="detail.parents.length > 1" class="text-dimmed">(compared with its first parent)</span>
+            <span v-else>{{ t('CommitDetails.firstCommit') }}</span>
+            <span v-if="detail.parents.length > 1" class="text-dimmed">{{ t('CommitDetails.firstParent') }}</span>
           </p>
         </template>
         <!-- Once the change is read by function (any lens but Files). -->
         <RiskLine v-if="codeFiles.length" :files="codeFiles" />
       </header>
 
-      <nav class="flex items-center gap-0.5 border-b border-default px-2" aria-label="Lenses">
+      <nav class="flex items-center gap-0.5 border-b border-default px-2" :aria-label="t('CommitDetails.lenses')">
         <button
           v-for="item in LENSES"
           :key="item.value"
@@ -208,7 +209,7 @@ async function copy(text: string): Promise<void> {
           :aria-current="lens === item.value ? 'page' : undefined"
           @click="lens = item.value"
         >
-          <UIcon :name="item.icon" class="size-3.5" />{{ item.label }}
+          <UIcon :name="item.icon" class="size-3.5" />{{ t(`CommitDetails.lens.${item.value}`) }}
           <span v-if="item.value === 'files'" class="text-dimmed tabular-nums">{{ span.files.length }}</span>
         </button>
         <span v-if="lens !== 'files' && changesLoading" class="ml-auto"><UIcon name="i-lucide-loader-circle" class="size-3.5 animate-spin text-muted" /></span>
@@ -232,7 +233,7 @@ async function copy(text: string): Promise<void> {
           </li>
         </ul>
         <DiffView v-if="file" :key="`${span.from}:${span.to}:${file.path}`" :from="span.from" :to="span.to" :path="file.path" :old-path="file.oldPath" class="min-h-0" />
-        <p v-else class="p-4 text-sm text-muted">No files changed.</p>
+        <p v-else class="p-4 text-sm text-muted">{{ t('CommitDetails.noFiles') }}</p>
       </div>
 
       <!-- Architecture: the imports the change adds and removes, judged by the rules (it needs no changes by function) -->
@@ -244,24 +245,24 @@ async function copy(text: string): Promise<void> {
         <UAlert v-if="changesProblem" class="m-3" color="error" variant="subtle" icon="i-lucide-circle-alert" :description="changesProblem" />
         <div v-else-if="!changes || changes.to !== span.to" class="grid flex-1 place-items-center gap-2 text-muted">
           <UIcon name="i-lucide-loader-circle" class="size-5 animate-spin" />
-          <p v-if="!scan" class="text-xs">Waiting for the first scan</p>
+          <p v-if="!scan" class="text-xs">{{ t('CommitDetails.waitingScan') }}</p>
         </div>
 
         <!-- Functions -->
         <div v-else-if="lens === 'functions'" class="min-h-0 flex-1 overflow-auto p-4">
-          <p v-if="!codeFiles.length" class="text-sm text-muted">This change touches no code Haunt reads.</p>
+          <p v-if="!codeFiles.length" class="text-sm text-muted">{{ t('CommitDetails.noCode') }}</p>
           <ChangedFunctions v-else :files="codeFiles" @file="showFile" />
         </div>
 
         <!-- What could break -->
         <div v-else-if="lens === 'impact'" class="min-h-0 flex-1 overflow-auto p-4">
           <div class="mb-3 flex flex-wrap items-center gap-2 text-xs text-muted">
-            <span class="flex-1">Functions that call a changed one, nearest first.<template v-if="missing"> {{ missing }} changed functions are not in the code now and have no callers here.</template></span>
-            Callers
+            <span class="flex-1">{{ t('CommitDetails.impactHelp') }}<template v-if="missing"> {{ t('CommitDetails.missing', { count: missing }) }}</template></span>
+            {{ t('CommitDetails.stepsBefore') }}
             <UFieldGroup size="xs">
               <UButton v-for="step in [1, 2, 3]" :key="step" :label="`${step}`" :color="depth === step ? 'primary' : 'neutral'" :variant="depth === step ? 'solid' : 'outline'" @click="depth = step" />
             </UFieldGroup>
-            steps out
+            {{ t('CommitDetails.stepsAfter') }}
           </div>
           <AffectedList :affected="affected" />
           <TestsReached :changed="ids" class="mt-6" />
@@ -272,13 +273,11 @@ async function copy(text: string): Promise<void> {
         <div v-else-if="lens === 'map'" class="flex min-h-0 flex-1 flex-col">
           <div class="flex items-center gap-3 px-4 pt-3 pb-2">
             <p class="min-w-0 flex-1 text-xs text-muted">
-              {{ mapAs === 'layers'
-                ? 'Per part: functions changed (Δ) and their callers, on the layer map.'
-                : 'Changed functions in amber, their callers outlined.' }}
+              {{ mapAs === 'layers' ? t('CommitDetails.mapLayersHelp') : t('CommitDetails.mapCanvasHelp') }}
             </p>
             <UFieldGroup size="xs">
-              <UButton label="Layers" icon="i-lucide-layers" :color="mapAs === 'layers' ? 'primary' : 'neutral'" :variant="mapAs === 'layers' ? 'solid' : 'outline'" @click="mapAs = 'layers'" />
-              <UButton label="Canvas" icon="i-lucide-boxes" :color="mapAs === 'canvas' ? 'primary' : 'neutral'" :variant="mapAs === 'canvas' ? 'solid' : 'outline'" @click="mapAs = 'canvas'" />
+              <UButton :label="t('CommitDetails.layers')" icon="i-lucide-layers" :color="mapAs === 'layers' ? 'primary' : 'neutral'" :variant="mapAs === 'layers' ? 'solid' : 'outline'" @click="mapAs = 'layers'" />
+              <UButton :label="t('CommitDetails.canvas')" icon="i-lucide-boxes" :color="mapAs === 'canvas' ? 'primary' : 'neutral'" :variant="mapAs === 'canvas' ? 'solid' : 'outline'" @click="mapAs = 'canvas'" />
             </UFieldGroup>
           </div>
           <div v-if="mapAs === 'layers'" class="min-h-0 flex-1 overflow-auto px-4 pb-4">
@@ -291,9 +290,9 @@ async function copy(text: string): Promise<void> {
 
         <!-- Calls -->
         <div v-else class="relative min-h-0 flex-1">
-          <p v-if="!graph.length" class="absolute inset-0 grid place-items-center text-sm text-muted">{{ index?.callers.size ? 'None of the changed functions is in the code now.' : 'Working out the call graph…' }}</p>
+          <p v-if="!graph.length" class="absolute inset-0 grid place-items-center text-sm text-muted">{{ index?.callers.size ? t('CommitDetails.noneInCode') : t('CommitDetails.workingOut') }}</p>
           <GraphView v-else :elements="graph" :stylesheet="graphStyle" :layout="layout" @node="id => select(id)" @open="id => router.push({ path: '/calls', query: { center: id, fn: id } })" />
-          <p class="pointer-events-none absolute right-3 bottom-2 text-label text-muted">Changed in the middle, callers left, callees right · double-click to open in Calls</p>
+          <p class="pointer-events-none absolute right-3 bottom-2 text-label text-muted">{{ t('CommitDetails.callsHint') }}</p>
         </div>
       </template>
     </template>

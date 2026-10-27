@@ -1,0 +1,40 @@
+{
+  "readError": "Wat een pull zou binnenhalen kon niet worden gelezen.",
+  "title": "Voor het pullen",
+  "summary": {
+    "one": "{upstream} heeft {count} commit die je branch niet heeft.",
+    "other": "{upstream} heeft {count} commits die je branch niet heeft."
+  },
+  "summaryAhead": {
+    "one": "{upstream} heeft {count} commit die je branch niet heeft, en je branch heeft er {ahead} van zichzelf.",
+    "other": "{upstream} heeft {count} commits die je branch niet heeft, en je branch heeft er {ahead} van zichzelf."
+  },
+  "theyChange": {
+    "one": "Ze wijzigen {count} functie in {files}.",
+    "other": "Ze wijzigen {count} functies in {files}."
+  },
+  "files": {
+    "one": "{count} bestand",
+    "other": "{count} bestanden"
+  },
+  "noUpstream": "Deze branch volgt geen remote branch, dus er valt niets te pullen.",
+  "pull": "Pull",
+  "both": {
+    "one": "{count} functie gewijzigd aan beide kanten",
+    "other": "{count} functies gewijzigd aan beide kanten"
+  },
+  "bothHelp": "Deze heb jij ook gewijzigd: een pull kan hier conflicten geven.",
+  "noneBoth": "Geen functies gewijzigd aan beide kanten",
+  "noneBothHelp": "Geen van de functies die deze commits wijzigen heb jij ook gewijzigd.",
+  "changedBoth": "Gewijzigd aan beide kanten",
+  "whatTheyChange": "Wat ze wijzigen",
+  "status": {
+    "added": "nieuw",
+    "changed": "gewijzigd",
+    "removed": "verwijderd",
+    "moved": "verplaatst"
+  },
+  "youToo": "jij wijzigde het ook",
+  "noFunctions": "Geen functies gewijzigd: imports, types of andere regels.",
+  "commits": "De commits"
+}
