@@ -206,11 +206,17 @@ onMounted(() => nextTick(() => pathBox.value?.inputRef?.focus()))
         </h2>
         <p v-if="!shown.length" class="text-xs text-muted">{{ t('RootPicker.noMatch') }}</p>
         <ul class="grid gap-0.5">
-          <li v-for="recent in shown" :key="recent" class="group relative">
+          <!-- The row's buttons take their own room at its end (shown on hover, focus or when picked), so the name
+               shortens instead of being covered; its status gives way to them. -->
+          <li
+            v-for="recent in shown"
+            :key="recent"
+            class="group flex min-w-0 items-center rounded-md"
+            :class="[picked === recent ? 'bg-elevated' : 'hover:bg-elevated/60', details.get(recent)?.openable === false ? 'opacity-60' : '']"
+          >
             <button
               type="button"
-              class="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 rounded-md px-2 py-1.5 text-left"
-              :class="[picked === recent ? 'bg-elevated' : 'hover:bg-elevated/60', details.get(recent)?.openable === false ? 'opacity-60' : '']"
+              class="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 px-2 py-1.5 text-left"
               :data-picked="picked === recent"
               :title="recent"
               @click="picked = recent"
@@ -220,20 +226,26 @@ onMounted(() => nextTick(() => pathBox.value?.inputRef?.focus()))
               <span class="grid min-w-0">
                 <span class="flex min-w-0 items-center gap-1.5">
                   <span class="truncate text-sm font-medium text-highlighted">{{ nameOf(recent) }}</span>
-                  <UBadge v-if="info.tabs.includes(recent)" :label="t('RootPicker.inTab')" size="sm" variant="subtle" color="neutral" />
-                  <UBadge v-if="details.get(recent)?.openable === false" :label="t('RootPicker.notFound')" size="sm" variant="subtle" color="warning" />
+                  <UBadge v-if="info.tabs.includes(recent)" :label="t('RootPicker.inTab')" size="sm" variant="subtle" color="neutral" class="shrink-0" />
+                  <UBadge v-if="details.get(recent)?.openable === false" :label="t('RootPicker.notFound')" size="sm" variant="subtle" color="warning" class="shrink-0" />
                 </span>
                 <span v-if="details.get(recent)?.branch" class="flex min-w-0 items-center gap-1 font-mono text-label text-muted"><UIcon name="i-lucide-git-branch" class="size-3 shrink-0" /><span class="truncate">{{ details.get(recent)!.branch }}</span></span>
               </span>
-              <span class="grid justify-items-end gap-0.5 text-label text-muted group-hover:invisible" :class="{ invisible: picked === recent }">
+              <span class="grid justify-items-end gap-0.5 text-label text-muted group-focus-within:hidden group-hover:hidden" :class="{ hidden: picked === recent }">
                 <span v-if="details.get(recent)?.changes" class="flex items-center gap-1 text-warning" :title="t('RootPicker.uncommitted', { count: details.get(recent)!.changes! })"><UIcon name="i-lucide-pencil-line" class="size-3" />{{ details.get(recent)!.changes }}</span>
                 <span v-if="details.get(recent)?.lastCommit" :title="details.get(recent)!.lastCommit!.subject">{{ ago(details.get(recent)!.lastCommit!.time) }}</span>
               </span>
             </button>
-            <span class="absolute top-1/2 right-1 flex -translate-y-1/2 gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100" :class="{ 'opacity-100': picked === recent }">
-              <UButton v-if="details.get(recent)?.openable !== false" icon="i-lucide-arrow-up-right" size="xs" color="primary" variant="soft" :label="t('common.open')" :aria-label="t('RootPicker.openNamed', { name: nameOf(recent) })" @click="use(recent)" />
-              <UButton v-if="details.get(recent)?.openable !== false" icon="i-lucide-folder-open" size="xs" color="neutral" variant="ghost" :aria-label="t('RootPicker.revealNamed', { name: nameOf(recent) })" :title="t('RootPicker.reveal')" @click="reveal(recent)" />
-              <UButton icon="i-lucide-x" size="xs" color="neutral" variant="ghost" :aria-label="t('RootPicker.forgetNamed', { name: nameOf(recent) })" :title="t('RootPicker.forget')" @click="forget(recent)" />
+            <span class="hidden shrink-0 gap-0.5 pr-1 group-focus-within:flex group-hover:flex" :class="{ flex: picked === recent }">
+              <UTooltip v-if="details.get(recent)?.openable !== false" :text="t('RootPicker.openNamed', { name: nameOf(recent) })">
+                <UButton icon="i-lucide-arrow-up-right" size="xs" color="primary" variant="soft" :aria-label="t('RootPicker.openNamed', { name: nameOf(recent) })" @click="use(recent)" />
+              </UTooltip>
+              <UTooltip v-if="details.get(recent)?.openable !== false" :text="t('RootPicker.reveal')">
+                <UButton icon="i-lucide-folder-open" size="xs" color="neutral" variant="ghost" :aria-label="t('RootPicker.revealNamed', { name: nameOf(recent) })" @click="reveal(recent)" />
+              </UTooltip>
+              <UTooltip :text="t('RootPicker.forget')">
+                <UButton icon="i-lucide-x" size="xs" color="neutral" variant="ghost" :aria-label="t('RootPicker.forgetNamed', { name: nameOf(recent) })" @click="forget(recent)" />
+              </UTooltip>
             </span>
           </li>
         </ul>
@@ -258,11 +270,10 @@ onMounted(() => nextTick(() => pathBox.value?.inputRef?.focus()))
           </div>
           <template v-if="tree.open">
             <p v-if="!tree.rows.length && !tree.folder.missing" class="pl-7 text-xs text-muted">{{ term ? t('RootPicker.noFolderMatch') : t('RootPicker.noRepos') }}</p>
-            <div v-for="row in tree.rows" :key="row.key" class="group relative grid">
+            <div v-for="row in tree.rows" :key="row.key" class="group flex min-w-0 items-center rounded-md" :class="row.repo && picked === row.repo ? 'bg-elevated' : 'hover:bg-elevated/60'">
             <button
               type="button"
-              class="flex min-w-0 items-center gap-1.5 rounded-md py-1 pr-2 text-left text-sm"
-              :class="row.repo && picked === row.repo ? 'bg-elevated' : 'hover:bg-elevated/60'"
+              class="flex min-w-0 flex-1 items-center gap-1.5 py-1 pr-2 text-left text-sm"
               :style="{ paddingLeft: `${1.25 + row.depth * 1}rem` }"
               :data-picked="!!row.repo && picked === row.repo"
               :title="row.repo ?? undefined"
@@ -273,20 +284,20 @@ onMounted(() => nextTick(() => pathBox.value?.inputRef?.focus()))
               <UIcon v-if="!row.repo" name="i-lucide-chevron-right" class="size-3.5 shrink-0 text-muted transition" :class="{ 'rotate-90': row.open }" />
               <UIcon :name="row.repo ? 'i-lucide-folder-git-2' : 'i-lucide-folder'" class="size-4 shrink-0 text-muted" />
               <span class="truncate" :class="row.repo ? 'text-highlighted' : 'text-muted'">{{ row.name }}</span>
-              <UBadge v-if="row.repo && info.tabs.includes(row.repo)" :label="t('RootPicker.inTab')" size="sm" variant="subtle" color="neutral" class="ml-auto group-hover:invisible" :class="{ invisible: picked === row.repo }" />
+              <UBadge v-if="row.repo && info.tabs.includes(row.repo)" :label="t('RootPicker.inTab')" size="sm" variant="subtle" color="neutral" class="ml-auto shrink-0 group-focus-within:hidden group-hover:hidden" :class="{ hidden: picked === row.repo }" />
             </button>
-            <UButton
-              v-if="row.repo"
-              icon="i-lucide-arrow-up-right"
-              size="xs"
-              color="primary"
-              variant="soft"
-              :label="t('common.open')"
-              class="absolute top-1/2 right-1 -translate-y-1/2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-              :class="{ 'opacity-100': picked === row.repo }"
-              :aria-label="t('RootPicker.openNamed', { name: row.name })"
-              @click="use(row.repo)"
-            />
+            <UTooltip v-if="row.repo" :text="t('RootPicker.openNamed', { name: row.name })">
+              <UButton
+                icon="i-lucide-arrow-up-right"
+                size="xs"
+                color="primary"
+                variant="soft"
+                class="mr-1 hidden shrink-0 group-focus-within:inline-flex group-hover:inline-flex"
+                :class="{ 'inline-flex': picked === row.repo }"
+                :aria-label="t('RootPicker.openNamed', { name: row.name })"
+                @click="use(row.repo)"
+              />
+            </UTooltip>
             </div>
           </template>
         </div>
