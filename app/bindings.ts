@@ -95,6 +95,8 @@ export const commands = {
 	openFile: (repo: string, editor: string, path: string, line: number) => __TAURI_INVOKE<null>("open_file", { repo, editor, path, line }),
 	/**  The editors whose command line tool is on the PATH. */
 	editors: () => __TAURI_INVOKE<string[]>("editors"),
+	/**  Saves an exported picture (the canvas, the layer map) where the save dialog said: base64 for a PNG. */
+	saveExport: (path: string, data: string, base64: boolean) => __TAURI_INVOKE<null>("save_export", { path, data, base64 }),
 	/**  The staged and unstaged files; null when not in a git repository. */
 	localStatus: (repo: string) => __TAURI_INVOKE<LocalStatus | null>("local_status", { repo }),
 	/**  One file's unstaged or staged diff (`old`: where a staged rename comes from). */

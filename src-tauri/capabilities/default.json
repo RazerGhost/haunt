@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Haunt's window (its own built pages, or the dev server's while Haunt is worked on): the calls to Rust, the folder picker, and the frameless window's buttons and title bar.",
+  "description": "Haunt's window (its own built pages, or the dev server's while Haunt is worked on): the calls to Rust, the folder picker, the save dialog (an exported picture of the canvas or layer map), and the frameless window's buttons and title bar.",
   "windows": ["main"],
   "permissions": [
     "core:default",
@@ -11,6 +11,7 @@
     "core:window:allow-toggle-maximize",
     "core:window:allow-close",
     "dialog:allow-open",
+    "dialog:allow-save",
     "window-state:default"
   ]
 }

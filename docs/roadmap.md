@@ -42,10 +42,11 @@ Done: ignoring files and stashing some from Local changes, side-by-side diffs th
 
 ## 6. Code map
 
-- **Bookmark files** (pinning functions exists already).
-- **Export** the canvas or the layer map as PNG or SVG.
-- **Blame per function:** the last author and age of each function in the function panel.
-- **More languages** through tree-sitter: Java, C#, Ruby, C and C++.
+Done: bookmarked files, who changed each function last, exporting the canvas and the layer map, and Java, C#, Ruby,
+C and C++. What is left:
+
+- **Ruby calls without brackets** (`total` alone) read as variables and are left out, as are Ruby blocks' own calls,
+  C++ methods only declared in their class, and C# properties and operators.
 
 ## 7. Signed installers and updates
 

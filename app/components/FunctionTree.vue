@@ -1,9 +1,19 @@
 <script setup lang="ts">
 import type { FunctionNode } from '~~/shared/types'
+import type { LastChange } from '~/composables/useFunctionBlame'
 
-// Functions as boxes: a function written inside another is drawn inside it.
-const props = defineProps<{ items: FunctionNode[], path: string, term?: string }>()
+// Functions as boxes: a function written inside another is drawn inside it; with `lastChanges`, who changed each last.
+const props = defineProps<{ items: FunctionNode[], path: string, term?: string, lastChanges?: Map<string, LastChange> | null }>()
 const { index, selected, select, open } = useCode()
+const { times } = usePreferences()
+const age = (seconds: number) => {
+  if (times.value === 'date') return new Date(seconds * 1000).toLocaleDateString()
+  const days = Math.floor((Date.now() / 1000 - seconds) / 86_400)
+  if (days < 1) return t('FunctionTree.today')
+  if (days < 60) return t('FunctionTree.days', { count: days })
+  if (days < 730) return t('FunctionTree.months', { count: Math.floor(days / 30) })
+  return t('FunctionTree.years', { count: Math.floor(days / 365) })
+}
 
 const KIND = { function: 'f', arrow: 'a', method: 'm', class: 'c' } as const
 const KIND_COLOR = {
@@ -48,10 +58,16 @@ function calls(id: string) {
           class="font-mono text-label whitespace-nowrap text-muted tabular-nums"
           :title="t('FunctionTree.calls', { count: calls(fn.id).in, out: calls(fn.id).out })"
         >↘{{ calls(fn.id).in }} ↗{{ calls(fn.id).out }}</span>
+        <span
+          v-if="props.lastChanges?.get(fn.id)"
+          class="max-w-36 truncate text-label whitespace-nowrap"
+          :class="props.lastChanges.get(fn.id)!.uncommitted ? 'text-warning' : 'text-muted'"
+          :title="props.lastChanges.get(fn.id)!.uncommitted ? t('FunctionTree.uncommittedHelp') : t('FunctionTree.lastChange', { subject: props.lastChanges.get(fn.id)!.subject, date: new Date(props.lastChanges.get(fn.id)!.time * 1000).toLocaleString() })"
+        >{{ props.lastChanges.get(fn.id)!.uncommitted ? t('FunctionTree.uncommitted') : `${props.lastChanges.get(fn.id)!.author} · ${age(props.lastChanges.get(fn.id)!.time)}` }}</span>
         <span class="font-mono text-label whitespace-nowrap text-dimmed tabular-nums">:{{ fn.line }}</span>
         <UButton icon="i-lucide-square-arrow-out-up-right" size="xs" color="neutral" variant="ghost" class="-my-1" :aria-label="t('FunctionTree.open', { name: fn.name })" @click="open(props.path, fn.line)" />
       </div>
-      <FunctionTree v-if="fn.children.length" :items="fn.children" :path="props.path" :term="props.term" class="pl-2" />
+      <FunctionTree v-if="fn.children.length" :items="fn.children" :path="props.path" :term="props.term" :last-changes="props.lastChanges" class="pl-2" />
     </div>
   </div>
 </template>

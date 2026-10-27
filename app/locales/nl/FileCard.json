@@ -13,5 +13,7 @@
     "other": "{count} regels"
   },
   "open": "Het bestand openen in de editor",
-  "none": "Geen functies: alleen types, schema's of data."
+  "none": "Geen functies: alleen types, schema's of data.",
+  "bookmark": "Dit bestand bookmarken",
+  "unbookmark": "De bookmark weghalen"
 }

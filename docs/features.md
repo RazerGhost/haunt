@@ -156,9 +156,11 @@ Every commit, two commits compared, a pull request, a branch and the local chang
 ## The code views
 
 - **Layers**: the project's layers, top to bottom, with a tile per part; a part opens folder by folder down to its
-  functions.
+  functions. **Last changed** shows who changed each function last and when (a `git blame` of each file shown open).
+  Bookmark a file to keep it a click away in the Code sidebar and the palette, next to the pinned functions.
 - **Canvas**: the code as boxes in boxes, each sized by its lines: parts, folders, files and functions. Zoom in for
   names and then code; hover a function to see its calls as lines.
+- **Export** the whole canvas or layer map, as shown (light or dark, test files or not), as a PNG or SVG image.
 - **Calls**: how the code reaches a function, from its entry points down, or its callers and callees around it.
 - **Imports**: the imports between parts, on the project's layers when it has rules, with breaks and runtime cycles;
   a part opens to the imports between its folders.
@@ -191,9 +193,11 @@ Without configuration:
 
 - **Languages**: TypeScript and JavaScript, and the script blocks of Vue, Svelte and Astro files, read with the
   TypeScript compiler, with the project's tsconfig, path aliases and workspace packages. PHP (Laravel, WordPress), Rust,
-  Lua, Python and Go, read with tree-sitter: their imports are resolved per language (Composer's PSR-4 map, Rust's
-  modules and crates, Lua's `require`, Python's imports, Go's packages through go.mod) and their calls are matched by
-  name, drawn dashed and marked ≈. WordPress hooks count as calls to their callback.
+  Lua, Python, Go, Java, C#, Ruby, C and C++ (a `.h` header as C), read with tree-sitter: their imports are resolved
+  per language (Composer's PSR-4 map, Rust's modules and crates, Lua's `require`, Python's imports, Go's packages
+  through go.mod, Java's imports from the package's source folder, C#'s `using` to the namespace's folder, Ruby's
+  `require` and `require_relative`, C and C++'s `#include "…"`) and their calls are matched by name, drawn dashed and
+  marked ≈. WordPress hooks count as calls to their callback.
 - **Files**: what the tsconfigs include, and every other source file outside dependencies, builds and bundled
   JavaScript.
 - **Parts**: in a workspace (pnpm, npm or Cargo), each package or crate; otherwise the folders in the source folder

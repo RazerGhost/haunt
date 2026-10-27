@@ -71,10 +71,10 @@ pub fn find_runtime() -> Result<Runtime, String> {
     }
     Err(match old_node {
         Some(version) => format!(
-            "Haunt needs Node {}.{} or later to read TypeScript and JavaScript; this machine has {version}. PHP, Rust, Lua, Python and Go are still read. Update Node (or install Bun or Deno), then open Haunt again.",
+            "Haunt needs Node {}.{} or later to read TypeScript and JavaScript; this machine has {version}. PHP, Rust, Lua, Python, Go, Java, C#, Ruby, C and C++ are still read. Update Node (or install Bun or Deno), then open Haunt again.",
             NODE_MIN.0, NODE_MIN.1
         ),
-        None => "No JavaScript runtime was found, so Haunt reads only PHP, Rust, Lua, Python and Go. For TypeScript and JavaScript, install Node 22.18 or later from nodejs.org (or Bun or Deno), then open Haunt again.".into(),
+        None => "No JavaScript runtime was found, so Haunt reads only PHP, Rust, Lua, Python, Go, Java, C#, Ruby, C and C++. For TypeScript and JavaScript, install Node 22.18 or later from nodejs.org (or Bun or Deno), then open Haunt again.".into(),
     })
 }
 

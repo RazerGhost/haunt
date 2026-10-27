@@ -1,4 +1,4 @@
-//! PHP, Rust and Lua on the sidecar's fixture projects: each file's functions, its imports resolved per language, and
+//! The languages read with tree-sitter on the sidecar's fixture projects: each file's functions, its imports resolved per language, and
 //! the calls matched by name. How the sidecar puts them into a scan (parts, imports between parts) is tested end to end
 //! in `api.rs`.
 
@@ -180,6 +180,83 @@ fn a_go_module_packages_methods_and_calls_by_name() {
     assert_eq!(seen.calls, ["Order.Total → rate", "main → New", "main → Order.Total"]);
     // A package is a folder: an import leads to its first file.
     assert_eq!(seen.imports, ["main.go → order/order.go"]);
+}
+
+#[test]
+fn a_java_project_imports_from_the_source_folder_and_calls_by_name() {
+    let seen = seen("java-app", &[]);
+    assert_eq!(
+        seen.outline["src/main/java/com/shop/order/Order.java"],
+        ["class Order exp :3", "  method Order exp :6", "  method create exp :10", "  method total exp :14"]
+    );
+    assert_eq!(seen.outline["src/main/java/com/shop/order/Pricing.java"], ["class Pricing :3", "  method rate :4"]);
+    assert_eq!(seen.calls, ["create → Order", "main → create", "main → total", "total → rate"]);
+    assert_eq!(seen.imports, ["src/main/java/com/shop/Main.java → src/main/java/com/shop/order/Order.java (types)"]);
+}
+
+#[test]
+fn a_csharp_project_namespaces_to_folders_and_calls_by_name() {
+    let seen = seen("csharp-app", &[]);
+    assert_eq!(
+        seen.outline["Shop/Orders/Order.cs"],
+        ["class Order exp :3", "  method Order exp :7", "  method Create exp :9", "  method Total exp :11"]
+    );
+    assert_eq!(seen.calls, ["Create → Order", "Main → Create", "Main → Total", "Total → Rate"]);
+    // A namespace is a folder: a using leads to its first file.
+    assert_eq!(seen.imports, ["Shop/Program.cs → Shop/Orders/Order.cs (types)"]);
+}
+
+#[test]
+fn a_ruby_project_require_relative_modules_and_private_methods() {
+    let seen = seen("ruby-app", &[]);
+    assert_eq!(
+        seen.outline["lib/shop/order.rb"],
+        [
+            "class Shop exp :4",
+            "  class Order exp :5",
+            "    method self.make exp :6",
+            "    method initialize exp :10",
+            "    method total exp :14",
+            "    method round :20"
+        ]
+    );
+    assert_eq!(seen.calls, ["main → self.make", "main → total", "total → round", "total → self.rate"]);
+    assert_eq!(seen.imports, ["lib/shop/order.rb → lib/shop/pricing.rb", "main.rb → lib/shop/order.rb"]);
+}
+
+#[test]
+fn a_c_project_headers_static_functions_and_calls_by_name() {
+    let seen = seen("c-app", &[]);
+    assert_eq!(
+        seen.outline["order.c"],
+        ["function rate :3", "function order_new exp :7", "function order_total exp :12"]
+    );
+    // A header's declarations are no functions; the definitions in order.c are.
+    assert!(seen.outline["order.h"].is_empty());
+    assert_eq!(seen.calls, ["main → order_new", "main → order_total", "order_total → rate"]);
+    assert_eq!(seen.imports, ["main.c → order.h", "order.c → order.h"]);
+}
+
+#[test]
+fn a_cpp_project_namespaces_classes_and_methods_written_outside_them() {
+    let seen = seen("cpp-app", &[]);
+    assert_eq!(
+        seen.outline["src/shop/order.hpp"],
+        ["class shop exp :3", "  class Order exp :5", "    method Order :11"]
+    );
+    assert_eq!(
+        seen.outline["src/shop/order.cpp"],
+        ["class shop exp :4", "  method Order::make exp :6", "  method Order::total exp :10"]
+    );
+    assert_eq!(seen.calls, ["Order::total → rate", "main → Order::make", "main → Order::total"]);
+    assert_eq!(
+        seen.imports,
+        [
+            "src/main.cpp → src/shop/order.hpp",
+            "src/shop/order.cpp → src/shop/order.hpp",
+            "src/shop/order.cpp → src/shop/pricing.hpp"
+        ]
+    );
 }
 
 /* ---------- the changes by function ---------- */

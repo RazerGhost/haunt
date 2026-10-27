@@ -11,8 +11,8 @@ test('reads the shared cases as the app does', () => {
 })
 
 test('knows tests by their names and folders, test helpers in a testing folder too', () => {
-  for (const path of ['a.test.ts', 'src/a.spec.tsx', 'tests/a.ts', 'src/testing/access-sweep.ts', 'e2e/login.ts', 'UserTest.php', 'x_spec.lua']) {
+  for (const path of ['a.test.ts', 'src/a.spec.tsx', 'tests/a.ts', 'src/testing/access-sweep.ts', 'e2e/login.ts', 'UserTest.php', 'x_spec.lua', 'src/OrderTest.java', 'OrderTests.cs', 'order_spec.rb', 'order_test.cpp']) {
     assert.equal(isTestPath(path), true, path)
   }
-  for (const path of ['src/a.ts', 'src/kernel/testable.ts', 'docs/testing.md']) assert.equal(isTestPath(path), false, path)
+  for (const path of ['src/a.ts', 'src/kernel/testable.ts', 'docs/testing.md', 'src/Order.java']) assert.equal(isTestPath(path), false, path)
 })

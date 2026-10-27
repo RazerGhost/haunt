@@ -1,6 +1,7 @@
-//! The PHP, Rust, Lua, Python and Go files of a scan, read here for the sidecar: it puts the scan together (the project decides each
-//! file's part and whether it is a test, and judges the imports), and asks for these files' functions, imports and
-//! guessed calls while it scans. Readings are kept by modification time, so a rescan only reads what changed.
+//! The PHP, Rust, Lua, Python, Go, Java, C#, Ruby, C and C++ files of a scan, read here for the sidecar: it puts the
+//! scan together (the project decides each file's part and whether it is a test, and judges the imports), and asks for
+//! these files' functions, imports and guessed calls while it scans. Readings are kept by modification time, so a
+//! rescan only reads what changed.
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -113,7 +114,7 @@ pub fn read(root: &str, request: &Request) -> Answer {
     Answer { files, calls }
 }
 
-/// The functions of another version of a PHP, Rust, Lua, Python or Go file (its text at a commit), for the changes by function.
+/// The functions of another version of a file read with tree-sitter (its text at a commit), for the changes by function.
 pub fn functions_of(root: &str, path: &str, source: &str) -> Vec<FunctionNode> {
     let Some(language) = language_of(path).filter(|language| *language != Language::Typescript) else {
         return Vec::new();
@@ -137,7 +138,7 @@ struct Text {
 }
 
 /// Answers what the sidecar asks while it scans (a whole protocol line in, the answer's value as JSON text out):
-/// `read-others` for the PHP, Rust, Lua, Python and Go files of a scan, `functions` for one such file's text at a commit.
+/// `read-others` for the files of a scan read with tree-sitter, `functions` for one such file's text at a commit.
 pub fn answer(root: &str, line: &str) -> Result<String, String> {
     let asked: Asked = serde_json::from_str(line).map_err(|error| error.to_string())?;
     let value = match asked.kind.as_str() {

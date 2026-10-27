@@ -6,5 +6,11 @@
     "one": "Tint files by how often they changed in the last {count} day",
     "other": "Tint files by how often they changed in the last {count} days"
   },
-  "fit": "Fit"
+  "fit": "Fit",
+  "export": "Export",
+  "exportTitle": "Export the canvas",
+  "png": "PNG image",
+  "svg": "SVG image",
+  "exported": "Canvas exported",
+  "notExported": "The canvas could not be exported"
 }

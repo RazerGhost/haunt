@@ -13,6 +13,7 @@ mod code;
 mod devbridge;
 mod editor;
 mod events;
+mod export;
 mod folders;
 mod git;
 mod hosts;

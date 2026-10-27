@@ -6,5 +6,11 @@
     "one": "Kleur bestanden naar hoe vaak ze wijzigden in de laatste {count} dag",
     "other": "Kleur bestanden naar hoe vaak ze wijzigden in de laatste {count} dagen"
   },
-  "fit": "Passend"
+  "fit": "Passend",
+  "export": "Exporteren",
+  "exportTitle": "Canvas exporteren",
+  "png": "PNG-afbeelding",
+  "svg": "SVG-afbeelding",
+  "exported": "Canvas geëxporteerd",
+  "notExported": "Het canvas kon niet worden geëxporteerd"
 }

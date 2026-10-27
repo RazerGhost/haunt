@@ -1,11 +1,12 @@
 /*
  * The languages Haunt reads, by file extension. The TypeScript family goes through the TypeScript compiler (with the
  * type checker for calls): TypeScript, JavaScript, and the script blocks of Vue, Svelte and Astro files (frameworks.ts).
- * The others the app reads with tree-sitter (src-tauri/src/code), with calls matched by name; its copy of this table
- * (code/languages.rs) is tested against the same cases (shared/languages.cases.json).
+ * The others (PHP, Rust, Lua, Python, Go, Java, C#, Ruby, C and C++) the app reads with tree-sitter (src-tauri/src/code),
+ * with calls matched by name; its copy of this table (code/languages.rs) is tested against the same cases
+ * (shared/languages.cases.json).
  */
 
-export type Language = 'typescript' | 'php' | 'rust' | 'lua' | 'python' | 'go'
+export type Language = 'typescript' | 'php' | 'rust' | 'lua' | 'python' | 'go' | 'java' | 'csharp' | 'ruby' | 'c' | 'cpp'
 
 const TYPESCRIPT = /\.([cm]?tsx?|[cm]?jsx?|vue|svelte|astro)$/
 /** Files whose code sits in script blocks, read through a TypeScript view of them (frameworks.ts). */
@@ -21,7 +22,13 @@ const OTHERS: Record<Exclude<Language, 'typescript'>, RegExp> = {
   rust: /\.rs$/,
   lua: /\.lua$/,
   python: /\.py$/,
-  go: /\.go$/
+  go: /\.go$/,
+  java: /\.java$/,
+  csharp: /\.cs$/,
+  ruby: /\.rb$/,
+  // A .h header is read as C.
+  c: /\.[ch]$/,
+  cpp: /\.(cpp|cc|cxx|hpp|hh|hxx)$/
 }
 
 /** Larger files are generated or vendored, not written. */
@@ -45,5 +52,7 @@ export function isTestPath(path: string): boolean {
     || /_spec\.lua$|_test\.lua$/.test(path)
     || /(^|\/)test_[^/]*\.py$|_test\.py$|(^|\/)conftest\.py$/.test(path)
     || /_test\.go$/.test(path)
+    || /Tests?\.(java|cs)$/.test(path)
+    || /_(spec|test)\.rb$|_test\.(c|cc|cpp)$/.test(path)
     || /(^|\/)(tests?|testing|spec|__tests__|__mocks__|__fixtures__|fixtures|e2e)\//.test(path)
 }

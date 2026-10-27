@@ -48,5 +48,6 @@
   "reflog": "Reflog",
   "reflogHelp": "waar HEAD en de branches naar wezen",
   "grep": "Bestanden doorzoeken",
-  "grepHelp": "tekst zoeken in de bestanden van een commit"
+  "grepHelp": "tekst zoeken in de bestanden van een commit",
+  "bookmarks": "Gebookmarkte bestanden"
 }

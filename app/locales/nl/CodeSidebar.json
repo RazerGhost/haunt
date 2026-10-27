@@ -18,5 +18,8 @@
   "functions": {
     "one": "{count} functie",
     "other": "{count} functies"
-  }
+  },
+  "bookmarks": "Bookmarks",
+  "fileGone": "{path} staat niet meer in de scan",
+  "removeBookmark": "De bookmark van {path} weghalen"
 }

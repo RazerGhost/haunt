@@ -11,6 +11,8 @@ const { structure: scan, index, visible, selected } = useCode()
 const route = useRoute()
 const router = useRouter()
 const openAll = ref(true)
+// Who changed each function last (useFunctionBlame), switched on here for every part.
+const { on: lastChanged } = useFunctionBlame()
 
 const part = computed(() => index.value?.parts.get(props.part) ?? null)
 const layer = computed(() => scan.value?.layers.find(layer => layer.id === part.value?.layer))
@@ -69,6 +71,7 @@ function go(to: string): void {
       </div>
       <div class="flex items-center gap-3 text-xs text-muted tabular-nums">
         <span>{{ t('PartFiles.files', { count: folder.fileCount }) }} · {{ t('PartFiles.functions', { count: folder.functionCount }) }}<template v-if="!folder.path"> · {{ t('PartFiles.nested', { count: nested }) }}</template></span>
+        <USwitch v-if="folder.files.length" v-model="lastChanged" :label="t('PartFiles.lastChanged')" :title="t('PartFiles.lastChangedHelp')" size="sm" />
         <USwitch v-if="folder.files.length" v-model="openAll" :label="t('PartFiles.openFiles')" size="sm" />
       </div>
     </div>
@@ -96,7 +99,7 @@ function go(to: string): void {
     <div v-if="folder.files.length" class="grid gap-2">
       <h3 v-if="folder.folders.length" class="font-mono text-xs text-muted">{{ folder.path || './' }} · {{ t('PartFiles.files', { count: folder.files.length }) }}</h3>
       <div class="grid grid-cols-[repeat(auto-fill,minmax(min(22rem,100%),1fr))] items-start gap-2.5">
-        <FileCard v-for="file in folder.files" :key="`${file.path}-${openAll}`" :file="file" :label="file.path.split('/').pop()!" :open="openAll" />
+        <FileCard v-for="file in folder.files" :key="`${file.path}-${openAll}`" :file="file" :label="file.path.split('/').pop()!" :open="openAll || route.query.file === file.path" :highlight="route.query.file === file.path" />
       </div>
     </div>
   </section>

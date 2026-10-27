@@ -19,6 +19,11 @@ const GRAMMARS: Record<string, () => Promise<unknown>> = {
   lua: () => import('shiki/langs/lua.mjs'),
   python: () => import('shiki/langs/python.mjs'),
   go: () => import('shiki/langs/go.mjs'),
+  java: () => import('shiki/langs/java.mjs'),
+  csharp: () => import('shiki/langs/csharp.mjs'),
+  ruby: () => import('shiki/langs/ruby.mjs'),
+  c: () => import('shiki/langs/c.mjs'),
+  cpp: () => import('shiki/langs/cpp.mjs'),
   shellscript: () => import('shiki/langs/shellscript.mjs'),
   json: () => import('shiki/langs/json.mjs'),
   css: () => import('shiki/langs/css.mjs'),
@@ -32,7 +37,7 @@ const GRAMMARS: Record<string, () => Promise<unknown>> = {
 const EXTENSIONS: [RegExp, string][] = [
   [/\.[cm]?ts$/, 'typescript'], [/\.tsx$/, 'tsx'], [/\.[cm]?js$/, 'javascript'], [/\.jsx$/, 'jsx'],
   [/\.vue$/, 'vue'], [/\.svelte$/, 'svelte'], [/\.astro$/, 'astro'], [/\.php$/, 'php'], [/\.rs$/, 'rust'],
-  [/\.lua$/, 'lua'], [/\.py$/, 'python'], [/\.go$/, 'go'], [/\.(sh|bash)$/, 'shellscript'], [/\.jsonc?$/, 'json'], [/\.css$/, 'css'], [/\.scss$/, 'scss'], [/\.html?$/, 'html'],
+  [/\.lua$/, 'lua'], [/\.py$/, 'python'], [/\.go$/, 'go'], [/\.java$/, 'java'], [/\.cs$/, 'csharp'], [/\.rb$/, 'ruby'], [/\.[ch]$/, 'c'], [/\.(cpp|cc|cxx|hpp|hh|hxx)$/, 'cpp'], [/\.(sh|bash)$/, 'shellscript'], [/\.jsonc?$/, 'json'], [/\.css$/, 'css'], [/\.scss$/, 'scss'], [/\.html?$/, 'html'],
   [/\.mdx?$/, 'markdown'], [/\.ya?ml$/, 'yaml'], [/\.toml$/, 'toml']
 ]
 

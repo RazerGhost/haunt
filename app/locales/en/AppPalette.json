@@ -48,5 +48,6 @@
   "reflog": "Reflog",
   "reflogHelp": "where HEAD and the branches pointed",
   "grep": "Search files",
-  "grepHelp": "find text in the files of a commit"
+  "grepHelp": "find text in the files of a commit",
+  "bookmarks": "Bookmarked files"
 }

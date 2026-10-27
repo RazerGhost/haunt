@@ -18,5 +18,8 @@
   "functions": {
     "one": "{count} function",
     "other": "{count} functions"
-  }
+  },
+  "bookmarks": "Bookmarks",
+  "fileGone": "{path} is not in the scan any more",
+  "removeBookmark": "Remove the bookmark of {path}"
 }

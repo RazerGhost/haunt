@@ -14,7 +14,7 @@ export interface WorkspacePackage {
 }
 
 /** Folders never searched: dependencies, builds and caches. */
-export const IGNORED_FOLDERS = new Set(['node_modules', '.git', 'dist', 'build', 'out', 'coverage', '.nuxt', '.output', '.next', '.svelte-kit', '.astro', '.turbo', '.cache', '.data', 'target', 'vendor', '__pycache__', '.venv', 'venv', '.tox', '.mypy_cache', '.pytest_cache'])
+export const IGNORED_FOLDERS = new Set(['node_modules', '.git', 'dist', 'build', 'out', 'coverage', '.nuxt', '.output', '.next', '.svelte-kit', '.astro', '.turbo', '.cache', '.data', 'target', 'vendor', '__pycache__', '.venv', 'venv', '.tox', '.mypy_cache', '.pytest_cache', 'obj'])
 
 /** The `packages:` list of a pnpm-workspace.yaml: enough YAML for a list of strings. */
 export function pnpmPatterns(yaml: string): string[] {

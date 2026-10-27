@@ -441,7 +441,7 @@ watch(() => props.focus, (now) => {
   if (now?.length && fitted) zoomToIds(now.map(path => `file:${path}`))
 })
 
-defineExpose({ fit, zoomToIds })
+defineExpose({ fit, zoomToIds, tree })
 </script>
 
 <template>

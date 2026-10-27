@@ -15,5 +15,7 @@
     "one": "{count} regel",
     "other": "{count} regels"
   },
-  "noPart": "Geen onderdeel met de naam {part} in deze scan."
+  "noPart": "Geen onderdeel met de naam {part} in deze scan.",
+  "lastChanged": "Laatst gewijzigd",
+  "lastChangedHelp": "Wie elke functie het laatst wijzigde, en wanneer (git blame van elk open bestand)"
 }

@@ -1,5 +1,5 @@
 //! The scan done here, without a JavaScript runtime: when neither Node, Bun nor Deno is found, the PHP, Rust, Lua,
-//! Python and Go files are still scanned (their functions, imports and calls matched by name, read by `others.rs`),
+//! Python, Go, Java, C#, Ruby, C and C++ files are still scanned (their functions, imports and calls matched by name, read by `others.rs`),
 //! and put together as the sidecar puts a scan together: the files to read and their parts (sidecar/project.ts and
 //! projects/typescript.ts), workspaces (workspaces.ts), the project's haunt.config.json (config.ts), and the imports
 //! between parts and their cycles (imports.ts). The TypeScript family is left out: it needs the TypeScript compiler.
@@ -40,6 +40,7 @@ const IGNORED: &[&str] = &[
     ".tox",
     ".mypy_cache",
     ".pytest_cache",
+    "obj",
 ];
 
 /// A scan: the structure and the call graph as the sidecar sends them (JSON text), and the structure's shape.
@@ -282,6 +283,8 @@ fn is_test(path: &str) -> bool {
         || name.ends_with("_test.lua")
         || (name.ends_with(".py") && (name.starts_with("test_") || name.ends_with("_test.py") || name == "conftest.py"))
         || name.ends_with("_test.go")
+        || ["Test.java", "Tests.java", "Test.cs", "Tests.cs"].iter().any(|ending| name.ends_with(ending))
+        || ["_spec.rb", "_test.rb", "_test.c", "_test.cc", "_test.cpp"].iter().any(|ending| name.ends_with(ending))
         || segments.iter().any(|folder| {
             matches!(
                 *folder,
@@ -887,6 +890,8 @@ mod tests {
         assert!(is_test("tests/Feature/OrderTest.php"));
         assert!(is_test("app/test_orders.py") && is_test("conftest.py") && is_test("pkg/a_test.go"));
         assert!(is_test("spec/a.lua") && is_test("a_spec.lua"));
+        assert!(is_test("src/OrderTest.java") && is_test("Shop.Tests/OrderTests.cs") && is_test("lib/order_spec.rb"));
+        assert!(is_test("order_test.c") && is_test("order_test.cpp") && !is_test("src/Order.java"));
         assert!(!is_test("app/Models/Order.php") && !is_test("src/testing.py") && !is_test("contest.py"));
     }
 

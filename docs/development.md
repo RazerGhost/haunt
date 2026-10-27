@@ -30,8 +30,8 @@ and attaches the installers to a draft release.
     that is no tab yet. `askpass.rs` passes git's questions to the window.
   - `git/overview.rs` reads any repository by its path, open or not, for the repository manager, and `folders.rs`
     finds the repositories in the folders you add.
-  - `code/` reads PHP, Rust, Lua, Python and Go with tree-sitter (`read.rs`, calls matched by name in `guess.rs`),
-    which the scanner asks for while it scans (`others.rs`), maps a change onto the functions of both versions of each
+  - `code/` reads PHP, Rust, Lua, Python, Go, Java, C#, Ruby, C and C++ with tree-sitter (`read.rs`, calls matched
+    by name in `guess.rs`), which the scanner asks for while it scans (`others.rs`), maps a change onto the functions of both versions of each
     file (`changes.rs`), and reads WordPress routes (`routes.rs`). Without a JavaScript runtime, `scan.rs` scans
     those languages itself, putting the scan together as the sidecar does.
   - `repos.rs` keeps the tabs, trust and the last scans (`settings.rs` saves them), `watch.rs` watches the shown

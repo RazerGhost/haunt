@@ -79,9 +79,9 @@ pub fn ignored(relative: &Path) -> bool {
         .any(|part| matches!(part, Component::Normal(name) if IGNORED.iter().any(|ignored| name == *ignored)))
 }
 
-const SOURCES: [&str; 18] = [
+const SOURCES: [&str; 29] = [
     "ts", "tsx", "mts", "cts", "js", "jsx", "mjs", "cjs", "vue", "svelte", "astro", "php", "rs", "lua", "py", "go",
-    "json", "toml",
+    "java", "cs", "rb", "c", "h", "cpp", "cc", "cxx", "hpp", "hh", "hxx", "json", "toml",
 ];
 
 /// A file a scan reads (or JSON and TOML, which change what a project is).
@@ -137,6 +137,7 @@ mod tests {
         assert!(!ignored(Path::new("src/node_modules_like/b.ts")));
         assert!(source(Path::new("a/b.svelte")));
         assert!(source(Path::new("a/b.py")) && source(Path::new("a/b.go")));
+        assert!(source(Path::new("a/B.java")) && source(Path::new("a/b.rb")) && source(Path::new("a/b.hpp")));
         assert!(!source(Path::new("a/b.md")));
         assert!(root_file("go.mod") && root_file("pyproject.toml"));
         assert!(root_file("tsconfig.app.json"));

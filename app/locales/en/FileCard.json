@@ -13,5 +13,7 @@
     "other": "{count} lines"
   },
   "open": "Open the file in the editor",
-  "none": "No functions: types, schemas or data only."
+  "none": "No functions: types, schemas or data only.",
+  "bookmark": "Bookmark this file",
+  "unbookmark": "Remove the bookmark"
 }

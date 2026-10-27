@@ -16,6 +16,7 @@ const undo = useUndo()
 const { operation } = useOperation()
 const { switchTo } = useMode()
 const pins = usePins()
+const bookmarks = useBookmarks()
 const toast = useToast()
 
 async function openTerminal(root: string): Promise<void> {
@@ -122,6 +123,16 @@ const groups = computed(() => {
           select(pin.found!.fn.id)
           return router.push({ path: '/calls', query: { center: pin.found!.fn.id, fn: pin.found!.fn.id } })
         })
+      }))
+    },
+    {
+      id: 'bookmarks',
+      label: t('AppPalette.bookmarks'),
+      items: bookmarks.bookmarks.value.filter(mark => mark.found).map(mark => ({
+        label: mark.path.split('/').pop() ?? mark.path,
+        suffix: tailOf(mark.path),
+        icon: 'i-lucide-bookmark',
+        onSelect: () => run(() => bookmarks.show(mark.path))
       }))
     },
     {

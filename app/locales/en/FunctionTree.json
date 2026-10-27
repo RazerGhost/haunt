@@ -11,5 +11,21 @@
     "one": "Called from {count} function, calls {out}",
     "other": "Called from {count} functions, calls {out}"
   },
-  "open": "Open {name} in the editor"
+  "open": "Open {name} in the editor",
+  "today": "today",
+  "days": {
+    "one": "{count} d",
+    "other": "{count} d"
+  },
+  "months": {
+    "one": "{count} mo",
+    "other": "{count} mo"
+  },
+  "years": {
+    "one": "{count} y",
+    "other": "{count} y"
+  },
+  "uncommitted": "not committed",
+  "uncommittedHelp": "Some of its lines are not committed yet",
+  "lastChange": "{subject}\n{date}"
 }

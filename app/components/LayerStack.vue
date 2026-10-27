@@ -30,6 +30,8 @@ const bands = computed(() => {
 const searching = computed(() => !!search.value.trim())
 const short = (name: string) => name.replace(/^@[^/]+\//, '')
 
+defineExpose({ bands, short })
+
 /** A tile's background: hotter parts warmer, from nothing to a clear amber. */
 function tint(name: string): Record<string, string> {
   const hot = props.heat?.get(name)

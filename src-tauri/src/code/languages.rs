@@ -1,7 +1,7 @@
 //! The languages Haunt reads, by file extension, as the sidecar's `languages.ts` has them. The TypeScript family goes
 //! through the TypeScript compiler in the sidecar (TypeScript, JavaScript, and Vue, Svelte and Astro files); PHP, Rust,
-//! Lua, Python and Go through tree-sitter here, with calls matched by name. `shared/languages.cases.json` holds paths both copies are
-//! tested against, so they cannot drift apart.
+//! Lua, Python, Go, Java, C#, Ruby, C and C++ through tree-sitter here, with calls matched by name (a `.h` header is
+//! read as C). `shared/languages.cases.json` holds paths both copies are tested against, so they cannot drift apart.
 
 use serde::{Deserialize, Serialize};
 
@@ -14,6 +14,11 @@ pub enum Language {
     Lua,
     Python,
     Go,
+    Java,
+    Csharp,
+    Ruby,
+    C,
+    Cpp,
 }
 
 /// Larger files are generated or vendored, not written.
@@ -67,6 +72,21 @@ pub fn language_of(path: &str) -> Option<Language> {
     }
     if path.ends_with(".go") {
         return Some(Language::Go);
+    }
+    if path.ends_with(".java") {
+        return Some(Language::Java);
+    }
+    if path.ends_with(".cs") {
+        return Some(Language::Csharp);
+    }
+    if path.ends_with(".rb") {
+        return Some(Language::Ruby);
+    }
+    if ends_with_any(path, &[".c", ".h"]) {
+        return Some(Language::C);
+    }
+    if ends_with_any(path, &[".cpp", ".cc", ".cxx", ".hpp", ".hh", ".hxx"]) {
+        return Some(Language::Cpp);
     }
     None
 }

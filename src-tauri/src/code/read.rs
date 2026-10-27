@@ -1,10 +1,11 @@
-//! One PHP, Rust, Lua, Python or Go file through tree-sitter (the native grammars):
+//! One PHP, Rust, Lua, Python, Go, Java, C#, Ruby, C or C++ file through tree-sitter (the native grammars):
 //!
 //! - Functions: the same tree as the sidecar builds for TypeScript: a function written inside another is its child, and
 //!   an unnamed function only stays when a named one sits inside it.
 //! - Imports: resolved to files per language (PHP `use` through Composer's PSR-4 map and `require`/`include`; Rust `mod`
 //!   and `use`; Lua `require`; Python `import` and `from … import`; Go `import` of the module's own packages, through
-//!   go.mod, to a file of that package).
+//!   go.mod, to a file of that package; Java `import` from the file's source folder; C# `using` of a namespace, to its
+//!   folder's first file; Ruby `require` and `require_relative`; C and C++ `#include "…"`, not `<…>`).
 //! - Calls: by the callee's name and how it is called; `guess.rs` matches them to functions across files.
 
 use std::collections::HashMap;
@@ -60,6 +61,11 @@ fn grammar(language: Language) -> Option<tree_sitter::Language> {
         Language::Lua => tree_sitter_lua::LANGUAGE.into(),
         Language::Python => tree_sitter_python::LANGUAGE.into(),
         Language::Go => tree_sitter_go::LANGUAGE.into(),
+        Language::Java => tree_sitter_java::LANGUAGE.into(),
+        Language::Csharp => tree_sitter_c_sharp::LANGUAGE.into(),
+        Language::Ruby => tree_sitter_ruby::LANGUAGE.into(),
+        Language::C => tree_sitter_c::LANGUAGE.into(),
+        Language::Cpp => tree_sitter_cpp::LANGUAGE.into(),
         Language::Typescript => return None,
     })
 }
@@ -130,13 +136,42 @@ fn kind_of(language: Language, kind: &str) -> Option<FunctionKind> {
         (Language::Go, "function_declaration") => Function,
         (Language::Go, "method_declaration") => Method,
         (Language::Go, "func_literal") => Arrow,
+        (Language::Java | Language::Csharp, "method_declaration" | "constructor_declaration") => Method,
+        (
+            Language::Java,
+            "class_declaration"
+            | "interface_declaration"
+            | "enum_declaration"
+            | "record_declaration"
+            | "annotation_type_declaration",
+        ) => Class,
+        (Language::Java | Language::Csharp, "lambda_expression") => Arrow,
+        (Language::Csharp, "local_function_statement" | "anonymous_method_expression") => Function,
+        (
+            Language::Csharp,
+            "class_declaration"
+            | "struct_declaration"
+            | "interface_declaration"
+            | "record_declaration"
+            | "namespace_declaration",
+        ) => Class,
+        (Language::Ruby, "method") => Function,
+        (Language::Ruby, "singleton_method") => Method,
+        (Language::Ruby, "class" | "module") => Class,
+        (Language::Ruby, "lambda") => Arrow,
+        (Language::C | Language::Cpp, "function_definition") => Function,
+        (Language::Cpp, "class_specifier" | "struct_specifier" | "namespace_definition") => Class,
+        (Language::Cpp, "lambda_expression") => Arrow,
         _ => return None,
     })
 }
 
-/// Rust items that are containers only when they have a body: `mod util;` declares a file, it holds nothing.
+/// Items that are containers only when they have a body: Rust's `mod util;` declares a file and C++'s `class Order;`
+/// (or `struct order *o`) names a type; they hold nothing.
 fn is_container(language: Language, node: Node) -> bool {
-    kind_of(language, node.kind()).is_some() && (node.kind() != "mod_item" || field(node, "body").is_some())
+    kind_of(language, node.kind()).is_some()
+        && (!matches!(node.kind(), "mod_item" | "class_specifier" | "struct_specifier")
+            || field(node, "body").is_some())
 }
 
 /// The name a function gets from what it is assigned to: `$f = function`, `local f = function`, `let f = |x|`.
@@ -163,7 +198,32 @@ fn assigned_name(node: Node, source: &str) -> Option<String> {
         let name = text(field(parent, "pattern"), source);
         return (!name.is_empty()).then(|| name.to_owned());
     }
+    // Java and C# `Runnable r = () -> …`, C++ `auto f = [](int x) { … }`.
+    if matches!(parent.kind(), "variable_declarator" | "init_declarator") {
+        let name = text(field(parent, "name").or_else(|| field(parent, "declarator")), source);
+        return (!name.is_empty()).then(|| name.to_owned());
+    }
     None
+}
+
+/// A C or C++ function's name, from inside its declarator: `int *next(void)` is next, `void Order::total()` is
+/// Order::total.
+fn c_function_name(node: Node, source: &str) -> Option<String> {
+    let mut declarator = field(node, "declarator")?;
+    while declarator.kind() != "function_declarator" {
+        declarator = field(declarator, "declarator")
+            .or_else(|| named_children(declarator).into_iter().find(|child| child.kind().ends_with("declarator")))?;
+    }
+    let name: String = text(field(declarator, "declarator"), source).split_whitespace().collect();
+    (!name.is_empty()).then_some(name)
+}
+
+/// The type a C++ method written outside its class belongs to: `Order::total` is Order, `shop::Box<T>::get` is Box.
+pub fn scope_of(name: &str) -> Option<&str> {
+    let (scope, _) = name.rsplit_once("::")?;
+    let scope = scope.rsplit("::").next().unwrap_or(scope);
+    let scope = scope.split('<').next().unwrap_or(scope);
+    (!scope.is_empty()).then_some(scope)
 }
 
 fn name_of(language: Language, node: Node, source: &str) -> Option<String> {
@@ -202,8 +262,62 @@ fn name_of(language: Language, node: Node, source: &str) -> Option<String> {
             "func_literal" => assigned_name(node, source),
             _ => own(),
         },
+        Language::Java | Language::Csharp => match node.kind() {
+            "lambda_expression" | "anonymous_method_expression" => assigned_name(node, source),
+            _ => own(),
+        },
+        // Ruby: `def self.make` is self.make.
+        Language::Ruby => match node.kind() {
+            "singleton_method" => Some(format!("{}.{}", text(field(node, "object"), source), own()?)),
+            "lambda" => assigned_name(node, source),
+            _ => own(),
+        },
+        Language::C | Language::Cpp => match node.kind() {
+            "function_definition" => c_function_name(node, source),
+            "lambda_expression" => assigned_name(node, source),
+            _ => own(),
+        },
         Language::Typescript => None,
     }
+}
+
+/// Ruby: a method after `private` or `protected` in its class, or written as `private def x`, is the class's own.
+fn ruby_public(node: Node, source: &str) -> bool {
+    let wrapped = node.parent().filter(|parent| parent.kind() == "argument_list").and_then(|list| list.parent());
+    if wrapped.is_some_and(|call| matches!(text(field(call, "method"), source), "private" | "protected")) {
+        return false;
+    }
+    let mut sibling = node.prev_named_sibling();
+    while let Some(previous) = sibling {
+        if previous.kind() == "identifier" {
+            match text(Some(previous), source) {
+                "private" | "protected" => return false,
+                "public" => return true,
+                _ => {}
+            }
+        }
+        sibling = previous.prev_named_sibling();
+    }
+    true
+}
+
+/// C and C++: a member as the access before it says (`public:`; a struct's members are public, a class's are not), and
+/// anything else unless it is `static` in its file.
+fn c_public(node: Node, source: &str) -> bool {
+    let at = node.parent().filter(|parent| parent.kind() == "template_declaration").unwrap_or(node);
+    let Some(list) = at.parent().filter(|parent| parent.kind() == "field_declaration_list") else {
+        return !named_children(node)
+            .iter()
+            .any(|child| child.kind() == "storage_class_specifier" && text(Some(*child), source) == "static");
+    };
+    let mut sibling = at.prev_named_sibling();
+    while let Some(previous) = sibling {
+        if previous.kind() == "access_specifier" {
+            return text(Some(previous), source) == "public";
+        }
+        sibling = previous.prev_named_sibling();
+    }
+    list.parent().is_some_and(|holder| holder.kind() == "struct_specifier")
 }
 
 fn exported(language: Language, node: Node, source: &str) -> bool {
@@ -226,6 +340,18 @@ fn exported(language: Language, node: Node, source: &str) -> bool {
         Language::Python => !text(field(node, "name"), source).starts_with('_'),
         // Go: a capital first letter exports.
         Language::Go => text(field(node, "name"), source).starts_with(|c: char| c.is_uppercase()),
+        // Java and C#: declared `public`; a C# namespace is open to all.
+        Language::Java => named_children(node).iter().any(|child| {
+            child.kind() == "modifiers" && text(Some(*child), source).split_whitespace().any(|word| word == "public")
+        }),
+        Language::Csharp => {
+            node.kind() == "namespace_declaration"
+                || named_children(node)
+                    .iter()
+                    .any(|child| child.kind() == "modifier" && text(Some(*child), source) == "public")
+        }
+        Language::Ruby => node.kind() != "lambda" && (node.kind() != "method" || ruby_public(node, source)),
+        Language::C | Language::Cpp => node.kind() != "lambda_expression" && c_public(node, source),
         Language::Typescript => false,
     }
 }
@@ -237,6 +363,9 @@ fn is_async(language: Language, node: Node, source: &str) -> bool {
                 && text(Some(*child), source).split_whitespace().any(|word| word == "async")
         }),
         Language::Python => node.kind() == "function_definition" && text(Some(node), source).starts_with("async"),
+        Language::Csharp => {
+            named_children(node).iter().any(|child| child.kind() == "modifier" && text(Some(*child), source) == "async")
+        }
         _ => false,
     }
 }
@@ -262,9 +391,18 @@ impl Reader<'_> {
             let mut kind = kind_of(self.language, node.kind()).expect("a container");
             let plain_in_type = matches!(
                 (self.language, node.kind()),
-                (Language::Rust, "function_item") | (Language::Python, "function_definition")
+                (Language::Rust, "function_item")
+                    | (Language::Python, "function_definition")
+                    | (Language::Ruby, "method")
+                    | (Language::Cpp, "function_definition")
             );
             if plain_in_type && container.is_some() {
+                kind = FunctionKind::Method;
+            }
+            // C++ `void Order::total() {}`: a method of Order, written outside it.
+            let outside = if self.language == Language::Cpp { name.as_deref().and_then(scope_of) } else { None }
+                .map(str::to_owned);
+            if outside.is_some() && kind == FunctionKind::Function {
                 kind = FunctionKind::Method;
             }
             let start = node.start_position();
@@ -288,10 +426,15 @@ impl Reader<'_> {
                     self.reading.classes.push(qualified);
                 }
             }
-            // The functions in a class, impl or trait are its methods (`$this`, `self`); an inline Rust `mod` holds plain ones.
-            let opens = is_type && node.kind() != "mod_item";
-            let inner_container =
-                if opens { name.clone().or(container.map(str::to_owned)) } else { container.map(str::to_owned) };
+            // The functions in a class, impl or trait are its methods (`$this`, `self`); an inline Rust `mod`, a C#
+            // namespace and a C++ namespace hold plain ones.
+            let opens =
+                is_type && !matches!(node.kind(), "mod_item" | "namespace_declaration" | "namespace_definition");
+            let inner_container = if opens {
+                name.clone().or(container.map(str::to_owned))
+            } else {
+                outside.or(container.map(str::to_owned))
+            };
             let calls_before = self.reading.calls.len();
             let mut children = Vec::new();
             for child in named_children(node) {
@@ -451,8 +594,114 @@ fn call_of(language: Language, node: Node, container: Option<&str>, source: &str
                 _ => None,
             }
         }
+        // Java: f(), this.m(), Order.make(), order.total(), new Order()
+        Language::Java => match node.kind() {
+            "method_invocation" => {
+                let receiver = match field(node, "object") {
+                    Some(object) if object.kind() == "this" => own(),
+                    Some(object) if object.kind() == "identifier" => on_name(text(Some(object), source)),
+                    _ => Receiver::Plain,
+                };
+                Some((text(field(node, "name"), source).to_owned(), receiver))
+            }
+            "object_creation_expression" => created(field(node, "type"), source),
+            _ => None,
+        },
+        // C#: F(), this.M(), Order.Make(), order.Total(), F<T>(), new Order()
+        Language::Csharp => match node.kind() {
+            "invocation_expression" => {
+                let callee = field(node, "function")?;
+                match callee.kind() {
+                    "member_access_expression" => {
+                        let object = text(field(callee, "expression"), source);
+                        let receiver = if object == "this" {
+                            own()
+                        } else if object.chars().all(|c| c.is_alphanumeric() || c == '_') {
+                            on_name(object)
+                        } else {
+                            Receiver::Plain
+                        };
+                        Some((without_generics(text(field(callee, "name"), source)), receiver))
+                    }
+                    "identifier" | "generic_name" => {
+                        Some((without_generics(text(Some(callee), source)), Receiver::Plain))
+                    }
+                    _ => None,
+                }
+            }
+            "object_creation_expression" => created(field(node, "type"), source),
+            _ => None,
+        },
+        // Ruby: f(1), self.m, Order.make, order.total, Order.new; a bare `f` without arguments reads as a variable.
+        Language::Ruby => {
+            if node.kind() != "call" {
+                return None;
+            }
+            let name = text(field(node, "method"), source);
+            let receiver = match field(node, "receiver") {
+                None if matches!(name, "require" | "require_relative" | "private" | "protected" | "public") => {
+                    return None
+                }
+                None => Receiver::Plain,
+                Some(receiver) if receiver.kind() == "self" => own(),
+                Some(receiver) if matches!(receiver.kind(), "constant" | "scope_resolution") => {
+                    let type_ = last(text(Some(receiver), source)).to_owned();
+                    if name == "new" {
+                        return Some((type_.clone(), Receiver::Type(type_)));
+                    }
+                    Receiver::Type(type_)
+                }
+                Some(_) => Receiver::Plain,
+            };
+            (!name.is_empty()).then(|| (name.to_owned(), receiver))
+        }
+        // C and C++: f(), o->f(), o.f(), this->m(), Order::make(), std::sort(), new Order()
+        Language::C | Language::Cpp => match node.kind() {
+            "call_expression" => {
+                let callee = field(node, "function")?;
+                match callee.kind() {
+                    "identifier" => Some((text(Some(callee), source).to_owned(), Receiver::Plain)),
+                    "template_function" => Some((text(field(callee, "name"), source).to_owned(), Receiver::Plain)),
+                    "field_expression" => {
+                        let receiver =
+                            if text(field(callee, "argument"), source) == "this" { own() } else { Receiver::Plain };
+                        let member = field(callee, "field")?;
+                        let name =
+                            if member.kind() == "template_method" { field(member, "name") } else { Some(member) };
+                        Some((text(name, source).to_owned(), receiver))
+                    }
+                    "qualified_identifier" => {
+                        let (scope, name) = text(Some(callee), source).rsplit_once("::")?;
+                        Some((without_generics(name), on_name(scope.rsplit("::").next().unwrap_or(scope))))
+                    }
+                    _ => None,
+                }
+            }
+            "new_expression" => created(field(node, "type"), source),
+            _ => None,
+        },
         Language::Typescript => None,
     }
+}
+
+/// A call on a name: on a type when it is capitalised (`Order.make()`), else on a value or a namespace.
+fn on_name(name: &str) -> Receiver {
+    if name.starts_with(|c: char| c.is_ascii_uppercase()) {
+        Receiver::Type(name.to_owned())
+    } else {
+        Receiver::Plain
+    }
+}
+
+/// `List<int>` is List.
+fn without_generics(name: &str) -> String {
+    name.split('<').next().unwrap_or(name).trim().to_owned()
+}
+
+/// `new Order(…)` as a call to the class Order, as PHP's `new` is.
+fn created(type_: Option<Node>, source: &str) -> Option<(String, Receiver)> {
+    let name = last(&without_generics(text(type_, source))).to_owned();
+    (!name.is_empty()).then(|| (name.clone(), Receiver::Type(name)))
 }
 
 /// WordPress hooks as calls: `add_action('init', 'boot')` and `add_filter('the_title', [$this, 'title'])` make WordPress
@@ -610,7 +859,85 @@ fn imports_of(language: Language, root_node: Node, ctx: &Context, source: &str) 
                 } else {
                     continue;
                 };
-                add(go_package_file(ctx.root, &folder), false);
+                add(package_file(ctx.root, &folder, ".go"), false);
+            }
+        }
+        // Java: import a.b.C is a/b/C.java in the source folder the file's own package sits in (src/main/java/…); a
+        // static import or a nested class names a member of a/b.java. `import a.b.*` is left out.
+        Language::Java => {
+            let package = named_children(root_node)
+                .into_iter()
+                .find(|child| child.kind() == "package_declaration")
+                .and_then(|declaration| named_children(declaration).into_iter().next());
+            let package = text(package, source).replace('.', "/");
+            let base = if package.is_empty() {
+                dir.clone()
+            } else if dir == package {
+                ".".to_owned()
+            } else {
+                dir.strip_suffix(&format!("/{package}")).unwrap_or(&dir).to_owned()
+            };
+            for import in named_children(root_node).into_iter().filter(|child| child.kind() == "import_declaration") {
+                if has_child(import, "asterisk") {
+                    continue;
+                }
+                let name = text(named_children(import).into_iter().next(), source).replace('.', "/");
+                let outer = dirname(&name);
+                add(
+                    file_in(ctx.root, &[join(&base, &format!("{name}.java")), join(&base, &format!("{outer}.java"))]),
+                    true,
+                );
+            }
+        }
+        // C#: using A.B is the namespace's folder (A/B, or B), to its first file; `using X = A.B.C` and `using static`
+        // name a type, so A/B/C.cs first.
+        Language::Csharp => {
+            for directive in descendants(root_node, &["using_directive"]) {
+                let alias = field(directive, "name");
+                let Some(name) = named_children(directive)
+                    .into_iter()
+                    .find(|child| matches!(child.kind(), "qualified_name" | "identifier") && Some(*child) != alias)
+                else {
+                    continue;
+                };
+                let segments: Vec<&str> = text(Some(name), source).split('.').map(str::trim).collect();
+                // At least two segments of a longer namespace: a lone `Logging` folder is too likely someone else's.
+                let shortest = segments.len().min(2);
+                let found = (0..=segments.len() - shortest).find_map(|start| {
+                    let rest = segments[start..].join("/");
+                    [rest.clone(), format!("src/{rest}")].iter().find_map(|folder| {
+                        file_in(ctx.root, &[format!("{folder}.cs")]).or_else(|| package_file(ctx.root, folder, ".cs"))
+                    })
+                });
+                add(found, true);
+            }
+        }
+        // Ruby: require_relative 'x' from the file's folder; require 'x' from lib/ or the top, gems left out.
+        Language::Ruby => {
+            for call in descendants(root_node, &["call"]) {
+                let method = text(field(call, "method"), source);
+                if field(call, "receiver").is_some() || !matches!(method, "require" | "require_relative") {
+                    continue;
+                }
+                let Some(name) = string_value(field(call, "arguments"), source) else { continue };
+                let file = if name.ends_with(".rb") { name } else { format!("{name}.rb") };
+                let candidates = if method == "require_relative" {
+                    vec![join(&dir, &file)]
+                } else {
+                    vec![format!("lib/{file}"), file.clone(), join(&dir, &file)]
+                };
+                add(file_in(ctx.root, &candidates), false);
+            }
+        }
+        // C and C++: #include "x.h" from the file's folder, the top, include/ or src/; <x.h> is the system's.
+        Language::C | Language::Cpp => {
+            for include in descendants(root_node, &["preproc_include"]) {
+                let Some(path) = field(include, "path").filter(|path| path.kind() == "string_literal") else {
+                    continue;
+                };
+                let Some(name) = string_value(Some(path), source) else { continue };
+                let candidates = [join(&dir, &name), name.clone(), format!("include/{name}"), format!("src/{name}")];
+                add(file_in(ctx.root, &candidates), false);
             }
         }
         Language::Typescript => {}
@@ -647,14 +974,15 @@ fn python_module_file(ctx: &Context, dir: &str, module: &str, names: &[&str]) ->
     None
 }
 
-/// A Go package's first file by name, tests left out: the file its importers lean on stands for the folder.
-fn go_package_file(root: &str, folder: &str) -> Option<String> {
+/// A Go package's or C# namespace's first file by name, Go's tests left out: the file its importers lean on stands for
+/// the folder.
+fn package_file(root: &str, folder: &str, extension: &str) -> Option<String> {
     let dir = std::path::Path::new(root).join(folder);
     let mut names: Vec<String> = std::fs::read_dir(dir)
         .ok()?
         .flatten()
         .map(|entry| entry.file_name().to_string_lossy().into_owned())
-        .filter(|name| name.ends_with(".go") && !name.ends_with("_test.go"))
+        .filter(|name| name.ends_with(extension) && !name.ends_with("_test.go"))
         .collect();
     names.sort();
     let name = names.into_iter().next()?;
@@ -851,6 +1179,176 @@ mod tests {
         assert_eq!(tree, ["Method Order.Total exp :3", "Function helper :7", "  Arrow double :8"]);
         let names: Vec<&str> = reading.calls.iter().map(|call| call.name.as_str()).collect();
         assert_eq!(names, ["sum", "helper", "double", "Len"]);
+    }
+
+    fn calls(reading: &FileReading) -> Vec<(String, Receiver)> {
+        reading.calls.iter().map(|call| (call.name.clone(), call.receiver.clone())).collect()
+    }
+
+    #[test]
+    fn reads_java_classes_nested_types_lambdas_and_calls() {
+        let (tree, reading) = read(
+            Language::Java,
+            "src/main/java/com/shop/Order.java",
+            "package com.shop;\n\npublic class Order {\n  public Order() {}\n  public int total() { return this.sum() + Rate.of(1) + helper(); }\n  private int sum() {\n    Runnable r = () -> run();\n    return new Pricing().rate();\n  }\n  interface Shown { void show(); }\n  enum Kind { A; void k() {} }\n  public record Point(int x) { int y() { return x; } }\n}\n",
+        );
+        assert_eq!(
+            tree,
+            [
+                "Class Order exp :3",
+                "  Method Order exp :4",
+                "  Method total exp :5",
+                "  Method sum :6",
+                "    Arrow r :7",
+                "  Class Shown :10",
+                "    Method show :10",
+                "  Class Kind :11",
+                "    Method k :11",
+                "  Class Point exp :12",
+                "    Method y :12"
+            ]
+        );
+        let own = || Receiver::SelfOf(Some("Order".into()));
+        assert_eq!(
+            calls(&reading),
+            [
+                ("sum".into(), own()),
+                ("of".into(), Receiver::Type("Rate".into())),
+                ("helper".into(), Receiver::Plain),
+                ("run".into(), Receiver::Plain),
+                ("rate".into(), Receiver::Plain),
+                ("Pricing".into(), Receiver::Type("Pricing".into()))
+            ]
+        );
+    }
+
+    #[test]
+    fn reads_csharp_namespaces_records_structs_and_calls() {
+        let (tree, reading) = read(
+            Language::Csharp,
+            "Shop/Order.cs",
+            "namespace Shop {\n  public record Line(int X);\n  public class Order {\n    public async Task<int> Total() { return this.Sum() + Rate.Of(1) + Helper<int>(); }\n    private int Sum() {\n      int Local() => 2;\n      Func<int> f = () => Local();\n      return new Pricing().Rate();\n    }\n  }\n  internal struct Point { public int Y() { return 1; } }\n  interface IShown { void Show(); }\n}\n",
+        );
+        assert_eq!(
+            tree,
+            [
+                "Class Shop exp :1",
+                "  Class Line exp :2",
+                "  Class Order exp :3",
+                "    Method Total exp :4",
+                "    Method Sum :5",
+                "      Function Local :6",
+                "      Arrow f :7",
+                "  Class Point :11",
+                "    Method Y exp :11",
+                "  Class IShown :12",
+                "    Method Show :12"
+            ]
+        );
+        assert!(reading.tree[0].children[1].children[0].is_async);
+        let own = || Receiver::SelfOf(Some("Order".into()));
+        assert_eq!(
+            calls(&reading),
+            [
+                ("Sum".into(), own()),
+                ("Of".into(), Receiver::Type("Rate".into())),
+                ("Helper".into(), Receiver::Plain),
+                ("Local".into(), Receiver::Plain),
+                ("Rate".into(), Receiver::Plain),
+                ("Pricing".into(), Receiver::Type("Pricing".into()))
+            ]
+        );
+    }
+
+    #[test]
+    fn reads_ruby_modules_classes_private_methods_and_calls() {
+        let (tree, reading) = read(
+            Language::Ruby,
+            "lib/shop/order.rb",
+            "module Shop\n  class Order\n    def self.make\n      Order.new(1)\n    end\n\n    def total\n      self.sum + Pricing.rate(1) + helper(2)\n    end\n\n    private\n\n    def sum\n      items.map { |x| x.price }\n    end\n  end\nend\n\ndef helper(x)\n  x\nend\n\ndouble = ->(x) { x * 2 }\n",
+        );
+        assert_eq!(
+            tree,
+            [
+                "Class Shop exp :1",
+                "  Class Order exp :2",
+                "    Method self.make exp :3",
+                "    Method total exp :7",
+                "    Method sum :13",
+                "Function helper exp :19",
+                "Arrow double :23"
+            ]
+        );
+        let own = || Receiver::SelfOf(Some("Order".into()));
+        assert_eq!(
+            calls(&reading),
+            [
+                ("Order".into(), Receiver::Type("Order".into())),
+                ("sum".into(), own()),
+                ("rate".into(), Receiver::Type("Pricing".into())),
+                ("helper".into(), Receiver::Plain),
+                ("map".into(), Receiver::Plain),
+                ("price".into(), Receiver::Plain)
+            ]
+        );
+    }
+
+    #[test]
+    fn reads_c_functions_static_ones_and_calls() {
+        let (tree, reading) = read(
+            Language::C,
+            "src/order.c",
+            "#include \"order.h\"\n#include <stdio.h>\n\nstatic int sum(int x) { return x; }\n\nint total(struct order *o) {\n  return sum(1) + o->rate(2);\n}\n\nint *next(void) { return 0; }\n",
+        );
+        assert_eq!(tree, ["Function sum :4", "Function total exp :6", "Function next exp :10"]);
+        let names: Vec<&str> = reading.calls.iter().map(|call| call.name.as_str()).collect();
+        assert_eq!(names, ["sum", "rate"]);
+    }
+
+    #[test]
+    fn reads_cpp_namespaces_classes_and_methods_written_outside_them() {
+        let (tree, reading) = read(
+            Language::Cpp,
+            "src/order.cpp",
+            "namespace shop {\nclass Order {\npublic:\n  int total() { return this->sum() + Pricing::rate() + std::max(1, 2); }\nprivate:\n  int sum() {\n    auto twice = [](int x) { return x * 2; };\n    return twice(1);\n  }\n};\n\nvoid Order::print() { this->total(); helper(); }\n}\n\nstatic void helper() { auto o = new shop::Order(); o->total(); }\n",
+        );
+        assert_eq!(
+            tree,
+            [
+                "Class shop exp :1",
+                "  Class Order exp :2",
+                "    Method total exp :4",
+                "    Method sum :6",
+                "      Arrow twice :7",
+                "  Method Order::print exp :12",
+                "Function helper :15"
+            ]
+        );
+        let own = || Receiver::SelfOf(Some("Order".into()));
+        assert_eq!(
+            calls(&reading),
+            [
+                ("sum".into(), own()),
+                ("rate".into(), Receiver::Type("Pricing".into())),
+                ("max".into(), Receiver::Plain),
+                ("twice".into(), Receiver::Plain),
+                ("total".into(), own()),
+                ("helper".into(), Receiver::Plain),
+                ("Order".into(), Receiver::Type("Order".into())),
+                ("total".into(), Receiver::Plain)
+            ]
+        );
+    }
+
+    #[test]
+    fn a_header_is_read_as_c() {
+        use super::super::languages::language_of;
+        assert_eq!(language_of("include/order.h"), Some(Language::C));
+        assert_eq!(language_of("include/order.hpp"), Some(Language::Cpp));
+        // A declaration is no function; a static inline one written in the header is.
+        let (tree, _) =
+            read(Language::C, "include/order.h", "int total(void);\nstatic inline int sum(int x) { return x; }\n");
+        assert_eq!(tree, ["Function sum :2"]);
     }
 
     #[test]

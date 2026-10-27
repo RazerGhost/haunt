@@ -534,6 +534,8 @@ commands! {
     }
     /// The editors whose command line tool is on the PATH.
     fn editors(api) -> Vec<String> { let _ = api; Ok(crate::editor::installed()) }
+    /// Saves an exported picture (the canvas, the layer map) where the save dialog said: base64 for a PNG.
+    fn save_export(api, path: String, data: String, base64: bool) -> () { let _ = api; crate::export::save(&path, &data, base64) }
 
     /* Local changes: the lists and diffs, and writing (git/write) */
 
@@ -1108,7 +1110,19 @@ mod tests {
         };
 
         let with_node = repos(crate::startup::find_runtime(), "with");
-        for name in ["laravel", "rust-workspace", "go-app", "python-app", "lua-app", "wp-plugin"] {
+        for name in [
+            "laravel",
+            "rust-workspace",
+            "go-app",
+            "python-app",
+            "lua-app",
+            "wp-plugin",
+            "java-app",
+            "csharp-app",
+            "ruby-app",
+            "c-app",
+            "cpp-app",
+        ] {
             let (repo, sidecar, _) = wait(&with_node, name, &fixture(name));
             let here: Value = serde_json::from_str(&crate::code::scan::scan(&repo, false).unwrap().structure).unwrap();
             let files: Vec<&Value> = sidecar["files"]

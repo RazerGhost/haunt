@@ -11,5 +11,21 @@
     "one": "Aangeroepen vanuit {count} functie, roept {out} aan",
     "other": "Aangeroepen vanuit {count} functies, roept {out} aan"
   },
-  "open": "{name} openen in de editor"
+  "open": "{name} openen in de editor",
+  "today": "vandaag",
+  "days": {
+    "one": "{count} d",
+    "other": "{count} d"
+  },
+  "months": {
+    "one": "{count} mnd",
+    "other": "{count} mnd"
+  },
+  "years": {
+    "one": "{count} j",
+    "other": "{count} j"
+  },
+  "uncommitted": "niet gecommit",
+  "uncommittedHelp": "Een deel van de regels is nog niet gecommit",
+  "lastChange": "{subject}\n{date}"
 }

@@ -1,11 +1,11 @@
-//! The calls between PHP, Rust and Lua functions, by name: there is no type checker, so a call goes to a function of
+//! The calls between the functions read with tree-sitter, by name: there is no type checker, so a call goes to a function of
 //! that name in the caller's class or impl first, then its file, then the files it imports, then the one function
 //! anywhere with that name. Calls found this way are marked `guessed`; an ambiguous name is left out rather than guessed
 //! wrong.
 
 use std::collections::{HashMap, HashSet};
 
-use super::read::{FileReading, Receiver};
+use super::read::{scope_of, FileReading, Receiver};
 use super::types::{CallEdge, FunctionKind, FunctionNode};
 
 struct Entry<'a> {
@@ -16,7 +16,8 @@ struct Entry<'a> {
     kind: FunctionKind,
 }
 
-/// The name a call uses for a function: Lua's `M.f` and `M:f` as `f`, a Rust `impl Trait for Type` as `Type`.
+/// The name a call uses for a function: Lua's `M.f` and `M:f` as `f`, C++'s `Order::total` as `total`, Ruby's
+/// `self.make` as `make`, a Rust `impl Trait for Type` as `Type`.
 fn call_name(name: &str) -> &str {
     let name = match name.strip_prefix("impl ") {
         Some(rest) => rest.rfind(" for ").map_or(rest, |at| &rest[at + 5..]),
@@ -28,6 +29,9 @@ fn call_name(name: &str) -> &str {
 fn entries<'a>(path: &'a str, items: &'a [FunctionNode], container: Option<&'a str>, out: &mut Vec<Entry<'a>>) {
     for item in items {
         if !item.anonymous {
+            // A method written outside its type (C++ `void Order::total()`) belongs to the type its name starts with.
+            let container =
+                if item.kind == FunctionKind::Method { scope_of(&item.name).or(container) } else { container };
             out.push(Entry { id: &item.id, name: &item.name, path, container, kind: item.kind });
         }
         let inner = if item.kind == FunctionKind::Class { Some(item.name.as_str()) } else { container };
@@ -134,5 +138,14 @@ mod tests {
         assert_eq!(call_name("impl Show for Order"), "Order");
         assert_eq!(call_name("impl Order"), "Order");
         assert_eq!(call_name("total"), "total");
+        assert_eq!(call_name("Order::total"), "total");
+        assert_eq!(call_name("self.make"), "make");
+    }
+
+    #[test]
+    fn a_cpp_method_written_outside_its_class() {
+        assert_eq!(scope_of("Order::total"), Some("Order"));
+        assert_eq!(scope_of("shop::Box<T>::get"), Some("Box"));
+        assert_eq!(scope_of("total"), None);
     }
 }

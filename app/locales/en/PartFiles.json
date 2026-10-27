@@ -15,5 +15,7 @@
     "one": "{count} line",
     "other": "{count} lines"
   },
-  "noPart": "No part called {part} in this scan."
+  "noPart": "No part called {part} in this scan.",
+  "lastChanged": "Last changed",
+  "lastChangedHelp": "Who changed each function last, and when (git blame of each file shown open)"
 }

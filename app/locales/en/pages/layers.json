@@ -11,5 +11,11 @@
     "one": "{count} function named like “{term}”, in {files} files",
     "other": "{count} functions named like “{term}”, in {files} files"
   },
-  "first150": "Showing the first 150 files. Narrow the search to see the rest."
+  "first150": "Showing the first 150 files. Narrow the search to see the rest.",
+  "export": "Export",
+  "exportTitle": "Export the layer map",
+  "png": "PNG image",
+  "svg": "SVG image",
+  "exported": "Layer map exported",
+  "notExported": "The layer map could not be exported"
 }
