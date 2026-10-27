@@ -49,5 +49,22 @@
   "reflogHelp": "waar HEAD en de branches naar wezen",
   "grep": "Bestanden doorzoeken",
   "grepHelp": "tekst zoeken in de bestanden van een commit",
-  "bookmarks": "Gebookmarkte bestanden"
+  "bookmarks": "Gebookmarkte bestanden",
+  "commitStaged": "Gestagede wijzigingen committen",
+  "commitStagedHelp": {
+    "one": "{count} bestand gestaged, op Lokale wijzigingen",
+    "other": "{count} bestanden gestaged, op Lokale wijzigingen"
+  },
+  "stashFiles": "Een paar bestanden stashen…",
+  "stashFilesHelp": "vink ze aan op Lokale wijzigingen",
+  "newPull": "Nieuwe pull request…",
+  "newPullHelp": "vanuit Pull requests",
+  "back": "Terug",
+  "forward": "Vooruit",
+  "repositories": "Repository’s…",
+  "clone": "Een repository clonen…",
+  "newRepository": "Nieuwe repository…",
+  "inManager": "in de repositorybeheerder",
+  "reopen": "{name} weer openen",
+  "shortcuts": "Sneltoetsen"
 }

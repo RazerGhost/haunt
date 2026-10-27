@@ -22,7 +22,8 @@ const changed = gitChanged('head', 'index')
 const { structure: scan } = useCode()
 // Local diffs keep whitespace (lines are staged from them exactly); wrapping and a tab's width apply.
 const { diffWrap, tabWidth } = usePreferences()
-const split = usePersisted('diff-split', false, value => typeof value === 'boolean')
+const root = useTemplateRef<HTMLElement>('root')
+const { wanted, narrow, split } = useSideBySide(root)
 
 const diff = shallowRef<FileDiffView | null>(null)
 const problem = ref('')
@@ -166,7 +167,7 @@ const SIGN = { add: '+', del: '−', context: ' ' } as const
 </script>
 
 <template>
-  <div class="flex min-h-0 flex-col">
+  <div ref="root" class="flex min-h-0 flex-col">
     <div class="flex flex-wrap items-center gap-2 border-b border-default px-3 py-1.5 text-xs">
       <span class="min-w-0 flex-1 truncate font-mono text-highlighted" :title="props.oldPath !== props.path ? `${props.oldPath} → ${props.path}` : props.path">
         <template v-if="props.oldPath !== props.path"><span class="text-muted">{{ props.oldPath }} → </span></template>{{ props.path }}
@@ -175,8 +176,13 @@ const SIGN = { add: '+', del: '−', context: ' ' } as const
       <UButton v-if="!props.untracked" :label="t('LocalDiff.history')" icon="i-lucide-history" size="xs" color="neutral" variant="ghost" :to="{ path: '/history', query: { path: props.path } }" />
       <UButton v-if="!props.untracked" :label="t('LocalDiff.blame')" icon="i-lucide-user-round-search" size="xs" color="neutral" variant="ghost" :to="{ path: '/blame', query: { path: props.path } }" />
       <UFieldGroup size="xs">
-        <UButton :label="t('DiffView.unified')" :color="split ? 'neutral' : 'primary'" :variant="split ? 'outline' : 'solid'" @click="split = false" />
-        <UButton :label="t('DiffView.sideBySide')" :color="split ? 'primary' : 'neutral'" :variant="split ? 'solid' : 'outline'" @click="split = true" />
+        <UButton :label="t('DiffView.unified')" :color="split ? 'neutral' : 'primary'" :variant="split ? 'outline' : 'solid'" @click="wanted = false" />
+        <!-- The span takes the hover when the button is disabled (a disabled button gets none); in it the button is no longer the group's last child, so it squares its own left corners. -->
+        <UTooltip :text="narrow ? t('DiffView.tooNarrow') : undefined">
+          <span class="flex" :class="{ 'cursor-not-allowed': narrow }">
+            <UButton :label="t('DiffView.sideBySide')" :color="split ? 'primary' : 'neutral'" :variant="split ? 'solid' : 'outline'" :disabled="narrow" class="rounded-s-none" :class="{ 'pointer-events-none': narrow }" @click="wanted = true" />
+          </span>
+        </UTooltip>
       </UFieldGroup>
       <UButton v-if="count" :label="t('LocalDiff.clearPicked', { count })" size="xs" color="neutral" variant="ghost" @click="picked = new Set()" />
       <template v-if="!props.staged">

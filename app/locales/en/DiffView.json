@@ -8,5 +8,6 @@
   "sideBySide": "Side by side",
   "binary": "A binary file: no lines to compare.",
   "noLines": "No lines changed (the file was renamed or its mode changed).",
-  "openFunction": "Open this function in the panel"
+  "openFunction": "Open this function in the panel",
+  "tooNarrow": "Too narrow here for two sides: shown unified until there is more room."
 }

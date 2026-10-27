@@ -66,8 +66,8 @@ function onScroll(event: Event): void {
   if (more.value && !loading.value && list.scrollTop + list.clientHeight > list.scrollHeight - 200) void load(false)
 }
 const when = (seconds: number) => times.value === 'date'
-  ? new Date(seconds * 1000).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
-  : new Date(seconds * 1000).toLocaleDateString()
+  ? new Date(seconds * 1000).toLocaleString(locale(), { dateStyle: 'short', timeStyle: 'short' })
+  : new Date(seconds * 1000).toLocaleDateString(locale())
 // A version's badge, `pages.history.status.<status>`; a modified file has none.
 const badge = (status: FileVersion['status']) => status === 'modified' ? '' : t(`pages.history.status.${status}`)
 </script>

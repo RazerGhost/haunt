@@ -18,5 +18,6 @@
   "pickHead": "Kies de commit waar je op staat",
   "hint": "Ctrl-klik op een tweede commit om te vergelijken · ↑ ↓ om te bewegen",
   "resize": "Sleep om de details groter of kleiner te maken",
-  "pick": "Kies een commit om te zien wat die wijzigde."
+  "pick": "Kies een commit om te zien wat die wijzigde.",
+  "moreFilters": "Meer filters"
 }

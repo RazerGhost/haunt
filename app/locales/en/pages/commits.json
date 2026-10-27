@@ -18,5 +18,6 @@
   "pickHead": "Pick the commit you are on",
   "hint": "Ctrl-click a second commit to compare · ↑ ↓ to move",
   "resize": "Drag to resize the details",
-  "pick": "Pick a commit to see what it changed."
+  "pick": "Pick a commit to see what it changed.",
+  "moreFilters": "More filters"
 }

@@ -94,7 +94,7 @@ function switchTo(ref: Leaf): void {
   if (!isBranch(ref) || !ref.current) void actions.switchTo(full(ref))
 }
 function tip(ref: Leaf): string {
-  const when = new Date(ref.time * 1000).toLocaleDateString()
+  const when = new Date(ref.time * 1000).toLocaleDateString(locale())
   if (!isBranch(ref)) return `${ref.subject} · ${when}`
   const tracking = ref.gone ? t('RefTree.upstreamGone', { upstream: ref.upstream ?? '' }) : ref.upstream ? t('RefTree.tracks', { upstream: ref.upstream }) : t('RefTree.tracksNothing')
   return `${ref.subject} · ${when} · ${tracking}`

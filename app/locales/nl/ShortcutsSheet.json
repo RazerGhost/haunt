@@ -1,0 +1,40 @@
+{
+  "title": "Sneltoetsen",
+  "description": "Alle sneltoetsen van het venster. Ze werken niet terwijl je in een tekstveld typt.",
+  "or": "of",
+  "space": "Spatie",
+  "click": "klik",
+  "group": {
+    "window": "Venster",
+    "git": "Git",
+    "local": "Lokale wijzigingen",
+    "commits": "Commitlijst",
+    "code": "Code"
+  },
+  "item": {
+    "palette": "Opdrachtenpalet",
+    "settings": "Instellingen",
+    "repositories": "Repository’s",
+    "reopen": "Laatst gesloten tab weer openen",
+    "back": "Terug",
+    "forward": "Vooruit",
+    "shortcuts": "Deze lijst",
+    "close": "Een dialoog of menu sluiten",
+    "managerMove": "Repositorybeheer: door de lijst gaan",
+    "managerOpen": "Repositorybeheer: de gekozen openen",
+    "managerBack": "Repositorybeheer: terug naar de repository",
+    "gitMode": "Gitmodus",
+    "fetch": "Fetch",
+    "pull": "Pull",
+    "push": "Push",
+    "localMove": "Door de bestanden gaan",
+    "stage": "Het gekozen bestand stagen of unstagen",
+    "commit": "Committen (in het commitvak)",
+    "commitMove": "De selectie verplaatsen",
+    "compare": "Vergelijken met een tweede commit",
+    "codeMode": "Codemodus",
+    "find": "Een functie zoeken",
+    "reviewNext": "Review: volgende functie",
+    "reviewPrevious": "Review: vorige functie"
+  }
+}

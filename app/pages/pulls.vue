@@ -85,8 +85,8 @@ function look(sha: string | null): void {
 }
 
 const when = (seconds: number) => times.value === 'date'
-  ? new Date(seconds * 1000).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
-  : new Date(seconds * 1000).toLocaleDateString()
+  ? new Date(seconds * 1000).toLocaleString(locale(), { dateStyle: 'short', timeStyle: 'short' })
+  : new Date(seconds * 1000).toLocaleDateString(locale())
 </script>
 
 <template>

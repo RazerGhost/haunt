@@ -29,7 +29,8 @@ function functionOf(section: string, at: number): string | null {
 const diff = shallowRef<FileDiffView | null>(null)
 const problem = ref('')
 const whole = ref(false)
-const split = usePersisted('diff-split', false, value => typeof value === 'boolean')
+const root = useTemplateRef<HTMLElement>('root')
+const { wanted, narrow, split } = useSideBySide(root)
 /** Tokens per hunk: the old side's lines (context and removed), the new side's (context and added). */
 const tokens = shallowRef<{ old: ThemedToken[][] | null, new: ThemedToken[][] | null }[]>([])
 const { repo } = useRepositories()
@@ -117,7 +118,7 @@ const SIGN = { add: '+', del: '−', context: ' ' } as const
 </script>
 
 <template>
-  <div class="flex min-h-0 flex-col">
+  <div ref="root" class="flex min-h-0 flex-col">
     <div class="flex items-center gap-3 border-b border-default px-3 py-1.5 text-xs">
       <span class="min-w-0 flex-1 truncate font-mono text-highlighted" :title="props.oldPath && props.oldPath !== props.path ? `${props.oldPath} → ${props.path}` : props.path">
         <template v-if="props.oldPath && props.oldPath !== props.path"><span class="text-muted">{{ props.oldPath }} → </span></template>{{ props.path }}
@@ -125,13 +126,24 @@ const SIGN = { add: '+', del: '−', context: ' ' } as const
       <UIcon v-if="loading" name="i-lucide-loader-circle" class="size-3.5 animate-spin text-muted" />
       <UButton :label="t('DiffView.history')" icon="i-lucide-history" size="xs" color="neutral" variant="ghost" :to="{ path: '/history', query: { path: props.path, at: props.to } }" />
       <UButton :label="t('DiffView.blame')" icon="i-lucide-user-round-search" size="xs" color="neutral" variant="ghost" :to="{ path: '/blame', query: { path: props.path, at: props.to } }" />
-      <UButton icon="i-lucide-copy" size="xs" color="neutral" variant="ghost" :title="t('DiffView.copyPath')" :aria-label="t('DiffView.copyPath')" @click="copyPath" />
-      <UButton v-if="webs.label.value" icon="i-lucide-external-link" size="xs" color="neutral" variant="ghost" :title="webs.label.value" :aria-label="webs.label.value" @click="webs.openFile(props.to, props.path)" />
-      <UButton v-if="webs.copyLabel.value" icon="i-lucide-link" size="xs" color="neutral" variant="ghost" :title="webs.copyLabel.value" :aria-label="webs.copyLabel.value" @click="webs.copyFile(props.to, props.path)" />
+      <UTooltip :text="t('DiffView.copyPath')">
+        <UButton icon="i-lucide-copy" size="xs" color="neutral" variant="ghost" :aria-label="t('DiffView.copyPath')" @click="copyPath" />
+      </UTooltip>
+      <UTooltip v-if="webs.label.value" :text="webs.label.value">
+        <UButton icon="i-lucide-external-link" size="xs" color="neutral" variant="ghost" :aria-label="webs.label.value" @click="webs.openFile(props.to, props.path)" />
+      </UTooltip>
+      <UTooltip v-if="webs.copyLabel.value" :text="webs.copyLabel.value">
+        <UButton icon="i-lucide-link" size="xs" color="neutral" variant="ghost" :aria-label="webs.copyLabel.value" @click="webs.copyFile(props.to, props.path)" />
+      </UTooltip>
       <USwitch v-model="whole" :label="t('DiffView.wholeFile')" size="xs" />
       <UFieldGroup size="xs">
-        <UButton :label="t('DiffView.unified')" :color="split ? 'neutral' : 'primary'" :variant="split ? 'outline' : 'solid'" @click="split = false" />
-        <UButton :label="t('DiffView.sideBySide')" :color="split ? 'primary' : 'neutral'" :variant="split ? 'solid' : 'outline'" @click="split = true" />
+        <UButton :label="t('DiffView.unified')" :color="split ? 'neutral' : 'primary'" :variant="split ? 'outline' : 'solid'" @click="wanted = false" />
+        <!-- The span takes the hover when the button is disabled (a disabled button gets none); in it the button is no longer the group's last child, so it squares its own left corners. -->
+        <UTooltip :text="narrow ? t('DiffView.tooNarrow') : undefined">
+          <span class="flex" :class="{ 'cursor-not-allowed': narrow }">
+            <UButton :label="t('DiffView.sideBySide')" :color="split ? 'primary' : 'neutral'" :variant="split ? 'solid' : 'outline'" :disabled="narrow" class="rounded-s-none" :class="{ 'pointer-events-none': narrow }" @click="wanted = true" />
+          </span>
+        </UTooltip>
       </UFieldGroup>
     </div>
 

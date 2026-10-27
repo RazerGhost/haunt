@@ -14,7 +14,7 @@ const details = computed(() => {
   if (message.value) return message.value
   const current = scan.value
   if (!current) return state.value.label
-  const at = new Date(current.scannedAt).toLocaleTimeString()
+  const at = new Date(current.scannedAt).toLocaleTimeString(locale())
   const structure = (current.ms.structure / 1000).toFixed(1)
   return current.ms.calls === null
     ? t('ScanStatus.scannedAt', { at, structure })

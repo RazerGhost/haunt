@@ -39,8 +39,8 @@ const age = computed(() => {
   return (commit: CommitInfo | undefined) => (!commit || NOT_YET.test(commit.sha) ? 1 : newest > oldest ? (commit.time - oldest) / (newest - oldest) : 1)
 })
 const when = (seconds: number) => times.value === 'date'
-  ? new Date(seconds * 1000).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
-  : new Date(seconds * 1000).toLocaleDateString()
+  ? new Date(seconds * 1000).toLocaleString(locale(), { dateStyle: 'short', timeStyle: 'short' })
+  : new Date(seconds * 1000).toLocaleDateString(locale())
 </script>
 
 <template>

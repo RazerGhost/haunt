@@ -206,7 +206,7 @@ async function copy(text: string): Promise<void> {
           <p v-if="detail.body" class="max-h-16 overflow-auto text-xs whitespace-pre-wrap text-muted">{{ detail.body }}</p>
           <p class="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted">
             <span :title="detail.email">{{ detail.author }}</span>
-            <span>{{ new Date(detail.time * 1000).toLocaleString() }}</span>
+            <span>{{ new Date(detail.time * 1000).toLocaleString(locale()) }}</span>
             <span v-if="detail.committer !== detail.author">{{ t('CommitDetails.committedBy', { name: detail.committer }) }}</span>
             <UBadge
               v-if="signature && signature.status !== 'none'"
@@ -257,7 +257,7 @@ async function copy(text: string): Promise<void> {
               @click="file = item"
             >
               <UIcon :name="STATUS_ICON[item.status].icon" class="size-3 shrink-0" :class="STATUS_ICON[item.status].class" />
-              <span class="min-w-0 flex-1 truncate font-mono"><span class="text-muted">{{ item.path.includes('/') ? item.path.slice(0, item.path.lastIndexOf('/') + 1) : '' }}</span>{{ item.path.split('/').pop() }}</span>
+              <PathLabel :path="item.path" class="flex-1 font-mono" />
               <span class="font-mono text-label tabular-nums"><span class="text-success">+{{ item.added }}</span> <span class="text-error">−{{ item.removed }}</span></span>
             </button>
           </li>

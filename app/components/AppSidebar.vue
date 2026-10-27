@@ -15,7 +15,7 @@ const { repo, gitChanged } = useRepositories()
 watch([repo, gitChanged('stash')], () => void actions.loadDropped(), { immediate: true })
 // The remotes with their URLs, for the ones with no remote branches yet.
 watch(repo, () => void remotes.load(), { immediate: true })
-const when = (seconds: number) => new Date(seconds * 1000).toLocaleString()
+const when = (seconds: number) => new Date(seconds * 1000).toLocaleString(locale())
 
 const shut = usePersisted<Record<string, boolean>>('sidebar-shut', {}, value => !!value && typeof value === 'object' && !Array.isArray(value))
 /** The Git screens without a place of their own in the sidebar. */
@@ -129,7 +129,9 @@ const active = (path: string) => route.path === path ? 'bg-elevated font-medium 
 
     <UInput v-if="refs && refCount > 6" v-model="filter" icon="i-lucide-filter" :placeholder="t('AppSidebar.filterPlaceholder')" size="xs" class="px-1" :aria-label="t('AppSidebar.filter')">
       <template v-if="filter" #trailing>
-        <UButton icon="i-lucide-x" size="xs" color="neutral" variant="link" :aria-label="t('AppSidebar.clearFilter')" @click="filter = ''" />
+        <UTooltip :text="t('AppSidebar.clearFilter')">
+          <UButton icon="i-lucide-x" size="xs" color="neutral" variant="link" :aria-label="t('AppSidebar.clearFilter')" @click="filter = ''" />
+        </UTooltip>
       </template>
     </UInput>
     <template v-if="refs && shown">
@@ -183,7 +185,7 @@ const active = (path: string) => route.path === path ? 'bg-elevated font-medium 
               :to="{ path: '/commits', query: { from: tag.name } }"
               class="flex items-center gap-1.5 rounded py-1 pr-2 pl-5 text-ui hover:bg-elevated"
               :class="{ 'bg-elevated text-highlighted': route.path === '/commits' && route.query.from === tag.name }"
-              :title="`${tag.sha.slice(0, 7)} · ${new Date(tag.time * 1000).toLocaleDateString()}`"
+              :title="`${tag.sha.slice(0, 7)} · ${new Date(tag.time * 1000).toLocaleDateString(locale())}`"
             >
               <UIcon name="i-lucide-tag" class="size-3.5 shrink-0 text-dimmed" />
               <span class="min-w-0 truncate">{{ tag.name }}</span>

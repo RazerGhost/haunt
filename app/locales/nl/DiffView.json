@@ -8,5 +8,6 @@
   "sideBySide": "Naast elkaar",
   "binary": "Een binair bestand: geen regels om te vergelijken.",
   "noLines": "Geen regels gewijzigd (het bestand is hernoemd of de modus is gewijzigd).",
-  "openFunction": "Open deze functie in het paneel"
+  "openFunction": "Open deze functie in het paneel",
+  "tooNarrow": "Te smal voor twee kanten: samengevoegd tot er meer ruimte is."
 }

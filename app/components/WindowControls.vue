@@ -21,14 +21,20 @@ const button = 'grid h-10 w-11 place-items-center text-muted transition-colors h
 
 <template>
   <div class="flex self-stretch">
-    <button type="button" :class="button" :aria-label="t('WindowControls.minimise')" @click="appWindow?.minimize()">
-      <UIcon name="i-lucide-minus" class="size-4" />
-    </button>
-    <button type="button" :class="button" :aria-label="maximized ? t('common.restore') : t('WindowControls.maximise')" @click="appWindow?.toggleMaximize()">
-      <UIcon :name="maximized ? 'i-lucide-copy' : 'i-lucide-square'" class="size-3.5" />
-    </button>
-    <button type="button" :class="[button, 'hover:bg-[#c42b1c] hover:text-white focus-visible:bg-[#c42b1c] focus-visible:text-white']" :aria-label="t('common.close')" @click="appWindow?.close()">
-      <UIcon name="i-lucide-x" class="size-4" />
-    </button>
+    <UTooltip :text="t('WindowControls.minimise')">
+      <button type="button" :class="button" :aria-label="t('WindowControls.minimise')" @click="appWindow?.minimize()">
+        <UIcon name="i-lucide-minus" class="size-4" />
+      </button>
+    </UTooltip>
+    <UTooltip :text="maximized ? t('common.restore') : t('WindowControls.maximise')">
+      <button type="button" :class="button" :aria-label="maximized ? t('common.restore') : t('WindowControls.maximise')" @click="appWindow?.toggleMaximize()">
+        <UIcon :name="maximized ? 'i-lucide-copy' : 'i-lucide-square'" class="size-3.5" />
+      </button>
+    </UTooltip>
+    <UTooltip :text="t('common.close')">
+      <button type="button" :class="[button, 'hover:bg-[#c42b1c] hover:text-white focus-visible:bg-[#c42b1c] focus-visible:text-white']" :aria-label="t('common.close')" @click="appWindow?.close()">
+        <UIcon name="i-lucide-x" class="size-4" />
+      </button>
+    </UTooltip>
   </div>
 </template>

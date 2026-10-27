@@ -1,0 +1,49 @@
+{
+  "clean": "Niets gewijzigd: de werkmap is schoon",
+  "detached": "HEAD op {sha}",
+  "upstream": "Upstream",
+  "gone": "bestaat niet meer op de remote",
+  "upToDate": "bijgewerkt (sinds de laatste fetch)",
+  "ahead": {
+    "one": "{count} commit om te pushen",
+    "other": "{count} commits om te pushen"
+  },
+  "behind": {
+    "one": "{count} commit om te pullen",
+    "other": "{count} commits om te pullen"
+  },
+  "fetch": "Fetch",
+  "pull": {
+    "one": "Pull {count}",
+    "other": "Pull {count}"
+  },
+  "push": "Push",
+  "pushCount": {
+    "one": "Push {count}",
+    "other": "Push {count}"
+  },
+  "noUpstream": "Deze branch heeft nog geen upstream.",
+  "pushSet": "Pushen en upstream instellen",
+  "noRemote": "Deze repository heeft geen remote.",
+  "untrusted": "Pull en push werken alleen in een vertrouwde map.",
+  "lastCommit": "Laatste commit",
+  "amend": "Aanpassen",
+  "amendHelp": "Herschrijf de laatste commit, of voeg er bestanden aan toe zodra ze gestaged zijn",
+  "stashes": "Stashes",
+  "apply": "Toepassen",
+  "applyHelp": "Haal deze wijzigingen terug en houd de stash",
+  "pop": "Pop",
+  "popHelp": "Haal deze wijzigingen terug en gooi de stash weg",
+  "minutes": {
+    "one": "{count} min geleden",
+    "other": "{count} min geleden"
+  },
+  "hours": {
+    "one": "{count} uur geleden",
+    "other": "{count} uur geleden"
+  },
+  "days": {
+    "one": "{count} dag geleden",
+    "other": "{count} dagen geleden"
+  }
+}

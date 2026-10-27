@@ -5,14 +5,16 @@
  *
  * What is written is kept as a draft per repository and branch, so switching tabs or branches loses nothing; it goes
  * once the commit is made. The subject counts up to 50 characters and the body's lines up to 72 (git's own advice),
- * and Recent offers the subjects of the branch's last commits to start from. Ctrl+Enter commits.
+ * and Recent offers the subjects of the branch's last commits to start from. Ctrl+Enter commits. With `amend` it starts
+ * in amend mode (Local changes' Amend, with nothing changed), and says `done` once the commit is made or amend is unticked.
  *
  * Draft writes a message from what is staged, by function (shared/commitDraft.ts): what it adds, changes and removes,
  * and the callers outside the change. Worked out here, without AI: nothing leaves the machine. It says what, not why.
  */
 import { draftCommitMessage } from '~~/shared/commitDraft'
 
-const props = defineProps<{ staged: number }>()
+const props = defineProps<{ staged: number, amend?: boolean }>()
+const emit = defineEmits<{ done: [] }>()
 const { commitBox, commit, busy } = useLocalChanges()
 const { repo } = useRepositories()
 const { current } = useRefs()
@@ -59,6 +61,9 @@ watch(amend, (now) => {
   subject.value = first
   body.value = rest.join('\n').replace(/^\n+/, '')
 })
+if (props.amend) amend.value = true
+// Opened to amend: unticking it closes the box again.
+watch(amend, (now) => { if (props.amend && !now) emit('done') })
 
 /* Lengths: git's advice is a subject of at most 50 characters, and body lines of at most 72 */
 const subjectLength = computed(() => subject.value.trim().length)
@@ -117,6 +122,7 @@ async function submit(): Promise<void> {
       const { [key]: _done, ...rest } = drafts.value
       drafts.value = rest
     }
+    emit('done')
   }
 }
 </script>

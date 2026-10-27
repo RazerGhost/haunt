@@ -1,0 +1,40 @@
+{
+  "title": "Keyboard shortcuts",
+  "description": "Every shortcut of the window. They do not work while you type in a text field.",
+  "or": "or",
+  "space": "Space",
+  "click": "click",
+  "group": {
+    "window": "Window",
+    "git": "Git",
+    "local": "Local changes",
+    "commits": "Commit list",
+    "code": "Code"
+  },
+  "item": {
+    "palette": "Command palette",
+    "settings": "Settings",
+    "repositories": "Repositories",
+    "reopen": "Reopen the tab closed last",
+    "back": "Back",
+    "forward": "Forward",
+    "shortcuts": "This list",
+    "close": "Close a dialog or menu",
+    "managerMove": "Repository manager: move through the list",
+    "managerOpen": "Repository manager: open the one picked",
+    "managerBack": "Repository manager: back to the repository",
+    "gitMode": "Git mode",
+    "fetch": "Fetch",
+    "pull": "Pull",
+    "push": "Push",
+    "localMove": "Move through the files",
+    "stage": "Stage or unstage the picked file",
+    "commit": "Commit (in the commit box)",
+    "commitMove": "Move the selection",
+    "compare": "Compare with a second commit",
+    "codeMode": "Code mode",
+    "find": "Find a function",
+    "reviewNext": "Review: next function",
+    "reviewPrevious": "Review: previous function"
+  }
+}

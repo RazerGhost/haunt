@@ -33,7 +33,7 @@ const old = computed(() => {
   return (refs.value?.branches ?? []).filter(branch => !branch.current && branch.time < cutoff).sort((a, b) => a.time - b.time)
 })
 const cleaning = ref(false)
-const day = (seconds: number) => new Date(seconds * 1000).toLocaleDateString()
+const day = (seconds: number) => new Date(seconds * 1000).toLocaleDateString(locale())
 const deletedBytes = computed(() => (health.value?.largest ?? []).filter(file => !file.inHead).reduce((sum, file) => sum + file.bytes, 0))
 </script>
 

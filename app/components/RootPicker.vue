@@ -70,7 +70,7 @@ async function reveal(repo: string) {
   }
 }
 const ago = (seconds: number) => {
-  if (times.value === 'date') return new Date(seconds * 1000).toLocaleDateString()
+  if (times.value === 'date') return new Date(seconds * 1000).toLocaleDateString(locale())
   const minutes = Math.floor((Date.now() / 1000 - seconds) / 60)
   if (minutes < 60) return t('RootPicker.minutesAgo', { count: Math.max(1, minutes) })
   if (minutes < 60 * 24) return t('RootPicker.hoursAgo', { count: Math.floor(minutes / 60) })
@@ -223,12 +223,13 @@ onMounted(() => nextTick(() => pathBox.value?.inputRef?.focus()))
                 </span>
                 <span v-if="details.get(recent)?.branch" class="flex min-w-0 items-center gap-1 font-mono text-label text-muted"><UIcon name="i-lucide-git-branch" class="size-3 shrink-0" /><span class="truncate">{{ details.get(recent)!.branch }}</span></span>
               </span>
-              <span class="grid justify-items-end gap-0.5 text-label text-muted group-hover:invisible">
+              <span class="grid justify-items-end gap-0.5 text-label text-muted group-hover:invisible" :class="{ invisible: picked === recent }">
                 <span v-if="details.get(recent)?.changes" class="flex items-center gap-1 text-warning" :title="t('RootPicker.uncommitted', { count: details.get(recent)!.changes! })"><UIcon name="i-lucide-pencil-line" class="size-3" />{{ details.get(recent)!.changes }}</span>
                 <span v-if="details.get(recent)?.lastCommit" :title="details.get(recent)!.lastCommit!.subject">{{ ago(details.get(recent)!.lastCommit!.time) }}</span>
               </span>
             </button>
-            <span class="absolute top-1/2 right-1 flex -translate-y-1/2 gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+            <span class="absolute top-1/2 right-1 flex -translate-y-1/2 gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100" :class="{ 'opacity-100': picked === recent }">
+              <UButton v-if="details.get(recent)?.openable !== false" icon="i-lucide-arrow-up-right" size="xs" color="primary" variant="soft" :label="t('common.open')" :aria-label="t('RootPicker.openNamed', { name: nameOf(recent) })" @click="use(recent)" />
               <UButton v-if="details.get(recent)?.openable !== false" icon="i-lucide-folder-open" size="xs" color="neutral" variant="ghost" :aria-label="t('RootPicker.revealNamed', { name: nameOf(recent) })" :title="t('RootPicker.reveal')" @click="reveal(recent)" />
               <UButton icon="i-lucide-x" size="xs" color="neutral" variant="ghost" :aria-label="t('RootPicker.forgetNamed', { name: nameOf(recent) })" :title="t('RootPicker.forget')" @click="forget(recent)" />
             </span>
@@ -255,9 +256,8 @@ onMounted(() => nextTick(() => pathBox.value?.inputRef?.focus()))
           </div>
           <template v-if="tree.open">
             <p v-if="!tree.rows.length && !tree.folder.missing" class="pl-7 text-xs text-muted">{{ term ? t('RootPicker.noFolderMatch') : t('RootPicker.noRepos') }}</p>
+            <div v-for="row in tree.rows" :key="row.key" class="group relative grid">
             <button
-              v-for="row in tree.rows"
-              :key="row.key"
               type="button"
               class="flex min-w-0 items-center gap-1.5 rounded-md py-1 pr-2 text-left text-sm"
               :class="row.repo && picked === row.repo ? 'bg-elevated' : 'hover:bg-elevated/60'"
@@ -271,8 +271,21 @@ onMounted(() => nextTick(() => pathBox.value?.inputRef?.focus()))
               <UIcon v-if="!row.repo" name="i-lucide-chevron-right" class="size-3.5 shrink-0 text-muted transition" :class="{ 'rotate-90': row.open }" />
               <UIcon :name="row.repo ? 'i-lucide-folder-git-2' : 'i-lucide-folder'" class="size-4 shrink-0 text-muted" />
               <span class="truncate" :class="row.repo ? 'text-highlighted' : 'text-muted'">{{ row.name }}</span>
-              <UBadge v-if="row.repo && info.tabs.includes(row.repo)" :label="t('RootPicker.inTab')" size="sm" variant="subtle" color="neutral" class="ml-auto" />
+              <UBadge v-if="row.repo && info.tabs.includes(row.repo)" :label="t('RootPicker.inTab')" size="sm" variant="subtle" color="neutral" class="ml-auto group-hover:invisible" :class="{ invisible: picked === row.repo }" />
             </button>
+            <UButton
+              v-if="row.repo"
+              icon="i-lucide-arrow-up-right"
+              size="xs"
+              color="primary"
+              variant="soft"
+              :label="t('common.open')"
+              class="absolute top-1/2 right-1 -translate-y-1/2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+              :class="{ 'opacity-100': picked === row.repo }"
+              :aria-label="t('RootPicker.openNamed', { name: row.name })"
+              @click="use(row.repo)"
+            />
+            </div>
           </template>
         </div>
       </section>

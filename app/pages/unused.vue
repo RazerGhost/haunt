@@ -36,7 +36,7 @@ async function ask(item: Unused): Promise<void> {
     when.set(item.id, 'failed')
   }
 }
-const date = (seconds: number) => times.value === 'date' ? new Date(seconds * 1000).toLocaleString() : new Date(seconds * 1000).toLocaleDateString()
+const date = (seconds: number) => times.value === 'date' ? new Date(seconds * 1000).toLocaleString(locale()) : new Date(seconds * 1000).toLocaleDateString(locale())
 </script>
 
 <template>

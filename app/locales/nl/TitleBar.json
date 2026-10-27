@@ -18,7 +18,7 @@
   "newProfileMenu": "Nieuw profiel…",
   "renameMenu": "{name} hernoemen…",
   "deleteProfile": "Een profiel verwijderen",
-  "openRepository": "Een repository openen…",
+  "openRepository": "Repository’s…",
   "reopen": "{name} heropenen",
   "tabUnchanged": "De tab is niet gewijzigd",
   "unpin": "Losmaken",
@@ -48,6 +48,6 @@
   "pinnedTitle": "{name} (vastgezet): {path}",
   "worktree": "Een worktree: een branch in een eigen map",
   "closeTab": "{name} sluiten",
-  "openRepositoryLabel": "Een repository openen",
+  "openRepositoryLabel": "Repository’s: openen, clonen of maken",
   "openHelp": "Een repository openen, een recente, of de laatst gesloten tab"
 }

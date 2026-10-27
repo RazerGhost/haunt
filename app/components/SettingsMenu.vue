@@ -4,7 +4,6 @@
  * Appearance (SettingsAppearance), Git (SettingsGit), Trusted folders (SettingsTrust) and About (SettingsAbout). The
  * settings Rust keeps are read each time the window opens (useAppSettings).
  */
-const { mac } = useDesktop()
 const { problem, load } = useAppSettings()
 
 const open = ref(false)
@@ -24,7 +23,7 @@ watch(open, (now) => {
 </script>
 
 <template>
-  <UTooltip :text="`${t('common.settings')} (${mac ? '⌘,' : 'Ctrl+,'})`">
+  <UTooltip :text="t('common.settings')" :kbds="['meta', ',']">
     <UButton icon="i-lucide-settings-2" color="neutral" variant="ghost" size="sm" :aria-label="t('common.settings')" @click="open = true" />
   </UTooltip>
   <UModal v-model:open="open" :title="t('common.settings')" :ui="{ content: 'max-w-3xl', body: 'p-0 sm:p-0' }">

@@ -18,7 +18,7 @@
   "newProfileMenu": "New profile…",
   "renameMenu": "Rename {name}…",
   "deleteProfile": "Delete a profile",
-  "openRepository": "Open a repository…",
+  "openRepository": "Repositories…",
   "reopen": "Reopen {name}",
   "tabUnchanged": "The tab did not change",
   "unpin": "Unpin",
@@ -48,6 +48,6 @@
   "pinnedTitle": "{name} (pinned): {path}",
   "worktree": "A worktree: a branch in its own folder",
   "closeTab": "Close {name}",
-  "openRepositoryLabel": "Open a repository",
+  "openRepositoryLabel": "Repositories: open, clone or make one",
   "openHelp": "Open a repository, a recent one, or the tab closed last"
 }

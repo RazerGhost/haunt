@@ -47,7 +47,7 @@ const busiestAuthor = computed(() => Math.max(1, ...(statistics.value?.authors.m
 const commonestExtension = computed(() => Math.max(1, ...(statistics.value?.extensions.map(item => item.files) ?? [])))
 const monthName = (month: string) => {
   const [year, number] = month.split('-').map(Number)
-  return new Date(year ?? 1970, (number ?? 1) - 1, 1).toLocaleDateString(undefined, { month: 'short' })
+  return new Date(year ?? 1970, (number ?? 1) - 1, 1).toLocaleDateString(locale(), { month: 'short' })
 }
 
 const uncommitted = computed(() => {
@@ -58,14 +58,14 @@ const uncommitted = computed(() => {
 })
 
 const ago = (seconds: number) => {
-  if (times.value === 'date') return new Date(seconds * 1000).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
+  if (times.value === 'date') return new Date(seconds * 1000).toLocaleString(locale(), { dateStyle: 'short', timeStyle: 'short' })
   const minutes = Math.floor((Date.now() / 1000 - seconds) / 60)
   if (minutes < 60) return t('RepoOverview.minutes', { count: Math.max(1, minutes) })
   if (minutes < 60 * 24) return t('RepoOverview.hours', { count: Math.floor(minutes / 60) })
   if (minutes < 60 * 24 * 60) return t('RepoOverview.days', { count: Math.floor(minutes / 60 / 24) })
-  return new Date(seconds * 1000).toLocaleDateString()
+  return new Date(seconds * 1000).toLocaleDateString(locale())
 }
-const day = (seconds: number) => new Date(seconds * 1000).toLocaleDateString()
+const day = (seconds: number) => new Date(seconds * 1000).toLocaleDateString(locale())
 
 async function openPage(remote: RemoteInfo, url: string) {
   try {
@@ -146,7 +146,7 @@ async function open() {
             </div>
             <div class="grid gap-0.5 rounded-md border border-default p-3">
               <dt class="text-label text-muted">{{ t('RepoOverview.commits') }}</dt>
-              <dd class="text-lg font-semibold text-highlighted tabular-nums">{{ overview.commits.toLocaleString() }}</dd>
+              <dd class="text-lg font-semibold text-highlighted tabular-nums">{{ overview.commits.toLocaleString(locale()) }}</dd>
             </div>
             <div class="grid min-w-0 gap-0.5 rounded-md border border-default p-3">
               <dt class="text-label text-muted">{{ t('RepoOverview.first') }}</dt>
@@ -254,7 +254,7 @@ async function open() {
               <h3 class="text-label font-semibold tracking-wider text-muted uppercase">{{ t('RepoOverview.authors') }}</h3>
               <ul class="grid gap-1.5">
                 <li v-for="author in statistics.authors" :key="author.email || author.name" class="grid gap-0.5">
-                  <span class="flex min-w-0 gap-2"><span class="truncate" :title="author.email">{{ author.name }}</span><span class="ml-auto text-muted tabular-nums">{{ author.commits.toLocaleString() }}</span></span>
+                  <span class="flex min-w-0 gap-2"><span class="truncate" :title="author.email">{{ author.name }}</span><span class="ml-auto text-muted tabular-nums">{{ author.commits.toLocaleString(locale()) }}</span></span>
                   <span class="h-1 rounded-full bg-primary/60" :style="{ width: `${(author.commits / busiestAuthor) * 100}%` }" />
                 </li>
               </ul>
@@ -263,7 +263,7 @@ async function open() {
               <h3 class="text-label font-semibold tracking-wider text-muted uppercase">{{ t('RepoOverview.files', { count: statistics.files }) }}</h3>
               <ul class="grid gap-1.5">
                 <li v-for="item in statistics.extensions" :key="item.extension" class="grid gap-0.5">
-                  <span class="flex gap-2"><span class="font-mono text-xs">{{ item.extension ? `.${item.extension}` : t('RepoOverview.noExtension') }}</span><span class="ml-auto text-muted tabular-nums">{{ item.files.toLocaleString() }}</span></span>
+                  <span class="flex gap-2"><span class="font-mono text-xs">{{ item.extension ? `.${item.extension}` : t('RepoOverview.noExtension') }}</span><span class="ml-auto text-muted tabular-nums">{{ item.files.toLocaleString(locale()) }}</span></span>
                   <span class="h-1 rounded-full bg-neutral-400/60" :style="{ width: `${(item.files / commonestExtension) * 100}%` }" />
                 </li>
               </ul>

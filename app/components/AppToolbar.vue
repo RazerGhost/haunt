@@ -26,19 +26,21 @@ const actions = computed(() => {
   // Pull and push run only in a trusted folder (they run its hooks and filters); fetch runs anywhere.
   const untrusted = t('AppToolbar.untrusted')
   return [
-    { label: t('AppToolbar.fetch'), op: 'fetch', icon: 'i-lucide-refresh-cw', count: 0, run: () => network.fetch(), tip: `${t('AppToolbar.fetchTip')}${fetchedTip.value}` },
+    { label: t('AppToolbar.fetch'), op: 'fetch', icon: 'i-lucide-refresh-cw', count: 0, run: () => network.fetch(), tip: `${t('AppToolbar.fetchTip')}${fetchedTip.value}`, kbds: ['F5'] },
     {
       label: t('AppToolbar.pull'), op: 'pull', icon: 'i-lucide-arrow-down-to-line', count: at?.behind ?? 0,
       run: network.trusted.value && upstream ? () => network.pull() : null,
-      tip: !network.trusted.value ? untrusted : upstream ? t('AppToolbar.pullTip', { upstream, name: at!.name, keys: mac ? '⌘⇧P' : 'Ctrl+Shift+P' }) : t('AppToolbar.pullNoUpstream')
+      tip: !network.trusted.value ? untrusted : upstream ? t('AppToolbar.pullTip', { upstream, name: at!.name }) : t('AppToolbar.pullNoUpstream'),
+      kbds: network.trusted.value && upstream ? ['meta', 'shift', 'P'] : []
     },
     {
       label: t('AppToolbar.push'), op: 'push', icon: 'i-lucide-arrow-up-from-line', count: at?.ahead ?? 0,
       run: network.trusted.value && at ? () => network.push() : null,
-      tip: !network.trusted.value ? untrusted : !at ? t('AppToolbar.noBranch') : upstream ? t('AppToolbar.pushTip', { name: at.name, upstream, keys: mac ? '⌘⇧U' : 'Ctrl+Shift+U' }) : t('AppToolbar.pushTrackTip', { name: at.name, keys: mac ? '⌘⇧U' : 'Ctrl+Shift+U' })
+      tip: !network.trusted.value ? untrusted : !at ? t('AppToolbar.noBranch') : upstream ? t('AppToolbar.pushTip', { name: at.name, upstream }) : t('AppToolbar.pushTrackTip', { name: at.name }),
+      kbds: network.trusted.value && at ? ['meta', 'shift', 'U'] : []
     },
-    { label: t('AppToolbar.branch'), op: null, icon: 'i-lucide-git-branch-plus', count: 0, run: () => refActions.newBranch(), tip: t('AppToolbar.branchTip') },
-    { label: t('AppToolbar.stash'), op: null, icon: 'i-lucide-archive', count: 0, run: () => refActions.stash(), tip: t('AppToolbar.stashTip') }
+    { label: t('AppToolbar.branch'), op: null, icon: 'i-lucide-git-branch-plus', count: 0, run: () => refActions.newBranch(), tip: t('AppToolbar.branchTip'), kbds: [] },
+    { label: t('AppToolbar.stash'), op: null, icon: 'i-lucide-archive', count: 0, run: () => refActions.stash(), tip: t('AppToolbar.stashTip'), kbds: [] }
   ]
 })
 const busy = computed(() => refActions.busy.value || !!network.running.value)
@@ -77,24 +79,27 @@ defineShortcuts({
 <template>
   <div class="flex h-11 shrink-0 items-center gap-1 border-b border-default px-2">
     <UFieldGroup size="sm" class="mr-1" :aria-label="t('AppToolbar.gitOrCode')">
-      <UTooltip :text="t('AppToolbar.gitTip', { keys: mac ? '⌘1' : 'Ctrl+1' })">
+      <UTooltip :text="t('AppToolbar.gitTip')" :kbds="['meta', '1']">
         <UButton label="Git" icon="i-lucide-git-branch" :color="mode === 'git' ? 'primary' : 'neutral'" :variant="mode === 'git' ? 'solid' : 'outline'" @click="switchTo('git')" />
       </UTooltip>
-      <UTooltip :text="t('AppToolbar.codeTip', { keys: mac ? '⌘2' : 'Ctrl+2' })">
+      <UTooltip :text="t('AppToolbar.codeTip')" :kbds="['meta', '2']">
         <UButton :label="t('AppToolbar.code')" icon="i-lucide-braces" :color="mode === 'code' ? 'primary' : 'neutral'" :variant="mode === 'code' ? 'solid' : 'outline'" @click="switchTo('code')" />
       </UTooltip>
     </UFieldGroup>
     <div class="flex items-center gap-0.5" role="toolbar" :aria-label="t('AppToolbar.git')">
-      <UTooltip v-for="action in actions" :key="action.label" :text="action.tip">
-        <span>
+      <!-- Not every webview sends pointer events to a disabled button, so the span around it takes the hover for the tooltip. -->
+      <UTooltip v-for="action in actions" :key="action.label" :text="action.tip" :kbds="action.kbds">
+        <span :class="{ 'cursor-not-allowed': !action.run || busy }">
           <UButton
             :icon="network.running.value?.op === action.op ? 'i-lucide-loader-circle' : action.icon"
             :label="action.label"
+            :aria-label="action.label"
             color="neutral"
             variant="ghost"
             size="sm"
             :disabled="!action.run || busy"
             class="relative"
+            :class="{ 'pointer-events-none': !action.run || busy }"
             :ui="{ label: 'hidden lg:inline', leadingIcon: network.running.value?.op === action.op ? 'animate-spin' : '' }"
             @click="action.run?.()"
           >
@@ -110,7 +115,7 @@ defineShortcuts({
     </div>
 
     <UTooltip v-if="current?.behind && !network.running.value" :text="t('AppToolbar.previewTip')">
-      <UButton icon="i-lucide-eye" :label="t('AppToolbar.preview')" size="xs" color="neutral" variant="soft" to="/incoming" :ui="{ label: 'hidden xl:inline' }" />
+      <UButton icon="i-lucide-eye" :label="t('AppToolbar.preview')" :aria-label="t('AppToolbar.preview')" size="xs" color="neutral" variant="soft" to="/incoming" :ui="{ label: 'hidden xl:inline' }" />
     </UTooltip>
     <div v-if="network.running.value" class="flex min-w-0 items-center gap-1 pl-1 text-ui text-muted" role="status">
       <span class="max-w-72 truncate tabular-nums">{{ network.running.value.text || t('AppToolbar.connecting') }}</span>
@@ -140,7 +145,9 @@ defineShortcuts({
     >
       <template #trailing>
         <UKbd v-if="!search" :value="mac ? '⌘F' : 'Ctrl F'" size="sm" />
-        <UButton v-else icon="i-lucide-x" size="xs" color="neutral" variant="link" :aria-label="t('AppToolbar.clearSearch')" @click="search = ''" />
+        <UTooltip v-else :text="t('AppToolbar.clearSearch')">
+          <UButton icon="i-lucide-x" size="xs" color="neutral" variant="link" :aria-label="t('AppToolbar.clearSearch')" @click="search = ''" />
+        </UTooltip>
       </template>
     </UInput>
 

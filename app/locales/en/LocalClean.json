@@ -1,0 +1,49 @@
+{
+  "clean": "Nothing changed: the working tree is clean",
+  "detached": "HEAD at {sha}",
+  "upstream": "Upstream",
+  "gone": "is gone from the remote",
+  "upToDate": "up to date (as of the last fetch)",
+  "ahead": {
+    "one": "{count} commit to push",
+    "other": "{count} commits to push"
+  },
+  "behind": {
+    "one": "{count} commit to pull",
+    "other": "{count} commits to pull"
+  },
+  "fetch": "Fetch",
+  "pull": {
+    "one": "Pull {count}",
+    "other": "Pull {count}"
+  },
+  "push": "Push",
+  "pushCount": {
+    "one": "Push {count}",
+    "other": "Push {count}"
+  },
+  "noUpstream": "This branch has no upstream yet.",
+  "pushSet": "Push and set upstream",
+  "noRemote": "This repository has no remote.",
+  "untrusted": "Pull and push run only in a trusted folder.",
+  "lastCommit": "Last commit",
+  "amend": "Amend",
+  "amendHelp": "Reword the last commit, or add files to it once they are staged",
+  "stashes": "Stashes",
+  "apply": "Apply",
+  "applyHelp": "Bring these changes back and keep the stash",
+  "pop": "Pop",
+  "popHelp": "Bring these changes back and drop the stash",
+  "minutes": {
+    "one": "{count} min ago",
+    "other": "{count} min ago"
+  },
+  "hours": {
+    "one": "{count} hour ago",
+    "other": "{count} hours ago"
+  },
+  "days": {
+    "one": "{count} day ago",
+    "other": "{count} days ago"
+  }
+}

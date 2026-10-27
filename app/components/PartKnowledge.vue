@@ -52,7 +52,7 @@ const onlyOne = computed(() => {
   return lately.value.every(item => item.name === top.name) ? top.name : null
 })
 const when = (seconds: number) => times.value === 'date'
-  ? new Date(seconds * 1000).toLocaleDateString()
+  ? new Date(seconds * 1000).toLocaleDateString(locale())
   : ago(seconds)
 function ago(seconds: number): string {
   const days = Math.floor((Date.now() / 1000 - seconds) / 86400)

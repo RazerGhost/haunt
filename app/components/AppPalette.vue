@@ -1,15 +1,17 @@
 <script setup lang="ts">
 /*
  * The command palette (Ctrl+K, ⌘K on macOS): one search over what Haunt can do and where it can go. Actions (undo,
- * fetch, pull, push, a terminal, a new branch, stash, Git or Code), the screens, the branches to switch to, the open repositories, and
- * the functions of the scan by name (picked: its calls). The toolbar's search box stays for filtering the code views.
+ * fetch, pull, push, a terminal, a commit, a new branch, stash, a pull request, Git or Code, back and forward, the
+ * repository manager, settings, the keyboard shortcuts), each with its shortcut, the screens, the branches to switch to,
+ * the open repositories, and the functions of the scan by name (picked: its calls). The toolbar's search box stays for
+ * filtering the code views.
  */
 const open = ref(false)
 const term = ref('')
 const router = useRouter()
 const { index, visible, select } = useCode()
 const { refs, current } = useRefs()
-const { info, chooseRoot } = useRepositories()
+const { info, picking, closed, chooseRoot, reopenClosed } = useRepositories()
 const network = useNetwork()
 const refActions = useRefActions()
 const undo = useUndo()
@@ -18,6 +20,10 @@ const { switchTo } = useMode()
 const pins = usePins()
 const bookmarks = useBookmarks()
 const toast = useToast()
+const { status } = useLocalChanges()
+const { mac } = useDesktop()
+// The keyboard shortcuts sheet (ShortcutsSheet) is open.
+const shortcuts = useState('shortcuts-sheet', () => false)
 
 async function openTerminal(root: string): Promise<void> {
   try {
@@ -25,6 +31,13 @@ async function openTerminal(root: string): Promise<void> {
   } catch (error) {
     toast.add({ title: t('AppPalette.terminalFailed'), description: errorMessage(error, t('common.tryAgain')), color: 'error', icon: 'i-lucide-circle-alert' })
   }
+}
+
+// Settings (SettingsMenu) opens on its own Ctrl+, (⌘,): the palette sends that, with the focus out of its search box
+// first (shortcuts do not run while typing).
+function openSettings(): void {
+  (document.activeElement as HTMLElement | null)?.blur()
+  window.dispatchEvent(new KeyboardEvent('keydown', { key: ',', ctrlKey: !mac, metaKey: mac }))
 }
 
 defineShortcuts({ meta_k: () => { open.value = !open.value } })
@@ -53,6 +66,8 @@ const functions = computed(() => {
 const groups = computed(() => {
   const branch = current.value
   const tabs = (info.value?.tabs ?? []).filter(tab => tab !== info.value?.root)
+  const staged = status.value?.staged.length ?? 0
+  const lastClosed = closed.value.at(-1)
   const sha = /^[0-9a-f]{7,40}$/i.test(term.value.trim()) ? term.value.trim() : null
   return [
     ...sha
@@ -63,15 +78,30 @@ const groups = computed(() => {
       label: t('AppPalette.actions'),
       items: [
         ...undo.last.value ? [{ label: t('AppPalette.undo', { title: undo.last.value.title }), suffix: undo.last.value.undo, icon: 'i-lucide-undo-2', onSelect: () => run(() => undo.undo()) }] : [],
-        { label: t('AppPalette.fetch'), icon: 'i-lucide-refresh-cw', onSelect: () => run(() => network.fetch()) },
+        { label: t('AppPalette.fetch'), icon: 'i-lucide-refresh-cw', kbds: ['F5'], onSelect: () => run(() => network.fetch()) },
         ...info.value?.root ? [{ label: t('AppPalette.terminal'), icon: 'i-lucide-square-terminal', onSelect: () => run(() => openTerminal(info.value!.root!)) }] : [],
-        ...network.trusted.value && branch?.upstream ? [{ label: t('AppPalette.pull', { upstream: branch.upstream }), icon: 'i-lucide-arrow-down-to-line', onSelect: () => run(() => network.pull()) }] : [],
+        ...network.trusted.value && branch?.upstream ? [{ label: t('AppPalette.pull', { upstream: branch.upstream }), icon: 'i-lucide-arrow-down-to-line', kbds: ['meta', 'shift', 'p'], onSelect: () => run(() => network.pull()) }] : [],
         ...branch?.behind ? [{ label: t('AppPalette.incoming'), suffix: t('AppPalette.incomingHelp'), icon: 'i-lucide-eye', onSelect: () => run(() => router.push('/incoming')) }] : [],
-        ...network.trusted.value && branch ? [{ label: t('AppPalette.push', { name: branch.name }), icon: 'i-lucide-arrow-up-from-line', onSelect: () => run(() => network.push()) }] : [],
+        ...network.trusted.value && branch ? [{ label: t('AppPalette.push', { name: branch.name }), icon: 'i-lucide-arrow-up-from-line', kbds: ['meta', 'shift', 'u'], onSelect: () => run(() => network.push()) }] : [],
+        // The commit box is on Local changes.
+        ...staged ? [{ label: t('AppPalette.commitStaged'), suffix: t('AppPalette.commitStagedHelp', { count: staged }), icon: 'i-lucide-git-commit-horizontal', onSelect: () => run(() => router.push('/local')) }] : [],
         { label: t('AppPalette.newBranch'), icon: 'i-lucide-git-branch-plus', onSelect: () => run(() => refActions.newBranch()) },
         { label: t('AppPalette.stash'), icon: 'i-lucide-archive', onSelect: () => run(() => refActions.stash()) },
+        // The files are ticked on Local changes, which has its own Stash….
+        { label: t('AppPalette.stashFiles'), suffix: t('AppPalette.stashFilesHelp'), icon: 'i-lucide-archive', onSelect: () => run(() => router.push('/local')) },
+        // Pull requests has the New pull request dialog.
+        { label: t('AppPalette.newPull'), suffix: t('AppPalette.newPullHelp'), icon: 'i-lucide-git-pull-request-create', onSelect: () => run(() => router.push('/pulls')) },
         { label: t('AppPalette.gitMode'), suffix: t('AppPalette.gitModeHelp'), icon: 'i-lucide-git-branch', kbds: ['meta', '1'], onSelect: () => run(() => switchTo('git')) },
-        { label: t('AppPalette.codeMode'), suffix: t('AppPalette.codeModeHelp'), icon: 'i-lucide-braces', kbds: ['meta', '2'], onSelect: () => run(() => switchTo('code')) }
+        { label: t('AppPalette.codeMode'), suffix: t('AppPalette.codeModeHelp'), icon: 'i-lucide-braces', kbds: ['meta', '2'], onSelect: () => run(() => switchTo('code')) },
+        { label: t('AppPalette.back'), icon: 'i-lucide-arrow-left', kbds: ['alt', 'arrowleft'], onSelect: () => run(() => router.back()) },
+        { label: t('AppPalette.forward'), icon: 'i-lucide-arrow-right', kbds: ['alt', 'arrowright'], onSelect: () => run(() => router.forward()) },
+        // The repository manager; Clone and New are buttons there.
+        { label: t('AppPalette.repositories'), icon: 'i-lucide-folder-open', kbds: ['meta', 'o'], onSelect: () => run(() => { picking.value = true }) },
+        { label: t('AppPalette.clone'), suffix: t('AppPalette.inManager'), icon: 'i-lucide-download', onSelect: () => run(() => { picking.value = true }) },
+        { label: t('AppPalette.newRepository'), suffix: t('AppPalette.inManager'), icon: 'i-lucide-folder-plus', onSelect: () => run(() => { picking.value = true }) },
+        ...lastClosed ? [{ label: t('AppPalette.reopen', { name: lastClosed.split(/[\\/]/).filter(Boolean).pop() ?? lastClosed }), icon: 'i-lucide-rotate-ccw', kbds: ['meta', 'shift', 't'], onSelect: () => run(() => reopenClosed()) }] : [],
+        { label: t('common.settings'), icon: 'i-lucide-settings-2', kbds: ['meta', ','], onSelect: () => run(openSettings) },
+        { label: t('AppPalette.shortcuts'), icon: 'i-lucide-keyboard', kbds: ['?'], onSelect: () => run(() => { shortcuts.value = true }) }
       ]
     },
     {
@@ -161,6 +191,7 @@ const groups = computed(() => {
         v-model:search-term="term"
         :groups="groups"
         :placeholder="t('AppPalette.placeholder')"
+        :fuse="{ resultLimit: 40 }"
         close
         class="h-[28rem]"
         @update:open="(value: boolean) => { open = value }"

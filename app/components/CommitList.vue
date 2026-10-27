@@ -138,12 +138,12 @@ function move(step: number): void {
 }
 
 function when(seconds: number): string {
-  if (times.value === 'date') return new Date(seconds * 1000).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
+  if (times.value === 'date') return new Date(seconds * 1000).toLocaleString(locale(), { dateStyle: 'short', timeStyle: 'short' })
   const minutes = Math.floor((Date.now() / 1000 - seconds) / 60)
   if (minutes < 60) return t('CommitList.minutes', { count: Math.max(1, minutes) })
   if (minutes < 60 * 24) return t('CommitList.hours', { count: Math.floor(minutes / 60) })
   if (minutes < 60 * 24 * 30) return t('CommitList.days', { count: Math.floor(minutes / 1440) })
-  return new Date(seconds * 1000).toLocaleDateString()
+  return new Date(seconds * 1000).toLocaleDateString(locale())
 }
 
 </script>
@@ -203,7 +203,7 @@ function when(seconds: number): string {
           </span>
           <UIcon v-if="commits[at]!.signed" name="i-lucide-shield-check" class="size-3.5 shrink-0 text-dimmed" :title="t('CommitList.signed')" />
           <span class="w-36 shrink-0 truncate text-muted" :title="commits[at]!.email">{{ commits[at]!.author }}</span>
-          <span class="shrink-0 text-right text-muted tabular-nums" :class="times === 'date' ? 'w-32' : 'w-20'" :title="new Date(commits[at]!.time * 1000).toLocaleString()">{{ when(commits[at]!.time) }}</span>
+          <span class="shrink-0 text-right text-muted tabular-nums" :class="times === 'date' ? 'w-32' : 'w-20'" :title="new Date(commits[at]!.time * 1000).toLocaleString(locale())">{{ when(commits[at]!.time) }}</span>
           <span class="w-16 shrink-0 text-right font-mono text-dimmed">{{ commits[at]!.sha.slice(0, 7) }}</span>
         </div>
       </div>

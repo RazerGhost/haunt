@@ -5,7 +5,7 @@
  */
 const { notRepository, activity } = useLocalChanges()
 const view = usePersisted<'files' | 'functions'>('local-view', 'files', value => value === 'files' || value === 'functions')
-const when = (seconds: number) => new Date(seconds * 1000).toLocaleTimeString()
+const when = (seconds: number) => new Date(seconds * 1000).toLocaleTimeString(locale())
 </script>
 
 <template>

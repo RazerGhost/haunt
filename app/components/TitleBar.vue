@@ -47,14 +47,15 @@ const profileMenu = computed(() => [
     ...others.value.length ? [{ label: t('TitleBar.deleteProfile'), icon: 'i-lucide-trash-2', children: others.value.map(name => ({ label: name, color: 'error' as const, onSelect: () => deleteProfile(name) })) }] : []
   ]
 ])
-defineShortcuts({ meta_shift_t: () => { void reopenClosed() } })
+// Ctrl+O (⌘O) opens the repository manager; Ctrl+Shift+T reopens the tab closed last.
+defineShortcuts({ meta_shift_t: () => { void reopenClosed() }, meta_o: () => { picking.value = true } })
 /** The + menu: a repository to open, the recent ones not open, and the tab closed last. */
 const openMenu = computed(() => {
   const name = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path
   const recent = (info.value?.recent ?? []).filter(path => !(info.value?.tabs ?? []).includes(path)).slice(0, 8)
   const last = closed.value.at(-1)
   return [
-    [{ label: t('TitleBar.openRepository'), icon: 'i-lucide-folder-open', onSelect: () => { picking.value = true } }],
+    [{ label: t('TitleBar.openRepository'), icon: 'i-lucide-folder-open', kbds: ['meta', 'o'], onSelect: () => { picking.value = true } }],
     ...last ? [[{ label: t('TitleBar.reopen', { name: name(last) }), icon: 'i-lucide-rotate-ccw', kbds: ['meta', 'shift', 't'], onSelect: () => { void reopenClosed() } }]] : [],
     ...recent.length ? [recent.map(path => ({ label: name(path), suffix: path, icon: 'i-lucide-folder-git-2', onSelect: () => { void chooseRoot(path) } }))] : [],
     // The first extra profile starts here; after that the profile menu has it too.
@@ -185,38 +186,43 @@ function show(path: string): void {
         @dragover.prevent
         @drop.prevent="dropOn(tab.path)"
       >
-        <button type="button" class="flex min-w-0 flex-1 items-center gap-1.5 text-left" :title="tab.pinned ? t('TitleBar.pinnedTitle', { name: tab.label, path: tab.path }) : tab.path" :aria-label="tab.pinned ? tab.label : undefined" :aria-current="tab.active ? 'page' : undefined" @click="show(tab.path)" @auxclick.middle="tab.pinned || closeTab(tab.path)">
-          <UIcon
-            :name="tab.worktree ? 'i-lucide-git-fork' : 'i-lucide-folder-git-2'"
-            class="size-3.5 shrink-0"
-            :class="tab.color ? '' : tab.active ? 'text-highlighted' : 'text-dimmed'"
-            :style="tab.color ? { color: SHADES[tab.color] } : undefined"
-            :title="tab.worktree ? t('TitleBar.worktree') : undefined"
-          />
-          <span v-if="!tab.pinned" class="truncate">{{ tab.label }}</span>
-        </button>
-        <button
-          v-if="!tab.pinned"
-          type="button"
-          class="grid size-5 shrink-0 place-items-center rounded text-dimmed hover:bg-accented hover:text-highlighted focus-visible:opacity-100"
-          :class="tab.active ? '' : 'opacity-0 group-hover:opacity-100'"
-          :aria-label="t('TitleBar.closeTab', { name: tab.label })"
-          @click="closeTab(tab.path)"
-        >
-          <UIcon name="i-lucide-x" class="size-3" />
-        </button>
+        <!-- A pinned tab shows only its icon, so its name comes in a tooltip; another tab's title shows its whole path. -->
+        <UTooltip :text="tab.pinned ? t('TitleBar.pinnedTitle', { name: tab.label, path: tab.path }) : undefined">
+          <button type="button" class="flex min-w-0 flex-1 items-center gap-1.5 text-left" :title="tab.pinned ? undefined : tab.path" :aria-label="tab.pinned ? tab.label : undefined" :aria-current="tab.active ? 'page' : undefined" @click="show(tab.path)" @auxclick.middle="tab.pinned || closeTab(tab.path)">
+            <UIcon
+              :name="tab.worktree ? 'i-lucide-git-fork' : 'i-lucide-folder-git-2'"
+              class="size-3.5 shrink-0"
+              :class="tab.color ? '' : tab.active ? 'text-highlighted' : 'text-dimmed'"
+              :style="tab.color ? { color: SHADES[tab.color] } : undefined"
+              :title="tab.worktree ? t('TitleBar.worktree') : undefined"
+            />
+            <span v-if="!tab.pinned" class="truncate">{{ tab.label }}</span>
+          </button>
+        </UTooltip>
+        <UTooltip v-if="!tab.pinned" :text="t('TitleBar.closeTab', { name: tab.label })">
+          <button
+            type="button"
+            class="grid size-5 shrink-0 place-items-center rounded text-dimmed hover:bg-accented hover:text-highlighted focus-visible:opacity-100"
+            :class="tab.active ? '' : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'"
+            :aria-label="t('TitleBar.closeTab', { name: tab.label })"
+            @click="closeTab(tab.path)"
+          >
+            <UIcon name="i-lucide-x" class="size-3" />
+          </button>
+        </UTooltip>
       </div>
       </UContextMenu>
       <UDropdownMenu :items="openMenu" :content="{ align: 'start' }">
-        <button
-          type="button"
-          class="mb-1 ml-1 grid size-7 place-items-center rounded-md text-muted hover:bg-elevated hover:text-highlighted"
-          :class="{ 'bg-elevated text-highlighted': picking }"
-          :aria-label="t('TitleBar.openRepositoryLabel')"
-          :title="t('TitleBar.openHelp')"
-        >
-          <UIcon name="i-lucide-plus" class="size-4" />
-        </button>
+        <UTooltip :text="t('TitleBar.openHelp')" :kbds="['meta', 'O']">
+          <button
+            type="button"
+            class="mb-1 ml-1 grid size-7 place-items-center rounded-md text-muted hover:bg-elevated hover:text-highlighted"
+            :class="{ 'bg-elevated text-highlighted': picking }"
+            :aria-label="t('TitleBar.openRepositoryLabel')"
+          >
+            <UIcon name="i-lucide-plus" class="size-4" />
+          </button>
+        </UTooltip>
       </UDropdownMenu>
     </nav>
     <div data-tauri-drag-region class="min-w-8 flex-1" />

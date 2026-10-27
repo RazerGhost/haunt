@@ -66,7 +66,7 @@ const actionIcon = (entry: ReflogEntry) => {
 }
 
 const when = (seconds: number) => {
-  if (times.value === 'date') return new Date(seconds * 1000).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
+  if (times.value === 'date') return new Date(seconds * 1000).toLocaleString(locale(), { dateStyle: 'short', timeStyle: 'short' })
   const minutes = Math.floor((Date.now() / 1000 - seconds) / 60)
   if (minutes < 60) return t('pages.reflog.minutes', { count: Math.max(1, minutes) })
   if (minutes < 60 * 24) return t('pages.reflog.hours', { count: Math.floor(minutes / 60) })
@@ -127,7 +127,7 @@ function menu(entry: ReflogEntry) {
             </div>
             <div class="flex items-center gap-2">
               <UBadge v-if="entry.lost" :label="t('pages.reflog.lost')" color="warning" variant="subtle" size="sm" :title="t('pages.reflog.lostHelp')" />
-              <span class="text-label text-muted tabular-nums" :title="new Date(entry.time * 1000).toLocaleString()">{{ when(entry.time) }}</span>
+              <span class="text-label text-muted tabular-nums" :title="new Date(entry.time * 1000).toLocaleString(locale())">{{ when(entry.time) }}</span>
               <UDropdownMenu :items="menu(entry)">
                 <UButton icon="i-lucide-ellipsis" size="xs" color="neutral" variant="ghost" class="opacity-0 group-hover:opacity-100 focus-visible:opacity-100" :aria-label="t('pages.reflog.actions', { selector: entry.selector })" />
               </UDropdownMenu>

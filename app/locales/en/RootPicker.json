@@ -39,5 +39,6 @@
   "removeFolderNamed": "Remove {name} from the folders",
   "noRepos": "No git repository in it.",
   "noFolderMatch": "None matches.",
-  "foldersNotRead": "The folders could not be read"
+  "foldersNotRead": "The folders could not be read",
+  "openNamed": "Open {name} in a tab"
 }

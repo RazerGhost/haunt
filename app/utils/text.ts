@@ -60,3 +60,13 @@ export function t(key: string, params: Record<string, string | number> = {}): st
   }
   return text.replace(/\{(\w+)\}/g, (whole, name: string) => name in params ? String(params[name]) : whole)
 }
+
+/**
+ * The locale dates and numbers are written in: the window's language, in the system's region when that speaks the
+ * same language (nl-BE, en-GB), else the language alone.
+ */
+export function locale(): string {
+  const language = useLanguage().value
+  const system = import.meta.client ? navigator.language : ''
+  return system.toLowerCase().startsWith(language) ? system : language
+}

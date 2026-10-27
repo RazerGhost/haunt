@@ -39,24 +39,25 @@ Everything Haunt does, by part of the window. The [README](../README.md) has the
   submodules, remotes, tags and stashes. A filter narrows long lists, and the eraser beside Branches cleans up merged
   branches and those whose remote branch is gone. The + beside Remotes adds a remote; right-click one to copy or
   change its URL, rename it or remove it (with its remote branches; nothing changes on the remote itself). In Code, the code views and the project's parts by layer.
-- **The command palette** (Ctrl K): one search over the actions, the screens, the branches, the open repositories and
-  the functions by name. A sha typed there goes to its commit.
+- **The command palette** (Ctrl K): one search over the actions (each with its shortcut), the screens, the branches,
+  the open repositories and the functions by name. A sha typed there goes to its commit.
 - **The function panel**: a function's code, where it is written, what it calls and what calls it, and its history.
   Pin a function to keep it a click away. In a diff, the function a hunk is in opens in the panel.
 - **Open in your editor**: every function and file opens at its line, with the project's folder, so the editor shows
   the whole project. VS Code, Cursor, Windsurf, Zed, WebStorm and Sublime Text work through their command line tools;
   for anything else set `HAUNT_EDITOR`, such as `nvim-qt +{line} {file}` (`{root}` is the project's folder).
 - **When something fails**, the message says what git said, with Copy, and offers to trust the folder when its trust
-  was the reason. After a discard, a dropped stash, an undone commit or a reset, Undo shows for a few seconds; the
+  was the reason; it stays until you close it. After a discard, a dropped stash, an undone commit or a reset, Undo shows for a few seconds; the
   Recently discarded and Recently dropped lists keep them for 30 days either way. Further back, the **Reflog** (More,
   or the palette) lists where HEAD or a branch pointed, newest first, with what moved it, and marks the commits only
   the reflog still keeps (left behind by a reset, a rebase or an amend, or by a deleted branch); right-click one to see
   it, put a new branch on it, reset the current branch to it or cherry-pick it.
 - **Notifications**: a fetch, pull, push or test run that finishes while Haunt is in the background says so through
   the system.
-- **Keyboard**: Ctrl K the palette, Ctrl F the function search, F5 fetch, Ctrl Shift P pull, Ctrl Shift U push, Alt ←
-  and → back and forward, Ctrl Enter commit; in Local changes ↑ ↓ move through the files and Space stages or unstages.
-  ⌘ takes the place of Ctrl on macOS.
+- **Keyboard**: Ctrl K the palette, Ctrl O the repositories, Ctrl F the function search, F5 fetch, Ctrl Shift P pull,
+  Ctrl Shift U push, Alt ← and → back and forward, Ctrl Enter commit; in Local changes ↑ ↓ move through the files and
+  Space stages or unstages. **?** lists them all. ⌘ takes the place of Ctrl on macOS. Buttons with only an icon say
+  what they do, and their shortcut, on hover and on keyboard focus.
 - **Profiles**: groups of repositories (work, your own, a client's), each with its own tabs, recent list and look,
   switched from the title bar. Trusted folders and the other settings are shared.
 - **Appearance**, per profile: Haunt's theme or one of Nuxt UI's twelve, then your own choices on top (light, dark or
@@ -86,7 +87,8 @@ Haunt reads git, and writes only what you ask for.
   changes createEntry; 2 callers in Api", worked out on your machine without AI. Activity lists every git command Haunt
   ran to write. The diff is unified or side by side (one choice for every diff), and lines are picked in either.
   Right-click a file to stash just it, or, for an untracked one, to ignore it, every file with its extension or its
-  folder (added to the repository's `.gitignore`); **Stash some files** stashes the files you tick.
+  folder (added to the repository's `.gitignore`); **Stash some files** stashes the files you tick. With nothing
+  changed, it shows the branch against its upstream (Pull, Push, Fetch), the last commit (Amend) and the stashes.
 - **Branches, stashes and tags**: create a branch anywhere and switch to it (taking your changes along or stashing
   them), check out a remote branch, rename and delete (saying when commits would be lost), stash with or without
   untracked files (or only the files you pick, from Local changes), apply, pop and drop, and create, delete and push

@@ -39,5 +39,6 @@
   "removeFolderNamed": "{name} uit de mappen halen",
   "noRepos": "Geen git-repository erin.",
   "noFolderMatch": "Geen enkele past.",
-  "foldersNotRead": "De mappen konden niet gelezen worden"
+  "foldersNotRead": "De mappen konden niet gelezen worden",
+  "openNamed": "{name} in een tab openen"
 }

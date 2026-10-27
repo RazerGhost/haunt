@@ -66,9 +66,11 @@ const toggle = (id: string) => { shut.value = { ...shut.value, [id]: !shut.value
           <span class="min-w-0 truncate font-mono" :class="{ 'line-through': !pin.found }">{{ pin.name }}</span>
           <span class="min-w-0 truncate text-label text-muted">{{ tailOf(pin.path) }}</span>
         </button>
-        <button type="button" class="grid size-5 shrink-0 place-items-center rounded text-dimmed opacity-0 group-hover:opacity-100 hover:bg-elevated hover:text-highlighted" :aria-label="t('CodeSidebar.unpin', { name: pin.name })" @click="pins.unpin(pin)">
-          <UIcon name="i-lucide-x" class="size-3" />
-        </button>
+        <UTooltip :text="t('CodeSidebar.unpin', { name: pin.name })">
+          <button type="button" class="grid size-5 shrink-0 place-items-center rounded text-dimmed opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-elevated hover:text-highlighted" :aria-label="t('CodeSidebar.unpin', { name: pin.name })" @click="pins.unpin(pin)">
+            <UIcon name="i-lucide-x" class="size-3" />
+          </button>
+        </UTooltip>
       </li>
     </ul>
   </section>
@@ -87,9 +89,11 @@ const toggle = (id: string) => { shut.value = { ...shut.value, [id]: !shut.value
           <span class="min-w-0 truncate font-mono" :class="{ 'line-through': !mark.found }">{{ mark.path.split('/').pop() }}</span>
           <span class="min-w-0 truncate text-label text-muted">{{ tailOf(mark.path) }}</span>
         </button>
-        <button type="button" class="grid size-5 shrink-0 place-items-center rounded text-dimmed opacity-0 group-hover:opacity-100 hover:bg-elevated hover:text-highlighted" :aria-label="t('CodeSidebar.removeBookmark', { path: mark.path })" @click="bookmarks.remove(mark.path)">
-          <UIcon name="i-lucide-x" class="size-3" />
-        </button>
+        <UTooltip :text="t('CodeSidebar.removeBookmark', { path: mark.path })">
+          <button type="button" class="grid size-5 shrink-0 place-items-center rounded text-dimmed opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-elevated hover:text-highlighted" :aria-label="t('CodeSidebar.removeBookmark', { path: mark.path })" @click="bookmarks.remove(mark.path)">
+            <UIcon name="i-lucide-x" class="size-3" />
+          </button>
+        </UTooltip>
       </li>
     </ul>
   </section>

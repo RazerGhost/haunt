@@ -44,8 +44,8 @@ watch([repo, gitChanged('refs', 'head')], () => repo.value && void load(), { imm
 const both = computed(() => theirs.value.flatMap(file => file.functions.filter(fn => mine.value.has(key(file.path, fn.qualified))).map(fn => ({ file, fn }))))
 const functions = computed(() => theirs.value.reduce((sum, file) => sum + file.functions.length, 0))
 const when = (seconds: number) => times.value === 'date'
-  ? new Date(seconds * 1000).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
-  : new Date(seconds * 1000).toLocaleDateString()
+  ? new Date(seconds * 1000).toLocaleString(locale(), { dateStyle: 'short', timeStyle: 'short' })
+  : new Date(seconds * 1000).toLocaleDateString(locale())
 const STATUS: Record<string, string> = { added: 'text-success', removed: 'text-error', changed: 'text-warning', modified: 'text-warning', renamed: 'text-info', moved: 'text-info' }
 </script>
 

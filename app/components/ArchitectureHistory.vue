@@ -47,7 +47,7 @@ const bars = computed(() => {
 const top = computed(() => Math.max(1, ...bars.value.map(bar => Math.max(bar.addedBreaks, bar.removedBreaks))))
 const peak = computed(() => Math.max(1, ...bars.value.map(bar => bar.after)))
 const changed = computed(() => bars.value.filter(bar => bar.addedBreaks || bar.removedBreaks).length)
-const when = (seconds: number) => times.value === 'date' ? new Date(seconds * 1000).toLocaleString() : new Date(seconds * 1000).toLocaleDateString()
+const when = (seconds: number) => times.value === 'date' ? new Date(seconds * 1000).toLocaleString(locale()) : new Date(seconds * 1000).toLocaleDateString(locale())
 const tip = (bar: (typeof bars.value)[number]) => bar.skipped
   ? `${bar.subject}\n${when(bar.time)}\n${t('ArchitectureHistory.skipped')}`
   : `${bar.subject}\n${when(bar.time)}\n${t('ArchitectureHistory.breaks', { added: bar.addedBreaks, removed: bar.removedBreaks, after: bar.after })}\n${t('ArchitectureHistory.imports', { count: bar.added, removed: bar.removed })}`

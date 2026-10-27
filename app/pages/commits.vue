@@ -53,6 +53,8 @@ watch([author, message, path, changed], ([nowAuthor, nowMessage, nowPath, nowCha
   if ((typed.changed || '') !== (nowChanged || '')) typed.changed = nowChanged || ''
 })
 const filtered = computed(() => !!(from.value || author.value || message.value || path.value || changed.value || merges.value))
+/** How many of the filters in More filters are on. */
+const moreOn = computed(() => [author.value, path.value, changed.value, merges.value].filter(Boolean).length)
 function clear(): void {
   typed.author = ''
   typed.message = ''
@@ -89,27 +91,40 @@ function drag(start: PointerEvent): void {
     <div class="flex flex-wrap items-center gap-2 border-b border-default px-3 py-1.5">
       <USelect v-model="branch" :items="branches" size="xs" class="w-48" :aria-label="t('pages.commits.branch')" />
       <UInput v-model="typed.message" icon="i-lucide-message-square" :placeholder="t('pages.commits.message')" size="xs" class="w-44" :aria-label="t('pages.commits.byMessage')" />
-      <UInput v-model="typed.author" icon="i-lucide-user" :placeholder="t('pages.commits.author')" size="xs" class="w-36" :aria-label="t('pages.commits.byAuthor')" />
-      <UInput v-model="typed.path" icon="i-lucide-file" :placeholder="t('pages.commits.path')" size="xs" class="w-48" :ui="{ base: 'font-mono' }" :aria-label="t('pages.commits.byPath')" />
-      <UInput v-model="typed.changed" icon="i-lucide-text-search" :placeholder="t('pages.commits.changed')" size="xs" class="w-40" :ui="{ base: 'font-mono' }" :title="t('pages.commits.changedHelp')" :aria-label="t('pages.commits.byChanged')" />
-      <USelect v-model="mergeChoice" :items="MERGES" size="xs" class="w-32" :aria-label="t('pages.commits.merges')" />
+      <!-- The rarer filters in one place, with how many are on: the row stays one line in a narrower window. -->
+      <UPopover :content="{ align: 'start' }">
+        <UButton :label="t('pages.commits.moreFilters')" icon="i-lucide-list-filter" size="xs" :color="moreOn ? 'primary' : 'neutral'" :variant="moreOn ? 'soft' : 'outline'">
+          <template v-if="moreOn" #trailing><UBadge :label="String(moreOn)" size="sm" color="primary" variant="solid" /></template>
+        </UButton>
+        <template #content>
+          <div class="grid w-72 gap-2 p-3">
+            <UInput v-model="typed.author" icon="i-lucide-user" :placeholder="t('pages.commits.author')" size="sm" :aria-label="t('pages.commits.byAuthor')" />
+            <UInput v-model="typed.path" icon="i-lucide-file" :placeholder="t('pages.commits.path')" size="sm" :ui="{ base: 'font-mono' }" :aria-label="t('pages.commits.byPath')" />
+            <UInput v-model="typed.changed" icon="i-lucide-text-search" :placeholder="t('pages.commits.changed')" size="sm" :ui="{ base: 'font-mono' }" :aria-label="t('pages.commits.byChanged')" />
+            <p class="text-label text-muted">{{ t('pages.commits.changedHelp') }}</p>
+            <USelect v-model="mergeChoice" :items="MERGES" size="sm" :aria-label="t('pages.commits.merges')" />
+          </div>
+        </template>
+      </UPopover>
       <UButton v-if="filtered" :label="t('pages.commits.clear')" icon="i-lucide-x" size="xs" color="neutral" variant="ghost" @click="clear" />
       <UButton v-if="refs?.sha" label="HEAD" icon="i-lucide-crosshair" size="xs" color="neutral" variant="ghost" :title="t('pages.commits.pickHead')" @click="pick(refs.sha!, false)" />
-      <span class="ml-auto text-label text-muted">{{ t('pages.commits.hint') }}</span>
     </div>
     <div ref="area" class="flex min-h-0 flex-1 flex-col">
-      <CommitList :from="from" :author="author" :message="message" :path="path" :changed="changed" :merges="merges" :selected="selected" :compare="compare" class="min-h-0" :style="{ flex: `${1 - share} 1 0` }" @select="pick" />
-      <div
-        class="h-1.5 shrink-0 cursor-row-resize border-y border-default bg-elevated/50 hover:bg-accented"
-        role="separator"
-        aria-orientation="horizontal"
-        :aria-label="t('pages.commits.resize')"
-        @pointerdown.prevent="drag"
-      />
-      <div class="flex min-h-0 flex-col" :style="{ flex: `${share} 1 0` }">
-        <CommitDetails v-if="selected" :sha="selected" :compare="compare" class="min-h-0 flex-1" @select="sha => pick(sha, false)" />
-        <p v-else class="grid flex-1 place-items-center text-sm text-muted">{{ t('pages.commits.pick') }}</p>
-      </div>
+      <CommitList :from="from" :author="author" :message="message" :path="path" :changed="changed" :merges="merges" :selected="selected" :compare="compare" class="min-h-0" :style="{ flex: selected ? `${1 - share} 1 0` : '1 1 0' }" @select="pick" />
+      <!-- The details take room only once a commit is picked; until then the list has it all. -->
+      <template v-if="selected">
+        <div
+          class="h-1.5 shrink-0 cursor-row-resize border-y border-default bg-elevated/50 hover:bg-accented"
+          role="separator"
+          aria-orientation="horizontal"
+          :aria-label="t('pages.commits.resize')"
+          @pointerdown.prevent="drag"
+        />
+        <div class="flex min-h-0 flex-col" :style="{ flex: `${share} 1 0` }">
+          <CommitDetails :sha="selected" :compare="compare" class="min-h-0 flex-1" @select="sha => pick(sha, false)" />
+        </div>
+      </template>
+      <p v-else class="shrink-0 border-t border-default px-3 py-1.5 text-label text-muted">{{ t('pages.commits.pick') }} {{ t('pages.commits.hint') }}</p>
     </div>
   </div>
 </template>

@@ -22,7 +22,7 @@ async function begin(): Promise<void> {
   if (!good.value.trim()) return
   await start(bad.value.trim() || 'HEAD', good.value.trim(), useFunction.value ? fromFunction.value ?? undefined : undefined)
 }
-const when = (seconds: number) => times.value === 'date' ? new Date(seconds * 1000).toLocaleString() : new Date(seconds * 1000).toLocaleDateString()
+const when = (seconds: number) => times.value === 'date' ? new Date(seconds * 1000).toLocaleString(locale()) : new Date(seconds * 1000).toLocaleDateString(locale())
 </script>
 
 <template>

@@ -49,5 +49,22 @@
   "reflogHelp": "where HEAD and the branches pointed",
   "grep": "Search files",
   "grepHelp": "find text in the files of a commit",
-  "bookmarks": "Bookmarked files"
+  "bookmarks": "Bookmarked files",
+  "commitStaged": "Commit staged changes",
+  "commitStagedHelp": {
+    "one": "{count} file staged, on Local changes",
+    "other": "{count} files staged, on Local changes"
+  },
+  "stashFiles": "Stash some files…",
+  "stashFilesHelp": "tick them on Local changes",
+  "newPull": "New pull request…",
+  "newPullHelp": "from Pull requests",
+  "back": "Back",
+  "forward": "Forward",
+  "repositories": "Repositories…",
+  "clone": "Clone a repository…",
+  "newRepository": "New repository…",
+  "inManager": "in the repository manager",
+  "reopen": "Reopen {name}",
+  "shortcuts": "Keyboard shortcuts"
 }

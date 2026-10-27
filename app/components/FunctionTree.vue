@@ -7,7 +7,7 @@ const props = defineProps<{ items: FunctionNode[], path: string, term?: string, 
 const { index, selected, select, open } = useCode()
 const { times } = usePreferences()
 const age = (seconds: number) => {
-  if (times.value === 'date') return new Date(seconds * 1000).toLocaleDateString()
+  if (times.value === 'date') return new Date(seconds * 1000).toLocaleDateString(locale())
   const days = Math.floor((Date.now() / 1000 - seconds) / 86_400)
   if (days < 1) return t('FunctionTree.today')
   if (days < 60) return t('FunctionTree.days', { count: days })
@@ -62,7 +62,7 @@ function calls(id: string) {
           v-if="props.lastChanges?.get(fn.id)"
           class="max-w-36 truncate text-label whitespace-nowrap"
           :class="props.lastChanges.get(fn.id)!.uncommitted ? 'text-warning' : 'text-muted'"
-          :title="props.lastChanges.get(fn.id)!.uncommitted ? t('FunctionTree.uncommittedHelp') : t('FunctionTree.lastChange', { subject: props.lastChanges.get(fn.id)!.subject, date: new Date(props.lastChanges.get(fn.id)!.time * 1000).toLocaleString() })"
+          :title="props.lastChanges.get(fn.id)!.uncommitted ? t('FunctionTree.uncommittedHelp') : t('FunctionTree.lastChange', { subject: props.lastChanges.get(fn.id)!.subject, date: new Date(props.lastChanges.get(fn.id)!.time * 1000).toLocaleString(locale()) })"
         >{{ props.lastChanges.get(fn.id)!.uncommitted ? t('FunctionTree.uncommitted') : `${props.lastChanges.get(fn.id)!.author} · ${age(props.lastChanges.get(fn.id)!.time)}` }}</span>
         <span class="font-mono text-label whitespace-nowrap text-dimmed tabular-nums">:{{ fn.line }}</span>
         <UButton icon="i-lucide-square-arrow-out-up-right" size="xs" color="neutral" variant="ghost" class="-my-1" :aria-label="t('FunctionTree.open', { name: fn.name })" @click="open(props.path, fn.line)" />
