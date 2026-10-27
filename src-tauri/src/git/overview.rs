@@ -99,46 +99,235 @@ pub fn repository(path: &str) -> Result<String, String> {
 
 pub fn overview(path: &str) -> Result<Overview, String> {
     let root = repository(path)?;
-    let refs =
-        super::refs(&root)?.ok_or_else(|| said!("overview.notRepository", "That folder is not a git repository."))?;
-    let has_head = refs.sha.is_some();
-    let commits = if has_head { git(&root, &["rev-list", "--count", "HEAD"])?.trim().parse().unwrap_or(0) } else { 0 };
-    let latest = if has_head {
-        CommitInfo::all(&git(
-            &root,
-            &["log", &format!("--max-count={LATEST}"), &format!("--format={COMMIT_FORMAT}"), "HEAD"],
-        )?)
-    } else {
-        Vec::new()
-    };
-    // The oldest root commit: a history that joined another one has several.
-    let first = if has_head {
-        let roots = git(&root, &["rev-list", "--max-parents=0", "HEAD"])?;
-        match roots.lines().map(str::trim).rfind(|sha| !sha.is_empty()) {
-            Some(sha) => CommitInfo::all(&git(&root, &["log", "-1", &format!("--format={COMMIT_FORMAT}"), sha])?)
-                .into_iter()
-                .next(),
-            None => None,
-        }
-    } else {
-        None
-    };
+    // Each part is a git call or two, or a read in the process: read side by side. The history is read before it is
+    // known whether HEAD has a commit, and left out after when it has none.
+    let (refs, status, history, remotes, readme) = std::thread::scope(|scope| {
+        let status = scope.spawn(|| status(&root));
+        let history = scope.spawn(|| history(&root));
+        let remotes = scope.spawn(|| remotes(&root));
+        let readme = scope.spawn(|| readme(&root));
+        let refs = super::refs(&root);
+        (refs, joined(status), joined(history), joined(remotes), joined(readme))
+    });
+    let refs = refs?.ok_or_else(|| said!("overview.notRepository", "That folder is not a git repository."))?;
+    let History { commits, latest, first } = if refs.sha.is_some() { history? } else { History::default() };
     let tag_count = refs.tags.len() as u32;
     Ok(Overview {
         name: Path::new(&root).file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_default(),
         branch: refs.branch.clone(),
-        status: status(&root)?.unwrap_or_default(),
+        status: status?.unwrap_or_default(),
         commits,
         last: latest.first().cloned(),
         first,
-        remotes: remotes(&root),
+        remotes,
         branches: refs.branches,
         tags: refs.tags.into_iter().take(TAGS).collect(),
         tag_count,
         latest,
-        readme: readme(&root),
+        readme,
         path: root,
     })
+}
+
+/// A scoped thread's result; its panic goes on as it would have without the thread.
+fn joined<T>(handle: std::thread::ScopedJoinHandle<'_, T>) -> T {
+    handle.join().unwrap_or_else(|panic| std::panic::resume_unwind(panic))
+}
+
+/// HEAD's history for the overview.
+#[derive(Debug, Default)]
+struct History {
+    /// Commits reachable from HEAD.
+    commits: u32,
+    /// The latest `LATEST`, newest first.
+    latest: Vec<CommitInfo>,
+    /// The oldest root commit: a history that joined another one has several.
+    first: Option<CommitInfo>,
+}
+
+/// HEAD's history, read in the process with gix, or by git when gix leaves it to git.
+fn history(root: &str) -> Result<History, String> {
+    match history_in_process(root) {
+        Some(history) => Ok(history),
+        None => history_by_git(root),
+    }
+}
+
+/// HEAD's history as git reads it: four calls.
+fn history_by_git(root: &str) -> Result<History, String> {
+    let commits = git(root, &["rev-list", "--count", "HEAD"])?.trim().parse().unwrap_or(0);
+    let latest = CommitInfo::all(&git(
+        root,
+        &["log", &format!("--max-count={LATEST}"), &format!("--format={COMMIT_FORMAT}"), "HEAD"],
+    )?);
+    let roots = git(root, &["rev-list", "--max-parents=0", "HEAD"])?;
+    let first = match roots.lines().map(str::trim).rfind(|sha| !sha.is_empty()) {
+        Some(sha) => {
+            CommitInfo::all(&git(root, &["log", "-1", &format!("--format={COMMIT_FORMAT}"), sha])?).into_iter().next()
+        }
+        None => None,
+    };
+    Ok(History { commits, latest, first })
+}
+
+/// HEAD's history read in the process, walked as git walks it: newest commit date first, a tie in the order the
+/// commits were met, each parent once. Commit dates and parents come from the commit-graph when it has them, so only
+/// the commits shown are read whole. None leaves it to git: a repository gix cannot open, a shallow one or one with
+/// grafts (git's history there is not the objects'), a log encoding other than UTF-8, or a commit read here
+/// differently than git might.
+fn history_in_process(root: &str) -> Option<History> {
+    use std::cmp::Reverse;
+    use std::collections::{BinaryHeap, HashSet};
+
+    let repo = gix::open(root).ok()?;
+    if repo.is_shallow().unwrap_or(true) || repo.common_dir().join("info").join("grafts").exists() {
+        return None;
+    }
+    let config = repo.config_snapshot();
+    for key in ["i18n.logOutputEncoding", "i18n.commitEncoding"] {
+        if config.string(key).is_some_and(|encoding| !utf8(encoding.as_ref())) {
+            return None;
+        }
+    }
+    let graph = repo.commit_graph_if_enabled().ok().flatten();
+    let head = repo.head_commit().ok()?.id;
+
+    let mut commits: u32 = 0;
+    let mut latest = Vec::new();
+    let mut first = None;
+    let mut seen = HashSet::from([head]);
+    let (time, parents) = links(&repo, graph.as_ref(), head)?;
+    let mut met: u64 = 0;
+    let mut queue = BinaryHeap::from([(time, Reverse(met), head, parents)]);
+    while let Some((_, _, id, parents)) = queue.pop() {
+        commits = commits.checked_add(1)?;
+        if latest.len() < LATEST as usize {
+            latest.push(id);
+        }
+        if parents.is_empty() {
+            first = Some(id);
+        }
+        for parent in parents {
+            if seen.insert(parent) {
+                let (time, grandparents) = links(&repo, graph.as_ref(), parent)?;
+                met += 1;
+                queue.push((time, Reverse(met), parent, grandparents));
+            }
+        }
+    }
+    let latest = latest.into_iter().map(|id| commit_info(&repo, id)).collect::<Option<Vec<_>>>()?;
+    let first = match first {
+        Some(id) => Some(commit_info(&repo, id)?),
+        None => None,
+    };
+    Some(History { commits, latest, first })
+}
+
+/// Whether an encoding's name is UTF-8's, as git compares them.
+fn utf8(name: &[u8]) -> bool {
+    name.eq_ignore_ascii_case(b"utf-8") || name.eq_ignore_ascii_case(b"utf8")
+}
+
+/// git's whitespace.
+fn space(byte: u8) -> bool {
+    matches!(byte, b' ' | b'\t' | b'\n' | b'\r')
+}
+
+/// A commit's date (the committer's) and parents, from the commit-graph or else the commit itself.
+fn links(
+    repo: &gix::Repository,
+    graph: Option<&gix::commitgraph::Graph>,
+    id: gix::ObjectId,
+) -> Option<(i64, Vec<gix::ObjectId>)> {
+    if let Some((graph, commit)) = graph.and_then(|graph| Some((graph, graph.commit_by_id(id)?))) {
+        let parents = commit
+            .iter_parents()
+            .map(|position| position.ok().map(|position| graph.commit_at(position).id().to_owned()))
+            .collect::<Option<Vec<_>>>()?;
+        return Some((i64::try_from(commit.committer_timestamp()).ok()?, parents));
+    }
+    let object = repo.find_object(id).ok()?;
+    if object.kind != gix::object::Kind::Commit {
+        return None;
+    }
+    let mut lines = object.data.split(|byte| *byte == b'\n');
+    lines.next()?.strip_prefix(b"tree ")?;
+    let mut parents = Vec::new();
+    let mut line = lines.next()?;
+    while let Some(hex) = line.strip_prefix(b"parent ") {
+        parents.push(gix::ObjectId::from_hex(hex).ok()?);
+        line = lines.next()?;
+    }
+    // As git's parse_commit_date: the author's line, then the committer's, its date after the first '>'.
+    if !line.starts_with(b"author") {
+        return None;
+    }
+    let committer = lines.next()?.strip_prefix(b"committer")?;
+    let after = &committer[committer.iter().position(|byte| *byte == b'>')? + 1..];
+    Some((digits(after)?.parse().ok()?, parents))
+}
+
+/// The digits a date starts with, after any whitespace; None when there are none.
+fn digits(text: &[u8]) -> Option<&str> {
+    let text = &text[text.iter().take_while(|byte| space(**byte)).count()..];
+    let length = text.iter().take_while(|byte| byte.is_ascii_digit()).count();
+    (length > 0).then(|| std::str::from_utf8(&text[..length]).ok()).flatten()
+}
+
+/// A commit as `git log --format=COMMIT_FORMAT` gives it: the line is put together as git would put it, then read the
+/// same way.
+fn commit_info(repo: &gix::Repository, id: gix::ObjectId) -> Option<CommitInfo> {
+    let object = repo.find_object(id).ok()?;
+    if object.kind != gix::object::Kind::Commit {
+        return None;
+    }
+    // git reads a commit as a C string.
+    let data = object.data.split(|byte| *byte == 0).next().unwrap_or_default();
+    let (headers, message) = match data.windows(2).position(|pair| pair == b"\n\n") {
+        Some(at) => (&data[..at], &data[at + 2..]),
+        None => (data, &data[data.len()..]),
+    };
+    let mut author = None;
+    for line in headers.split(|byte| *byte == b'\n') {
+        if let Some(value) = line.strip_prefix(b"author ") {
+            author = Some(value);
+        } else if line.strip_prefix(b"encoding ").is_some_and(|encoding| !utf8(encoding)) {
+            return None;
+        }
+    }
+    // As git's split_ident_line: the name up to the first '<', its date after the last '>'.
+    let author = author?;
+    let open = author.iter().position(|byte| *byte == b'<')?;
+    let name = &author[..open];
+    let name = &name[..name.len() - name.iter().rev().take_while(|byte| space(**byte)).count()];
+    author[open..].iter().position(|byte| *byte == b'>')?;
+    let time = digits(&author[author.iter().rposition(|byte| *byte == b'>')? + 1..])?;
+    let mut line = format!("{id}\x1f").into_bytes();
+    line.extend_from_slice(name);
+    line.extend_from_slice(format!("\x1f{time}\x1f").as_bytes());
+    line.extend_from_slice(&subject(message));
+    CommitInfo::parse(&String::from_utf8_lossy(&line))
+}
+
+/// `%s` as git makes it: the first paragraph after any blank lines, its lines' ends trimmed and joined by a space.
+fn subject(message: &[u8]) -> Vec<u8> {
+    let blank = |line: &[u8]| line.iter().all(|byte| space(*byte));
+    let mut out = Vec::new();
+    let mut started = false;
+    for line in message.split_inclusive(|byte| *byte == b'\n') {
+        if blank(line) {
+            if started {
+                break;
+            }
+            continue;
+        }
+        if started {
+            out.push(b' ');
+        }
+        started = true;
+        out.extend_from_slice(&line[..line.len() - line.iter().rev().take_while(|byte| space(**byte)).count()]);
+    }
+    out
 }
 
 /// Each remote with its URL, as `remote.<name>.url` has it.
@@ -200,13 +389,21 @@ fn readme(root: &str) -> Option<Readme> {
 
 pub fn statistics(path: &str) -> Result<Statistics, String> {
     let root = repository(path)?;
-    let has_head =
-        git(&root, &["rev-parse", "--verify", "--quiet", "HEAD^{commit}"]).is_ok_and(|sha| !sha.trim().is_empty());
+    // Four git calls, side by side; the two on HEAD's history are left out after when HEAD has no commit.
+    let (has_head, listed, dates, tracked) = std::thread::scope(|scope| {
+        let listed = scope.spawn(|| git(&root, &["shortlog", "--summary", "--numbered", "--email", "HEAD"]));
+        let dates = scope
+            .spawn(|| git(&root, &["log", "--since=12.months.ago", "--format=%ad", "--date=format:%Y-%m", "HEAD"]));
+        let tracked = scope.spawn(|| git(&root, &["ls-files", "-z"]));
+        let has_head =
+            git(&root, &["rev-parse", "--verify", "--quiet", "HEAD^{commit}"]).is_ok_and(|sha| !sha.trim().is_empty());
+        (has_head, joined(listed), joined(dates), joined(tracked))
+    });
     let mut authors = Vec::new();
     let mut months = Vec::new();
     if has_head {
         // "  12\tName <email>"
-        let listed = git(&root, &["shortlog", "--summary", "--numbered", "--email", "HEAD"])?;
+        let listed = listed?;
         for line in listed.lines().take(10) {
             let Some((count, who)) = line.trim().split_once('\t') else { continue };
             let (name, email) = match who.rsplit_once(" <") {
@@ -215,10 +412,9 @@ pub fn statistics(path: &str) -> Result<Statistics, String> {
             };
             authors.push(AuthorCount { name, email, commits: count.trim().parse().unwrap_or(0) });
         }
-        let dates = git(&root, &["log", "--since=12.months.ago", "--format=%ad", "--date=format:%Y-%m", "HEAD"])?;
-        months = last_year(&dates, this_month());
+        months = last_year(&dates?, this_month());
     }
-    let tracked = git(&root, &["ls-files", "-z"])?;
+    let tracked = tracked?;
     let mut files = 0;
     let mut by_extension: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
     for path in tracked.split('\0').filter(|path| !path.is_empty()) {
@@ -286,6 +482,139 @@ mod tests {
         assert_eq!(months.last().map(|month| (month.month.as_str(), month.commits)), Some(("2026-10", 2)));
         assert_eq!(months.iter().find(|month| month.month == "2026-01").map(|month| month.commits), Some(1));
         assert_eq!(months.iter().map(|month| month.commits).sum::<u32>(), 4);
+    }
+
+    /// A history as text, to compare.
+    fn seen<E: std::fmt::Debug>(history: Result<History, E>) -> String {
+        format!("{history:?}")
+    }
+
+    /// git in the test repository with every date `date`: commits made in one second tie in the walk.
+    fn at(repo: &crate::git::tests::Repo, date: &str, args: &[&str]) -> String {
+        let output = std::process::Command::new("git")
+            .args(args)
+            .current_dir(&repo.root)
+            .env("GIT_AUTHOR_DATE", date)
+            .env("GIT_COMMITTER_DATE", date)
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&output.stderr));
+        String::from_utf8_lossy(&output.stdout).trim().to_owned()
+    }
+
+    /// A history with ties, merges, two roots, over `LATEST` commits and an odd message.
+    fn tangled() -> crate::git::tests::Repo {
+        let r = crate::git::tests::Repo::new();
+        let tie = "@1700000000 +0000";
+        r.write("a.txt", "a");
+        r.sh(&["add", "."]);
+        r.sh(&["commit", "-q", "-m", "Root"]);
+        at(&r, tie, &["switch", "-q", "-c", "side"]);
+        for n in 0..6 {
+            at(&r, tie, &["commit", "-q", "--allow-empty", "-m", &format!("Side {n}")]);
+        }
+        at(&r, tie, &["switch", "-q", "main"]);
+        for n in 0..18 {
+            r.write("a.txt", &n.to_string());
+            at(&r, tie, &["commit", "-q", "-am", &format!("Main {n}")]);
+        }
+        at(&r, tie, &["merge", "-q", "--no-ff", "-m", "Merge side", "side"]);
+        at(&r, "@1600000000 +0000", &["switch", "-q", "--orphan", "other"]);
+        r.write("b.txt", "b");
+        at(&r, "@1600000000 +0000", &["add", "."]);
+        at(&r, "@1600000000 +0000", &["commit", "-q", "-m", "Other root"]);
+        at(&r, tie, &["switch", "-q", "main"]);
+        at(&r, tie, &["merge", "-q", "--allow-unrelated-histories", "-m", "Join", "other"]);
+        r.write("message.txt", "\n  \n  Title  one  \t\nand two \n\nBody\n");
+        let tree = at(&r, tie, &["rev-parse", "HEAD^{tree}"]);
+        let message = r.path("message.txt").to_string_lossy().into_owned();
+        let odd = at(&r, tie, &["commit-tree", &tree, "-p", "HEAD", "-F", &message]);
+        at(&r, tie, &["update-ref", "HEAD", &odd]);
+        r
+    }
+
+    #[test]
+    fn reads_the_history_as_git_does() {
+        let r = tangled();
+        let by_git = history_by_git(&r.root).unwrap();
+        assert!(by_git.commits > LATEST);
+        assert_eq!(by_git.latest.len(), LATEST as usize);
+        assert_eq!(by_git.first.as_ref().map(|first| first.subject.as_str()), Some("Other root"));
+        assert_eq!(by_git.latest[0].subject, "  Title  one and two");
+        assert_eq!(seen(history_in_process(&r.root).ok_or("left to git")), seen::<&str>(Ok(by_git)));
+        // The same from the commit-graph's dates and parents.
+        r.sh(&["commit-graph", "write", "--reachable"]);
+        assert_eq!(seen(history_in_process(&r.root).ok_or("left to git")), seen(history_by_git(&r.root)));
+        assert_eq!(seen(history(&r.root)), seen(history_by_git(&r.root)));
+    }
+
+    #[test]
+    fn leaves_to_git_what_git_reads_differently() {
+        let r = tangled();
+        r.sh(&["config", "i18n.logOutputEncoding", "ISO-8859-1"]);
+        assert!(history_in_process(&r.root).is_none());
+        assert_eq!(seen(history(&r.root)), seen(history_by_git(&r.root)));
+        r.sh(&["config", "--unset", "i18n.logOutputEncoding"]);
+        r.sh(&["config", "i18n.commitEncoding", "ISO-8859-1"]);
+        r.sh(&["commit", "-q", "--allow-empty", "-m", "Encoded"]);
+        r.sh(&["config", "--unset", "i18n.commitEncoding"]);
+        assert!(history_in_process(&r.root).is_none());
+        // A shallow clone's history ends where it was cut.
+        let shallow = tempfile::tempdir().unwrap();
+        let into = crate::paths::plain(std::fs::canonicalize(shallow.path()).unwrap()).to_string_lossy().into_owned();
+        let source = format!("file:///{}", r.root.replace('\\', "/").trim_start_matches('/'));
+        at(&r, "@1700000000 +0000", &["clone", "-q", "--depth", "3", &source, &into]);
+        assert!(history_in_process(&into).is_none());
+        let cut = history(&into).unwrap();
+        assert!(cut.commits < history_by_git(&r.root).unwrap().commits);
+        assert_eq!(cut.first.map(|first| first.subject), Some("Join".to_owned()));
+    }
+
+    #[test]
+    fn an_empty_repository_has_no_history() {
+        let r = crate::git::tests::Repo::new();
+        let read = overview(&r.root).unwrap();
+        assert_eq!((read.commits, read.latest.len(), read.first.is_none(), read.last.is_none()), (0, 0, true, true));
+        let stats = statistics(&r.root).unwrap();
+        assert!(stats.authors.is_empty() && stats.months.is_empty() && stats.files == 0);
+    }
+
+    #[test]
+    fn the_overview_reads_every_part() {
+        let r = tangled();
+        let read = overview(&r.root).unwrap();
+        let by_git = history_by_git(&r.root).unwrap();
+        assert_eq!(read.branch.as_deref(), Some("main"));
+        assert_eq!(
+            format!("{:?}", (read.commits, &read.latest, &read.first, &read.last)),
+            format!("{:?}", (by_git.commits, &by_git.latest, &by_git.first, by_git.latest.first()))
+        );
+        assert_eq!(read.status.unstaged.len(), 1, "message.txt is not tracked");
+        let stats = statistics(&r.root).unwrap();
+        assert_eq!(stats.files, 2);
+    }
+
+    /// How long the overview and the statistics take on this repository (`HAUNT_OVERVIEW` names another):
+    /// `cargo test overview_timing -- --ignored --nocapture`.
+    #[test]
+    #[ignore]
+    fn overview_timing() {
+        let path = std::env::var("HAUNT_OVERVIEW").unwrap_or_else(|_| env!("CARGO_MANIFEST_DIR").to_owned() + "/..");
+        // The first of each reads git's filters and warms the disk cache.
+        let (_, _) = (overview(&path), statistics(&path));
+        for _ in 0..5 {
+            let started = std::time::Instant::now();
+            let read = overview(&path).unwrap();
+            let middle = started.elapsed();
+            let stats = statistics(&path).unwrap();
+            println!("overview {middle:?}, statistics {:?}", started.elapsed() - middle);
+            if std::env::var("HAUNT_OVERVIEW_DUMP").is_ok() {
+                let mut read = read;
+                read.status = LocalStatus::default();
+                println!("{}", serde_json::to_string(&read).unwrap());
+                println!("{}", serde_json::to_string(&stats).unwrap());
+            }
+        }
     }
 
     #[test]

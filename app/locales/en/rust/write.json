@@ -9,5 +9,7 @@
   "discardUnknown": "That discard is not known.",
   "noMessage": "Write a message first.",
   "nothingToAmend": "There is no commit to amend yet.",
-  "noFiles": "No files given."
+  "noFiles": "No files given.",
+  "stopped": "git {command} was stopped.",
+  "tookTooLong": "git {command} took longer than {minutes} minutes and was stopped."
 }

@@ -3,6 +3,7 @@
 //! (staging, commits, branches, stashes and tags) is its own module, `write/`, with its own rules.
 
 pub(crate) mod cli;
+pub(crate) mod command;
 pub mod diff;
 pub mod grep;
 mod health;

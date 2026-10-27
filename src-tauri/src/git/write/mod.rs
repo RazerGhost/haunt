@@ -13,6 +13,9 @@
 //! - A discard is saved first, as a commit under `refs/haunt/discarded/<time>` (made through a temporary index, so
 //!   your index is left alone; untracked files and deletions included), and can be brought back for 30 days.
 //! - Every command lands in the repository's activity list, with how long it took and what git said.
+//! - A write is stopped after `WRITE_LIMIT` (a hook waiting for input must not hold the repository's queue for ever),
+//!   and can be stopped from the window (`cancel`), with everything it started.
+//! - How git is started for a write (its `-c` settings and environment) is in `../command.rs`.
 
 mod bisect;
 mod conflicts;
@@ -31,8 +34,9 @@ mod worktrees;
 use parking_lot::Mutex;
 use std::collections::{HashMap, VecDeque};
 use std::io::Write as _;
-use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::path::Path;
+use std::process::Stdio;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, OnceLock};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
@@ -91,6 +95,8 @@ const LOCK_WAIT: Duration = Duration::from_secs(3);
 /// How long a discard can be brought back.
 const KEEP_DISCARDS: Duration = Duration::from_secs(30 * 24 * 60 * 60);
 const DISCARDED: &str = "refs/haunt/discarded/";
+/// The longest a write may take: long enough for hooks that run the tests, short of holding the queue for ever.
+const WRITE_LIMIT: Duration = Duration::from_secs(10 * 60);
 
 /// A command Haunt ran to write, for the activity list.
 #[derive(Debug, Clone, Serialize, Type)]
@@ -143,10 +149,86 @@ fn now_seconds() -> i64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map(|time| time.as_secs() as i64).unwrap_or(0)
 }
 
+/// A lock per repository.
+type Turns = Mutex<HashMap<String, Arc<Mutex<()>>>>;
+
+fn queues() -> &'static Turns {
+    static QUEUES: OnceLock<Turns> = OnceLock::new();
+    QUEUES.get_or_init(Mutex::default)
+}
+
 /// One lock per repository: its writes run one at a time.
 pub(crate) fn queue(root: &str) -> Arc<Mutex<()>> {
-    static QUEUES: OnceLock<Mutex<HashMap<String, Arc<Mutex<()>>>>> = OnceLock::new();
-    QUEUES.get_or_init(Mutex::default).lock().entry(root.to_owned()).or_default().clone()
+    queues().lock().entry(root.to_owned()).or_default().clone()
+}
+
+/// Forgets `root`'s lock unless something holds it now (it stays then, so writes still run one at a time).
+fn forget_turn(turns: &Turns, root: &str) {
+    let mut all = turns.lock();
+    if all.get(root).is_some_and(|turn| Arc::strong_count(turn) == 1) {
+        all.remove(root);
+    }
+}
+
+/// Forgets a repository whose tab closed: its write queue and network turn (unless a write holds them right now), its
+/// activity list and its last action.
+pub fn forget(root: &str) {
+    forget_turn(queues(), root);
+    network::forget(root);
+    activities().lock().remove(root);
+    last::forget_last(root);
+}
+
+/// The git processes running per repository, so they can be stopped (`cancel`): each one's id, and whether it was.
+type Running = Mutex<HashMap<String, Vec<(u32, Arc<AtomicBool>)>>>;
+
+/// The writes running now.
+fn writes() -> &'static Running {
+    static WRITES: OnceLock<Running> = OnceLock::new();
+    WRITES.get_or_init(Mutex::default)
+}
+
+/// A process listed as running in a repository until this is dropped.
+struct Registered {
+    running: &'static Running,
+    root: String,
+    pid: u32,
+    stopped: Arc<AtomicBool>,
+}
+
+impl Registered {
+    fn new(running: &'static Running, root: &str, pid: u32) -> Registered {
+        let stopped = Arc::new(AtomicBool::new(false));
+        running.lock().entry(root.to_owned()).or_default().push((pid, stopped.clone()));
+        Registered { running, root: root.to_owned(), pid, stopped }
+    }
+
+    /// Whether it was stopped (`stop`).
+    fn stopped(&self) -> bool {
+        self.stopped.load(Ordering::SeqCst)
+    }
+}
+
+impl Drop for Registered {
+    fn drop(&mut self) {
+        let mut all = self.running.lock();
+        if let Some(list) = all.get_mut(&self.root) {
+            list.retain(|(pid, _)| *pid != self.pid);
+            if list.is_empty() {
+                all.remove(&self.root);
+            }
+        }
+    }
+}
+
+/// Stops every process listed in `root`, with what each started; whether there was one.
+fn stop(running: &Running, root: &str) -> bool {
+    let list = running.lock().get(root).cloned().unwrap_or_default();
+    for (pid, stopped) in &list {
+        stopped.store(true, Ordering::SeqCst);
+        crate::process::kill_tree(*pid);
+    }
+    !list.is_empty()
 }
 
 fn activities() -> &'static Mutex<HashMap<String, VecDeque<Activity>>> {
@@ -168,13 +250,6 @@ fn record(root: &str, entry: Activity) {
     }
 }
 
-/// An empty folder for `core.hooksPath` in an untrusted folder: no hook can run from it.
-fn no_hooks() -> PathBuf {
-    let dir = std::env::temp_dir().join("haunt-no-hooks");
-    let _ = std::fs::create_dir_all(&dir);
-    dir
-}
-
 /// A repository to write to, as the shown tab has it: its folder and whether its own code may run.
 pub struct Writer<'a> {
     root: &'a str,
@@ -190,20 +265,6 @@ impl<'a> Writer<'a> {
         Writer { root, trusted, quiet: false, tabless: false }
     }
 
-    fn config(&self) -> Vec<String> {
-        let mut out: Vec<String> =
-            ["color.ui=false", "core.pager=cat"].iter().map(|setting| setting.to_string()).collect();
-        if !self.trusted {
-            out.push(format!("core.hooksPath={}", no_hooks().to_string_lossy().replace('\\', "/")));
-            out.extend(
-                ["core.fsmonitor=false", "commit.gpgsign=false", "tag.gpgsign=false", "protocol.ext.allow=never"]
-                    .iter()
-                    .map(|setting| setting.to_string()),
-            );
-        }
-        out.into_iter().flat_map(|setting| ["-c".to_string(), setting]).collect()
-    }
-
     /// Runs a writing git command in `cwd` (the opened folder by default), with `input` on its stdin, and records it.
     fn git(
         &self,
@@ -212,28 +273,50 @@ impl<'a> Writer<'a> {
         env: &[(&str, &str)],
         cwd: Option<&str>,
     ) -> Result<String, String> {
-        let mut command = Command::new("git");
-        command
-            .args(self.config())
-            .args(args)
-            .current_dir(cwd.unwrap_or(self.root))
-            .env("GIT_TERMINAL_PROMPT", "0")
-            .env("GIT_EDITOR", ":")
-            .env("GIT_SEQUENCE_EDITOR", ":")
-            .env("LC_ALL", "C")
-            .envs(env.iter().copied())
-            .stdin(if input.is_some() { Stdio::piped() } else { Stdio::null() })
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
-        crate::startup::hide_console(&mut command);
+        let mut command = super::command::write(cwd.unwrap_or(self.root), self.trusted);
+        let stdin = if input.is_some() { Stdio::piped() } else { Stdio::null() };
+        command.args(args).envs(env.iter().copied()).stdin(stdin);
         let started = Instant::now();
-        let mut child = command
-            .spawn()
-            .map_err(|error| said!("write.couldNotStart", "git could not start: {error}", error = error))?;
+        let mut child = crate::process::start(command).map_err(|failure| match failure {
+            crate::process::Failure::NotFound => said!("cli.notInstalled", "git could not start: it is not installed."),
+            crate::process::Failure::Other(error) => {
+                said!("write.couldNotStart", "git could not start: {error}", error = error)
+            }
+            crate::process::Failure::TimedOut => {
+                said!("write.couldNotStart", "git could not start: {error}", error = "-")
+            }
+        })?;
+        // Written aside, so a git that does not read its input (a hook hanging first) cannot hold this up.
         if let (Some(input), Some(mut stdin)) = (input, child.stdin.take()) {
-            let _ = stdin.write_all(input);
+            let input = input.to_vec();
+            std::thread::spawn(move || {
+                let _ = stdin.write_all(&input);
+            });
         }
-        let output = child.wait_with_output().map_err(|error| error.to_string())?;
+        let running = Registered::new(writes(), self.root, child.id());
+        let finished = crate::process::finish(child, WRITE_LIMIT);
+        let stopped = running.stopped();
+        drop(running);
+        let name = args.first().copied().unwrap_or_default();
+        let output = match finished {
+            Ok(output) if !stopped => output,
+            Err(crate::process::Failure::TimedOut) if !stopped => {
+                let message = said!(
+                    "write.tookTooLong",
+                    "git {command} took longer than {minutes} minutes and was stopped.",
+                    command = name,
+                    minutes = WRITE_LIMIT.as_secs() / 60
+                );
+                self.record_failure(args, started, &message);
+                return Err(message);
+            }
+            Err(crate::process::Failure::Other(error)) if !stopped => return Err(error),
+            _ => {
+                let message = said!("write.stopped", "git {command} was stopped.", command = name);
+                self.record_failure(args, started, &message);
+                return Err(message);
+            }
+        };
         let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
         let stderr = String::from_utf8_lossy(&output.stderr).trim().to_owned();
         let mut said = format!("{}\n{stderr}", stdout.trim()).trim().to_owned();
@@ -262,6 +345,20 @@ impl<'a> Writer<'a> {
         } else {
             Err(stderr)
         }
+    }
+
+    /// A command that did not finish, in the activity list.
+    fn record_failure(&self, args: &[&str], started: Instant, message: &str) {
+        record(
+            self.root,
+            Activity {
+                command: format!("git {}", args.join(" ")),
+                at: now_seconds(),
+                ms: started.elapsed().as_millis() as u32,
+                ok: false,
+                output: crate::said::english(message).to_owned(),
+            },
+        );
     }
 
     /// Waits while another git holds the index lock; Haunt never deletes the lock itself.

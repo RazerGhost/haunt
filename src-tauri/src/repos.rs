@@ -670,6 +670,8 @@ impl Repos {
             inner.kept.retain(|kept| kept.root != root);
             crate::code::others::forget(&root);
             crate::git::forget_config(&root);
+            crate::git::objects::forget(&root);
+            crate::git::write::forget(&root);
             match inner.settings.close(&root) {
                 None => {}
                 Some(next) => {

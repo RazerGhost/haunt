@@ -10,20 +10,19 @@
 //!   pull that stops on conflicts leaves them for the conflict view (`conflicts.rs`), where it is continued or aborted.
 //! - Push sets the upstream the first time, and overwrites only with a lease on what Haunt last fetched.
 //! - git's questions (passwords, passphrases, host keys) go to the window (`crate::askpass`); git's progress goes to
-//!   `progress` as it comes; a run can be stopped (`cancel`), which stops git and everything it started.
+//!   `progress` as it comes; a run can be stopped (`cancel`), which stops git and everything it started. How git is
+//!   started for it (settings and environment) is in `../command.rs`.
 
 use parking_lot::Mutex;
-use std::collections::HashMap;
 use std::io::Read;
-use std::process::{Command, Stdio};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::process::Stdio;
 use std::sync::{Arc, OnceLock};
 use std::time::Instant;
 
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
-use super::{now_seconds, queue, record, Activity, Writer};
+use super::{forget_turn, now_seconds, queue, record, stop, writes, Activity, Registered, Running, Turns, Writer};
 use crate::git::cli::git as read;
 
 /// How a pull joins the remote branch's commits with yours.
@@ -102,9 +101,7 @@ fn pull_refs(listing: &str) -> Vec<(u32, String)> {
         .collect()
 }
 
-/// The network run going on per repository: git's process id, and whether it was stopped.
-type Running = Mutex<HashMap<String, (u32, Arc<AtomicBool>)>>;
-
+/// The network run going on per repository.
 fn runs() -> &'static Running {
     static RUNNING: OnceLock<Running> = OnceLock::new();
     RUNNING.get_or_init(Mutex::default)
@@ -113,8 +110,18 @@ fn runs() -> &'static Running {
 /// One network run at a time per repository: a fetch, pull or push holds it (a foreground one together with the write
 /// queue, taken first; the background fetch alone, so your own writes never wait for it).
 pub(super) fn network_turn(root: &str) -> Arc<Mutex<()>> {
-    static TURNS: OnceLock<Mutex<HashMap<String, Arc<Mutex<()>>>>> = OnceLock::new();
-    TURNS.get_or_init(Mutex::default).lock().entry(root.to_owned()).or_default().clone()
+    turns().lock().entry(root.to_owned()).or_default().clone()
+}
+
+fn turns() -> &'static Turns {
+    static TURNS: OnceLock<Turns> = OnceLock::new();
+    TURNS.get_or_init(Mutex::default)
+}
+
+/// Forgets a repository whose tab closed: its network turn, unless a run holds it right now. A running run is
+/// listed until it ends, so it can still be stopped.
+pub(super) fn forget(root: &str) {
+    forget_turn(turns(), root);
 }
 
 /// Whether a fetch, pull or push is running in `root`.
@@ -122,27 +129,11 @@ pub fn running(root: &str) -> bool {
     runs().lock().contains_key(root)
 }
 
-/// Stops the fetch, pull or push running in `root`, with every process git started (a credential helper, ssh).
+/// Stops the fetch, pull or push running in `root`, and any other write running there, with every process git started
+/// (a credential helper, ssh, a hook). Whether there was one.
 pub fn cancel(root: &str) -> bool {
-    let Some((pid, stopped)) = runs().lock().get(root).cloned() else {
-        return false;
-    };
-    stopped.store(true, Ordering::SeqCst);
-    #[cfg(windows)]
-    let mut kill = {
-        let mut command = Command::new("taskkill");
-        command.args(["/T", "/F", "/PID", &pid.to_string()]);
-        command
-    };
-    #[cfg(not(windows))]
-    let mut kill = {
-        let mut command = Command::new("kill");
-        command.args(["-TERM", &format!("-{pid}")]);
-        command
-    };
-    kill.stdout(Stdio::null()).stderr(Stdio::null());
-    crate::startup::hide_console(&mut kill);
-    kill.status().is_ok()
+    let network = stop(runs(), root);
+    stop(writes(), root) || network
 }
 
 /// A line of git's progress ("Receiving objects:  45% (12/27)"), as opposed to what it has to say.
@@ -238,32 +229,20 @@ impl Writer<'_> {
         env: &[(String, String)],
         progress: &dyn Fn(&str),
     ) -> Result<Ran, String> {
-        let mut command = Command::new("git");
+        let asks_for = (!self.quiet).then_some(if self.tabless { "" } else { self.root });
+        let mut command = crate::git::command::network(self.root, self.trusted, extra, asks_for);
         command
-            .args(self.config())
-            .args(extra.iter().flat_map(|setting| ["-c".to_string(), setting.clone()]))
             .args(args)
-            .current_dir(self.root)
-            .env("GIT_TERMINAL_PROMPT", "0")
-            .env("GIT_EDITOR", ":")
-            .env("GIT_SEQUENCE_EDITOR", ":")
-            .env("LC_ALL", "C")
-            .envs(if self.quiet { Vec::new() } else { crate::askpass::env(if self.tabless { "" } else { self.root }) })
-            .envs(self.quiet.then_some(("GCM_INTERACTIVE", "never")))
             .envs(env.iter().map(|(name, value)| (name.as_str(), value.as_str())))
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
-        crate::startup::hide_console(&mut command);
-        // Its own process group, so stopping it stops what it started too.
-        #[cfg(unix)]
-        std::os::unix::process::CommandExt::process_group(&mut command, 0);
         let started = Instant::now();
         let mut child = command
             .spawn()
             .map_err(|error| said!("network.couldNotStart", "git could not start: {error}", error = error))?;
-        let stopped = Arc::new(AtomicBool::new(false));
-        runs().lock().insert(self.root.to_owned(), (child.id(), stopped.clone()));
+        crate::process::adopt(&child);
+        let running = Registered::new(runs(), self.root, child.id());
 
         let mut stdout = child.stdout.take();
         let reading = std::thread::spawn(move || {
@@ -304,11 +283,12 @@ impl Writer<'_> {
         }
         stderr.extend_from_slice(&piece);
         let status = child.wait().map_err(|error| error.to_string());
-        runs().lock().remove(self.root);
+        crate::process::release(child.id());
+        let cancelled = running.stopped();
+        drop(running);
         let stdout = reading.join().unwrap_or_default();
         let status = status?;
         let stderr = String::from_utf8_lossy(&stderr).into_owned();
-        let cancelled = stopped.load(Ordering::SeqCst);
         record(
             self.root,
             Activity {
@@ -726,6 +706,138 @@ impl Writer<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A temporary repository with one commit; removed when dropped.
+    struct Temp(std::path::PathBuf);
+
+    impl Temp {
+        fn new(label: &str) -> Temp {
+            let base = std::env::temp_dir().join(format!("haunt-{label}-{}", std::process::id()));
+            let _ = std::fs::remove_dir_all(&base);
+            std::fs::create_dir_all(&base).unwrap();
+            let temp = Temp(base);
+            temp.run(&["init", "-q", "-b", "main"]);
+            temp.run(&["config", "user.name", "T"]);
+            temp.run(&["config", "user.email", "t@t"]);
+            temp.run(&["config", "commit.gpgsign", "false"]);
+            std::fs::write(temp.0.join("a.txt"), "one\n").unwrap();
+            temp.run(&["add", "."]);
+            temp.run(&["commit", "-q", "-m", "first"]);
+            temp
+        }
+
+        fn run(&self, args: &[&str]) {
+            let out = std::process::Command::new("git").args(args).current_dir(&self.0).output().unwrap();
+            assert!(out.status.success(), "{args:?}");
+        }
+
+        fn root(&self) -> String {
+            self.0.to_string_lossy().into_owned()
+        }
+    }
+
+    impl Drop for Temp {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    /// The processes whose command line holds `marker`.
+    #[cfg(windows)]
+    fn processes_with(marker: &str) -> Vec<String> {
+        let query = format!(
+            "Get-CimInstance Win32_Process | Where-Object {{ $_.CommandLine -like '*{marker}*' -and $_.Name -ne 'powershell.exe' }} | ForEach-Object {{ $_.Name }}"
+        );
+        let out = std::process::Command::new("powershell").args(["-NoProfile", "-Command", &query]).output().unwrap();
+        String::from_utf8_lossy(&out.stdout)
+            .lines()
+            .map(str::trim)
+            .filter(|l| !l.is_empty())
+            .map(str::to_owned)
+            .collect()
+    }
+
+    /// A write held up by a hook (here one that sleeps) is stopped by the window's Stop, hook and all.
+    #[test]
+    fn stops_a_write_that_hangs() {
+        let temp = Temp::new("stop-write");
+        let root = temp.root();
+        // A sleep of its own length, so it can be found again.
+        let marker = format!("60.{}", std::process::id());
+        let hook = temp.0.join(".git/hooks/pre-commit");
+        std::fs::write(
+            &hook,
+            format!(
+                "#!/bin/sh
+sleep {marker}
+"
+            ),
+        )
+        .unwrap();
+        #[cfg(unix)]
+        std::fs::set_permissions(&hook, std::os::unix::fs::PermissionsExt::from_mode(0o755)).unwrap();
+        std::fs::write(
+            temp.0.join("a.txt"),
+            "two
+",
+        )
+        .unwrap();
+        temp.run(&["add", "."]);
+
+        let started = Instant::now();
+        let committing = {
+            let root = root.clone();
+            std::thread::spawn(move || Writer::new(&root, true).commit("second", false, false))
+        };
+        while !writes().lock().get(&root).is_some_and(|list| !list.is_empty()) {
+            assert!(started.elapsed() < std::time::Duration::from_secs(20), "the commit never started");
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+        #[cfg(windows)]
+        while !processes_with(&marker).iter().any(|name| name == "sleep.exe") {
+            assert!(started.elapsed() < std::time::Duration::from_secs(30), "the hook never started");
+        }
+        #[cfg(not(windows))]
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        let stopping = Instant::now();
+        assert!(cancel(&root));
+        let error = committing.join().unwrap().unwrap_err();
+        assert_eq!(crate::said::english(&error), "git commit was stopped.");
+        assert!(
+            stopping.elapsed() < std::time::Duration::from_secs(10),
+            "waited for the hook: {:?}",
+            stopping.elapsed()
+        );
+        #[cfg(windows)]
+        assert_eq!(processes_with(&marker), Vec::<String>::new(), "the hook still runs");
+        assert!(!writes().lock().contains_key(&root));
+        assert!(!cancel(&root));
+        let activity = super::super::activity(&root);
+        assert!(activity.first().is_some_and(|entry| !entry.ok && entry.output == "git commit was stopped."));
+    }
+
+    /// Closing a tab forgets the repository's queue, turn and activity, but never a queue a write holds right now.
+    #[test]
+    fn forgets_a_repository_but_not_a_queue_in_use() {
+        let temp = Temp::new("forget-write");
+        let root = temp.root();
+        Writer::new(&root, false).stage(&["a.txt".to_string()]).unwrap();
+        let _ = network_turn(&root);
+        assert!(!super::super::activity(&root).is_empty());
+        assert!(super::super::queues().lock().contains_key(&root));
+
+        let held = queue(&root);
+        let turn = held.lock();
+        super::super::forget(&root);
+        assert!(super::super::activity(&root).is_empty());
+        assert!(!turns().lock().contains_key(&root));
+        // Held: the same queue still, so the next write waits for this one.
+        assert!(Arc::ptr_eq(&held, &queue(&root)));
+        drop(turn);
+        drop(held);
+        super::super::forget(&root);
+        assert!(!super::super::queues().lock().contains_key(&root));
+    }
 
     fn setting(scope: &str, key: &str, value: &str) -> Setting {
         Setting { scope: scope.into(), key: key.into(), value: Some(value.into()) }

@@ -17,10 +17,23 @@ use super::types::{
     ChangedPath, CommitDetail, Decoration, DecorationKind, DiffHunk, DiffLine, FileDiffView, LineKind, PathStatus,
 };
 
+/// The repositories opened, by folder, with the opened folder's place in each.
+type Opened = Mutex<HashMap<String, (gix::ThreadSafeRepository, String)>>;
+
+fn opened() -> &'static Opened {
+    static OPEN: OnceLock<Opened> = OnceLock::new();
+    OPEN.get_or_init(Mutex::default)
+}
+
+/// Forgets a repository whose tab closed: its pack files are let go (on Windows a folder with an open file cannot be
+/// moved or deleted), and the memory with them.
+pub fn forget(root: &str) {
+    opened().lock().remove(root);
+}
+
 /// A repository opened once per folder, shared between threads.
 fn open(root: &str) -> Result<(gix::Repository, String), String> {
-    static OPEN: OnceLock<Mutex<HashMap<String, (gix::ThreadSafeRepository, String)>>> = OnceLock::new();
-    let mut known = OPEN.get_or_init(Mutex::default).lock();
+    let mut known = opened().lock();
     if let Some((repo, prefix)) = known.get(root) {
         return Ok((repo.to_thread_local(), prefix.clone()));
     }
@@ -238,6 +251,12 @@ fn section(lines: &[&str], before: usize) -> String {
 }
 
 /// The hunks between two texts, with `context` lines around each change; changes closer than twice that share a hunk.
+/// Whether `root` is kept open.
+#[cfg(test)]
+pub fn is_open(root: &str) -> bool {
+    opened().lock().contains_key(root)
+}
+
 #[cfg(test)]
 pub fn hunks(before: &str, after: &str, context: u32) -> Vec<DiffHunk> {
     hunks_with(before, after, context, false)
@@ -379,4 +398,38 @@ pub fn file_diff_with(
         return Ok(view(Vec::new(), true));
     }
     Ok(view(hunks_with(&before.to_str_lossy(), &after.to_str_lossy(), context.min(1_000_000), ignore_space), false))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A closed tab's repository is let go: no longer kept, and its folder (pack files and all) can be deleted.
+    #[test]
+    fn forgets_a_repository_and_lets_its_files_go() {
+        let base = std::env::temp_dir().join(format!("haunt-objects-forget-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&base);
+        std::fs::create_dir_all(&base).unwrap();
+        let run = |args: &[&str]| {
+            let mut command = std::process::Command::new("git");
+            command
+                .args(["-c", "user.name=T", "-c", "user.email=t@t", "-c", "commit.gpgsign=false"])
+                .args(args)
+                .current_dir(&base);
+            assert!(command.output().unwrap().status.success(), "{args:?}");
+        };
+        run(&["init", "-q", "-b", "main"]);
+        std::fs::write(base.join("a.txt"), "one\n").unwrap();
+        run(&["add", "."]);
+        run(&["commit", "-q", "-m", "first"]);
+        // Into a pack, which gix keeps open.
+        run(&["gc", "-q"]);
+        let root = base.to_string_lossy().into_owned();
+
+        assert_eq!(commit(&root, "HEAD").unwrap().subject, "first");
+        assert!(is_open(&root));
+        forget(&root);
+        assert!(!is_open(&root));
+        std::fs::remove_dir_all(&base).unwrap();
+    }
 }

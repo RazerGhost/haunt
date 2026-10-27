@@ -3,7 +3,8 @@
 //! textconv, a clean or smudge filter, fsmonitor, a pager), so every call switches those off: reading a folder you have
 //! not trusted runs nothing of its own here either. Optional locks are off too, so a read never takes the index lock
 //! from a git you are running yourself. Your own git config (system and global) stays: it holds core.autocrlf on
-//! Windows, without which every line of a checked-out file would differ from the repository.
+//! Windows, without which every line of a checked-out file would differ from the repository. The settings themselves are
+//! in `command.rs`, with those of the writes.
 
 use parking_lot::Mutex;
 use std::collections::HashMap;
@@ -12,31 +13,6 @@ use std::process::{Child, ChildStdout, Command, Stdio};
 use std::sync::OnceLock;
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
-
-const BASE_CONFIG: [&str; 12] = [
-    "-c",
-    "core.fsmonitor=false",
-    "-c",
-    "core.untrackedCache=false",
-    "-c",
-    "diff.external=",
-    "-c",
-    "core.pager=cat",
-    "-c",
-    "color.ui=false",
-    "-c",
-    "log.showSignature=false",
-];
-
-/// Flags each read needs so that no diff driver or textconv command of the repository runs; added here, so no caller
-/// can forget them (`git blame` runs a textconv command unless told not to).
-fn safe_flags(command: &str) -> &'static [&'static str] {
-    match command {
-        "diff" | "diff-tree" | "log" | "show" => &["--no-ext-diff", "--no-textconv"],
-        "blame" => &["--no-textconv"],
-        _ => &[],
-    }
-}
 
 /// How long a repository's list of filters is used before it is read again. Its `.git/config` is watched (repos.rs),
 /// but a filter can also come from an included file, `config.worktree` or your global config, which are not: read
@@ -60,24 +36,7 @@ pub fn forget_config(root: &str) {
 /// The longest a read may take: a pickaxe search or blame over a huge history is stopped rather than holding on for ever.
 const READ_LIMIT: Duration = Duration::from_secs(300);
 
-/// git with these exact arguments, in `root`, with optional locks, prompts and pagers off.
-fn base(root: &str, args: &[String]) -> Command {
-    let mut command = Command::new("git");
-    command
-        .args(args)
-        .current_dir(root)
-        .env("GIT_OPTIONAL_LOCKS", "0")
-        .env("GIT_TERMINAL_PROMPT", "0")
-        .env("GIT_PAGER", "cat")
-        .env("PAGER", "cat")
-        .env("LC_ALL", "C")
-        .stdin(Stdio::null());
-    command
-}
-
-fn spawn(root: &str, args: &[&str]) -> Result<Vec<u8>, String> {
-    let args: Vec<String> = args.iter().map(|arg| arg.to_string()).collect();
-    let command = base(root, &args);
+fn spawn(command: Command) -> Result<Vec<u8>, String> {
     let output = crate::process::run(command, READ_LIMIT).map_err(|failure| match failure {
         crate::process::Failure::NotFound => said!("cli.notInstalled", "git could not start: it is not installed."),
         crate::process::Failure::TimedOut => {
@@ -103,49 +62,29 @@ fn spawn(root: &str, args: &[&str]) -> Result<Vec<u8>, String> {
     }
 }
 
-fn safe_config(root: &str) -> Vec<String> {
-    let names = {
-        let known = filters()
-            .lock()
-            .get(root)
-            .filter(|(read, _)| read.elapsed() < FILTERS_FRESH)
-            .map(|(_, names)| names.clone());
-        match known {
-            Some(names) => names,
-            None => {
-                let mut args: Vec<&str> = BASE_CONFIG.to_vec();
-                args.extend(["config", "--get-regexp", r"^filter\."]);
-                let out = spawn(root, &args).map(|out| String::from_utf8_lossy(&out).into_owned()).unwrap_or_default();
-                let mut names: Vec<String> = Vec::new();
-                for line in out.lines() {
-                    let key = line.split_whitespace().next().unwrap_or_default();
-                    // filter.<name>.<setting>: the name may itself hold dots.
-                    if let Some(rest) = key.strip_prefix("filter.") {
-                        if let Some((name, _)) = rest.rsplit_once('.') {
-                            if !names.iter().any(|known| known == name) {
-                                names.push(name.to_owned());
-                            }
-                        }
-                    }
+/// The filters the repository's config names (to be switched off), as last read or read now.
+fn filters_of(root: &str) -> Vec<String> {
+    let known =
+        filters().lock().get(root).filter(|(read, _)| read.elapsed() < FILTERS_FRESH).map(|(_, names)| names.clone());
+    if let Some(names) = known {
+        return names;
+    }
+    let listing = spawn(super::command::read(root, &[], "config", &["--get-regexp", r"^filter\."]));
+    let out = listing.map(|out| String::from_utf8_lossy(&out).into_owned()).unwrap_or_default();
+    let mut names: Vec<String> = Vec::new();
+    for line in out.lines() {
+        let key = line.split_whitespace().next().unwrap_or_default();
+        // filter.<name>.<setting>: the name may itself hold dots.
+        if let Some(rest) = key.strip_prefix("filter.") {
+            if let Some((name, _)) = rest.rsplit_once('.') {
+                if !names.iter().any(|known| known == name) {
+                    names.push(name.to_owned());
                 }
-                filters().lock().insert(root.to_owned(), (Instant::now(), names.clone()));
-                names
             }
         }
-    };
-    let mut out: Vec<String> = BASE_CONFIG.iter().map(|part| part.to_string()).collect();
-    for name in names {
-        for setting in [
-            format!("filter.{name}.clean=cat"),
-            format!("filter.{name}.smudge=cat"),
-            format!("filter.{name}.process="),
-            format!("filter.{name}.required=false"),
-        ] {
-            out.push("-c".into());
-            out.push(setting);
-        }
     }
-    out
+    filters().lock().insert(root.to_owned(), (Instant::now(), names.clone()));
+    names
 }
 
 /// Runs a read-only git command in the repository at `root`, with everything that could run its own commands off.
@@ -155,19 +94,13 @@ pub fn git(root: &str, args: &[&str]) -> Result<String, String> {
 
 /// As `git`, with the output as it is: a patch must keep every byte (`git/write`).
 pub fn git_bytes(root: &str, args: &[&str]) -> Result<Vec<u8>, String> {
-    let all = safe_args(root, args)?;
-    let refs: Vec<&str> = all.iter().map(String::as_str).collect();
-    spawn(root, &refs)
+    spawn(command(root, args)?)
 }
 
-/// A read's whole arguments: the repository's filters off, then the command with the flags it needs to run nothing.
-fn safe_args(root: &str, args: &[&str]) -> Result<Vec<String>, String> {
+/// A read's git: the repository's filters off, then the command with the flags it needs to run nothing.
+fn command(root: &str, args: &[&str]) -> Result<Command, String> {
     let (command, rest) = args.split_first().ok_or_else(|| said!("cli.noCommand", "No git command."))?;
-    let mut all: Vec<String> = safe_config(root);
-    all.push(command.to_string());
-    all.extend(safe_flags(command).iter().filter(|flag| !rest.contains(flag)).map(|flag| flag.to_string()));
-    all.extend(rest.iter().map(|part| part.to_string()));
-    Ok(all)
+    Ok(super::command::read(root, &filters_of(root), command, rest))
 }
 
 /// A read whose output is taken a line at a time, as it comes (a long log, every object of the history), rather than
@@ -236,7 +169,7 @@ fn started(command: &mut Command) -> Result<Child, String> {
 
 /// `args` read a line at a time.
 pub fn stream(root: &str, args: &[&str]) -> Result<Lines, String> {
-    let mut command = base(root, &safe_args(root, args)?);
+    let mut command = command(root, args)?;
     command.stdout(Stdio::piped()).stderr(Stdio::piped());
     let mut child = started(&mut command)?;
     lines_of(vec![], child.stdout.take(), child.stderr.take(), child)
@@ -244,10 +177,10 @@ pub fn stream(root: &str, args: &[&str]) -> Result<Lines, String> {
 
 /// `first`'s output fed to `second` (`rev-list --objects | cat-file --batch-check`), read a line at a time.
 pub fn pipe(root: &str, first: &[&str], second: &[&str]) -> Result<Lines, String> {
-    let mut upstream = base(root, &safe_args(root, first)?);
+    let mut upstream = command(root, first)?;
     upstream.stdout(Stdio::piped()).stderr(Stdio::null());
     let mut feeding = started(&mut upstream)?;
-    let mut command = base(root, &safe_args(root, second)?);
+    let mut command = command(root, second)?;
     let input = feeding.stdout.take().ok_or_else(|| said!("cli.noOutput", "git gave no output."))?;
     command.stdin(Stdio::from(input)).stdout(Stdio::piped()).stderr(Stdio::piped());
     let mut child = started(&mut command)?;
