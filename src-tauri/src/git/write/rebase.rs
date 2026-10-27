@@ -111,7 +111,7 @@ impl Writer<'_> {
         std::fs::write(&todo_file, todo).map_err(|error| error.to_string())?;
 
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         let editor = format!("cp \"{todo_file}\"");
         let result = self.git(

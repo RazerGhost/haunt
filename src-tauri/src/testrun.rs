@@ -3,11 +3,12 @@
 //! files inside the repository, one run at a time, and it can be stopped. Each file runs in its nearest package (where
 //! its `package.json` is), and only the named tests, by a pattern made from their titles.
 
+use parking_lot::Mutex;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
@@ -57,20 +58,20 @@ enum Runner {
 pub fn run(root: &str, node: &Path, tests: &[TestToRun]) -> Result<TestRun, String> {
     let stop = Arc::new(AtomicBool::new(false));
     {
-        let mut running = RUNNING.lock().unwrap();
+        let mut running = RUNNING.lock();
         if running.is_some() {
             return Err(said!("testrun.running", "Tests are running already: wait for them, or stop them."));
         }
         *running = Some(stop.clone());
     }
     let result = run_groups(root, node, tests, &stop);
-    *RUNNING.lock().unwrap() = None;
+    *RUNNING.lock() = None;
     result
 }
 
 /// Stops the run going on, if there is one.
 pub fn stop() {
-    if let Some(stop) = RUNNING.lock().unwrap().as_ref() {
+    if let Some(stop) = RUNNING.lock().as_ref() {
         stop.store(true, Ordering::SeqCst);
     }
 }
@@ -255,7 +256,7 @@ fn execute(node: &Path, folder: &Path, args: &[String], stop: &AtomicBool) -> Re
                 if read == 0 {
                     break;
                 }
-                output.lock().unwrap().extend_from_slice(&buffer[..read]);
+                output.lock().extend_from_slice(&buffer[..read]);
             }
         })
     })
@@ -274,7 +275,7 @@ fn execute(node: &Path, folder: &Path, args: &[String], stop: &AtomicBool) -> Re
     for reader in readers {
         let _ = reader.join();
     }
-    let bytes = output.lock().unwrap();
+    let bytes = output.lock();
     let text = String::from_utf8_lossy(&bytes);
     let text = strip_ansi(&text);
     let kept = if text.len() > KEEP {

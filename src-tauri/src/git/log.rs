@@ -7,7 +7,8 @@
 //! is read on from where the last one stopped; the first page always starts afresh (new commits, moved branches), as
 //! does any other query. A reader nobody asked for a minute is stopped.
 
-use std::sync::{Mutex, OnceLock};
+use parking_lot::Mutex;
+use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 
 use super::cli::{revision, stream, Lines};
@@ -34,7 +35,7 @@ fn reader() -> &'static Mutex<Option<Reader>> {
         // Stops a reader left idle: it keeps git, and on Windows its pack files, open.
         std::thread::spawn(|| loop {
             std::thread::sleep(Duration::from_secs(20));
-            let mut kept = reader().lock().unwrap();
+            let mut kept = reader().lock();
             if kept.as_ref().is_some_and(|reader| reader.used.elapsed() > IDLE) {
                 *kept = None;
             }
@@ -145,7 +146,7 @@ pub fn log(root: &str, query: &LogQuery) -> Result<LogPage, String> {
         args.push(path.to_owned());
     }
     let key = format!("{root}\0{}", args.join("\0"));
-    let mut kept = reader().lock().unwrap();
+    let mut kept = reader().lock();
     let going_on = skip > 0 && kept.as_ref().is_some_and(|reader| reader.key == key && reader.next == skip);
     if !going_on {
         // A new reader, from this page on.

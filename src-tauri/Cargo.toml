@@ -16,6 +16,8 @@ tauri-build = { version = "=2.7.1", features = [] }
 [dependencies]
 gix = "=0.90.0"
 notify = "=8.2.0"
+# Locks that stay usable after a panic in another thread (std's are poisoned for good); in the tree already.
+parking_lot = "=0.12.5"
 notify-debouncer-full = "=0.7.0"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1.0.154", features = ["raw_value"] }

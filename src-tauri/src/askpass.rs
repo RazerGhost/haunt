@@ -8,13 +8,14 @@
 //!   the news `ask`, and `answer` sends back what was typed, or nothing when cancelled (git then stops).
 //! - Nothing is kept: the answer goes straight to git. A question unanswered after five minutes is cancelled.
 
+use parking_lot::Mutex;
 use std::collections::HashMap;
 use std::hash::{BuildHasher, Hasher};
 use std::io::{BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc::{channel, Sender};
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 
 use serde::Deserialize;
@@ -96,7 +97,7 @@ pub fn env(repo: &str) -> Vec<(String, String)> {
 
 /// The window's answer to question `id`: the text, or null to cancel.
 pub fn answer(id: u64, text: Option<String>) {
-    if let Some(waiting) = ASKER.get().and_then(|asker| asker.waiting.lock().unwrap().remove(&id)) {
+    if let Some(waiting) = ASKER.get().and_then(|asker| asker.waiting.lock().remove(&id)) {
         let _ = waiting.send(text);
     }
 }
@@ -130,7 +131,7 @@ impl Asker {
         }
         let id = self.next.fetch_add(1, Ordering::Relaxed);
         let (sender, receiver) = channel();
-        self.waiting.lock().unwrap().insert(id, sender);
+        self.waiting.lock().insert(id, sender);
         let (secret, yes_no) = kind(&question.prompt);
         let prompt = question.prompt.trim().to_owned();
         self.events.send(
@@ -138,7 +139,7 @@ impl Asker {
             json!({ "type": "ask", "id": id, "prompt": prompt, "secret": secret, "yesNo": yes_no }),
         );
         let answer = receiver.recv_timeout(WAIT).unwrap_or(None);
-        if self.waiting.lock().unwrap().remove(&id).is_some() {
+        if self.waiting.lock().remove(&id).is_some() {
             // Not answered in time: the window closes the question.
             self.events.send(question.repo.as_deref(), json!({ "type": "asked", "id": id }));
         }

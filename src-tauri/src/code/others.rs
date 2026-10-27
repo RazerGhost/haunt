@@ -3,9 +3,10 @@
 //! these files' functions, imports and guessed calls while it scans. Readings are kept by modification time, so a
 //! rescan only reads what changed.
 
+use parking_lot::Mutex;
 use std::collections::HashMap;
 use std::path::Path;
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, OnceLock};
 use std::time::SystemTime;
 
 use serde::{Deserialize, Serialize};
@@ -72,7 +73,6 @@ pub fn read(root: &str, request: &Request) -> Answer {
         let modified = meta.modified().unwrap_or(SystemTime::UNIX_EPOCH);
         let hit = kept()
             .lock()
-            .unwrap()
             .get(root)
             .and_then(|files| files.get(&wanted.path))
             .and_then(|kept| (kept.modified == modified).then(|| (kept.reading.clone(), kept.lines)));
@@ -88,7 +88,6 @@ pub fn read(root: &str, request: &Request) -> Answer {
                 let lines = source.split('\n').count() as u32;
                 kept()
                     .lock()
-                    .unwrap()
                     .entry(root.to_owned())
                     .or_default()
                     .insert(wanted.path.clone(), Kept { modified, reading: reading.clone(), lines });
@@ -157,5 +156,5 @@ pub fn answer(root: &str, line: &str) -> Result<String, String> {
 
 /// Forgets a repository's readings, when its tab closes.
 pub fn forget(root: &str) {
-    kept().lock().unwrap().remove(root);
+    kept().lock().remove(root);
 }

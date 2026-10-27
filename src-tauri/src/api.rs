@@ -119,8 +119,8 @@ pub struct LastFetch {
     pub background: bool,
 }
 
-fn fetches() -> &'static std::sync::Mutex<HashMap<String, LastFetch>> {
-    static FETCHES: std::sync::OnceLock<std::sync::Mutex<HashMap<String, LastFetch>>> = std::sync::OnceLock::new();
+fn fetches() -> &'static parking_lot::Mutex<HashMap<String, LastFetch>> {
+    static FETCHES: std::sync::OnceLock<parking_lot::Mutex<HashMap<String, LastFetch>>> = std::sync::OnceLock::new();
     FETCHES.get_or_init(Default::default)
 }
 
@@ -130,7 +130,7 @@ fn record_fetch(root: &str, result: &Result<(), String>, background: bool) {
         .map(|time| time.as_secs() as i64)
         .unwrap_or(0);
     let entry = LastFetch { at, ok: result.is_ok(), message: result.as_ref().err().cloned(), background };
-    fetches().lock().unwrap().insert(root.to_owned(), entry);
+    fetches().lock().insert(root.to_owned(), entry);
 }
 
 fn wait(receiver: Receiver<Reply>) -> Reply {
@@ -148,7 +148,7 @@ impl Api {
             files: Vec<ScannedFile>,
         }
         type Kept = Option<(String, String, Arc<HashMap<String, ScannedFile>>)>;
-        static KEPT: std::sync::OnceLock<std::sync::Mutex<Kept>> = std::sync::OnceLock::new();
+        static KEPT: std::sync::OnceLock<parking_lot::Mutex<Kept>> = std::sync::OnceLock::new();
         let text = self
             .repos
             .structure(repo)?
@@ -160,7 +160,7 @@ impl Api {
             .unwrap_or_default()
             .to_owned();
         let kept = KEPT.get_or_init(Default::default);
-        if let Some((known, at, files)) = kept.lock().unwrap().as_ref() {
+        if let Some((known, at, files)) = kept.lock().as_ref() {
             if known == repo && !scanned_at.is_empty() && *at == scanned_at {
                 return Ok(files.clone());
             }
@@ -168,7 +168,7 @@ impl Api {
         let scan: Scan = serde_json::from_str(&text).map_err(|error| error.to_string())?;
         let files: Arc<HashMap<String, ScannedFile>> =
             Arc::new(scan.files.into_iter().map(|file| (file.path.clone(), file)).collect());
-        *kept.lock().unwrap() = Some((repo.to_owned(), scanned_at, files.clone()));
+        *kept.lock() = Some((repo.to_owned(), scanned_at, files.clone()));
         Ok(files)
     }
 
@@ -771,7 +771,7 @@ commands! {
     fn notify(api, title: String, body: String) -> () { let _ = api; crate::alerts::notify_if_away(&title, &body); Ok(()) }
     /// Stops the tests running now.
     fn stop_tests(api) -> () { let _ = api; crate::testrun::stop(); Ok(()) }
-    fn last_fetch(api, repo: String) -> Option<LastFetch> { api.repos.require(&repo)?; Ok(fetches().lock().unwrap().get(&repo).cloned()) }
+    fn last_fetch(api, repo: String) -> Option<LastFetch> { api.repos.require(&repo)?; Ok(fetches().lock().get(&repo).cloned()) }
     /// What a pull of the current branch would bring in; null when it tracks nothing.
     /// Fetches the remote's pull requests as refs: the newest 30, and `number` too when asked for.
     fn fetch_pull_requests(api, repo: String, remote: Option<String>, number: Option<u32>) -> crate::git::write::PullFetch {

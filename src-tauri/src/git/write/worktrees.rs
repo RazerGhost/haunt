@@ -77,7 +77,7 @@ impl Writer<'_> {
         let branch = self.branch_name(branch)?;
         self.refuse_checkout(super::refs::Checkout::Worktree)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         if new {
             let at = at.map(revision).transpose()?.unwrap_or("HEAD");
@@ -103,7 +103,7 @@ impl Writer<'_> {
             return Err(said!("worktrees.main", "The repository's own folder is not a worktree to remove."));
         }
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         let mut args = vec!["worktree", "remove"];
         if force {
@@ -122,7 +122,7 @@ impl Writer<'_> {
     /// Forgets the worktrees whose folders are gone.
     pub fn prune_worktrees(&self) -> Result<(), String> {
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.git(&["worktree", "prune"], None, &[], None).map(drop)
     }
 }

@@ -28,11 +28,12 @@ mod remotes;
 mod undo;
 mod worktrees;
 
+use parking_lot::Mutex;
 use std::collections::{HashMap, VecDeque};
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, OnceLock};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
@@ -145,7 +146,7 @@ fn now_seconds() -> i64 {
 /// One lock per repository: its writes run one at a time.
 pub(crate) fn queue(root: &str) -> Arc<Mutex<()>> {
     static QUEUES: OnceLock<Mutex<HashMap<String, Arc<Mutex<()>>>>> = OnceLock::new();
-    QUEUES.get_or_init(Mutex::default).lock().unwrap().entry(root.to_owned()).or_default().clone()
+    QUEUES.get_or_init(Mutex::default).lock().entry(root.to_owned()).or_default().clone()
 }
 
 fn activities() -> &'static Mutex<HashMap<String, VecDeque<Activity>>> {
@@ -155,11 +156,11 @@ fn activities() -> &'static Mutex<HashMap<String, VecDeque<Activity>>> {
 
 /// The repository's activity, newest first.
 pub fn activity(root: &str) -> Vec<Activity> {
-    activities().lock().unwrap().get(root).map(|list| list.iter().rev().cloned().collect()).unwrap_or_default()
+    activities().lock().get(root).map(|list| list.iter().rev().cloned().collect()).unwrap_or_default()
 }
 
 fn record(root: &str, entry: Activity) {
-    let mut all = activities().lock().unwrap();
+    let mut all = activities().lock();
     let list = all.entry(root.to_owned()).or_default();
     list.push_back(entry);
     while list.len() > 100 {
@@ -324,7 +325,7 @@ impl<'a> Writer<'a> {
         let paths = checked_all(paths)?;
         self.refuse_filtered(&paths, false)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         self.git(&[&["add", "-A", "--"][..], &paths].concat(), None, &[], None).map(drop)
     }
@@ -333,7 +334,7 @@ impl<'a> Writer<'a> {
     pub fn unstage(&self, paths: &[String]) -> Result<(), String> {
         let paths = checked_all(paths)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         if self.has_head() {
             self.git(&[&["restore", "--staged", "--"][..], &paths].concat(), None, &[], None).map(drop)
@@ -353,7 +354,7 @@ impl<'a> Writer<'a> {
         let (toplevel, prefix) = top(self.root)?;
         let full = format!("{prefix}{path}");
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         let staged = action == LinesAction::Unstage;
         let mut args = vec!["diff", "--no-color", "-U3"];
@@ -382,7 +383,7 @@ impl<'a> Writer<'a> {
         let paths = checked_all(paths)?;
         self.refuse_filtered(&paths, false)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         self.save(&paths, "Discarded")?;
         let mut known = Vec::new();
@@ -486,7 +487,7 @@ impl<'a> Writer<'a> {
         let paths = checked_all(&saved.paths)?;
         self.refuse_filtered(&paths, false)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         self.save(&paths, "Replaced on restoring")?;
         // The paths the save has; the others were deleted when it was made, and are deleted again.
@@ -542,7 +543,7 @@ impl<'a> Writer<'a> {
             return Err(said!("write.nothingToAmend", "There is no commit to amend yet."));
         }
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         // Whitespace only: a line of the message that starts with # is part of it.
         let mut args = vec!["commit", "--cleanup=whitespace", "-F", "-"];

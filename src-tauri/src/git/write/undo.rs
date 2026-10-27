@@ -78,7 +78,7 @@ impl Writer<'_> {
         self.refuse_busy()?;
         let sha = self.commit_of(at)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         let mut args = vec!["revert", "--no-edit"];
         if self.is_merge(&sha) {
@@ -94,7 +94,7 @@ impl Writer<'_> {
         self.refuse_busy()?;
         let sha = self.commit_of(at)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         let mut args = vec!["cherry-pick"];
         if self.is_merge(&sha) {
@@ -135,7 +135,7 @@ impl Writer<'_> {
         self.refuse_busy()?;
         let sha = self.commit_of(at)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         if mode == ResetMode::Hard {
             let changed = self.changed_tracked()?;
@@ -181,7 +181,7 @@ impl Writer<'_> {
             ));
         }
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         self.git(&["reset", "-q", "--soft", "HEAD~1"], None, &[], None).map(drop)
     }

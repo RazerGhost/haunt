@@ -6,6 +6,7 @@
 //! The sidecar asks too, while it scans: `{ "ask": n, "type", ... }` for what Rust reads itself (PHP, Rust and Lua),
 //! answered on its stdin with `{ "answer": n, "ok", "value" }` or `{ "answer": n, "ok": false, "error" }`.
 
+use parking_lot::Mutex;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
@@ -13,7 +14,7 @@ use std::path::Path;
 use std::process::{Child, ChildStdin, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc::{channel, Receiver, Sender};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use serde::Deserialize;
 use serde_json::value::RawValue;
@@ -124,7 +125,7 @@ impl Sidecar {
                             Ok(value) => format!("{{\"answer\":{ask},\"ok\":true,\"value\":{value}}}"),
                             Err(error) => serde_json::json!({ "answer": ask, "ok": false, "error": error }).to_string(),
                         };
-                        let _ = writeln!(answers.lock().unwrap(), "{reply}");
+                        let _ = writeln!(answers.lock(), "{reply}");
                     });
                     continue;
                 }
@@ -134,7 +135,7 @@ impl Sidecar {
                     } else {
                         Err(parsed.error.unwrap_or_else(|| said!("sidecar.noAnswer", "The scanner could not answer.")))
                     };
-                    if let Some(sender) = waiting.lock().unwrap().remove(&id) {
+                    if let Some(sender) = waiting.lock().remove(&id) {
                         let _ = sender.send(reply);
                     }
                     continue;
@@ -152,7 +153,7 @@ impl Sidecar {
                 }
             }
             // stdout closed: the process is gone. Whoever still waits for an answer hears so now, not after a timeout.
-            for (_, sender) in waiting.lock().unwrap().drain() {
+            for (_, sender) in waiting.lock().drain() {
                 let _ = sender.send(Err(said!("sidecar.stoppedEarly", "The scanner stopped before it answered.")));
             }
             said(Said::Exited);
@@ -162,7 +163,7 @@ impl Sidecar {
 
     /// Sends a message that has no reply (`scan`).
     pub fn tell(&self, message: &Value) {
-        let _ = writeln!(self.stdin.lock().unwrap(), "{message}");
+        let _ = writeln!(self.stdin.lock(), "{message}");
     }
 
     /// Sends a request; the receiver gets the reply's value as JSON text, or its error.
@@ -170,9 +171,9 @@ impl Sidecar {
         let (sender, receiver) = channel();
         let id = self.next.fetch_add(1, Ordering::Relaxed);
         request["id"] = id.into();
-        self.pending.lock().unwrap().insert(id, sender);
-        if writeln!(self.stdin.lock().unwrap(), "{request}").is_err() {
-            if let Some(sender) = self.pending.lock().unwrap().remove(&id) {
+        self.pending.lock().insert(id, sender);
+        if writeln!(self.stdin.lock(), "{request}").is_err() {
+            if let Some(sender) = self.pending.lock().remove(&id) {
                 let _ = sender.send(Err(said!("sidecar.notRunning", "The scanner is not running.")));
             }
         }
@@ -181,11 +182,11 @@ impl Sidecar {
 
     /// Whether the process is still running.
     pub fn running(&self) -> bool {
-        self.child.lock().unwrap().try_wait().is_ok_and(|status| status.is_none())
+        self.child.lock().try_wait().is_ok_and(|status| status.is_none())
     }
 
     pub fn stop(&self) {
-        let _ = self.child.lock().unwrap().kill();
+        let _ = self.child.lock().kill();
     }
 }
 

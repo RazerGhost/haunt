@@ -304,9 +304,9 @@ mod tests {
         std::fs::create_dir_all(&src).unwrap();
         let root = crate::paths::plain(std::fs::canonicalize(&dir).unwrap());
         let (sender, receiver) = channel();
-        let sender = std::sync::Mutex::new(sender);
+        let sender = parking_lot::Mutex::new(sender);
         let on = move |change: Change| {
-            let _ = sender.lock().unwrap().send(change);
+            let _ = sender.lock().send(change);
         };
         let shared = std::sync::Arc::new(on);
         let handler = {
@@ -347,9 +347,9 @@ mod tests {
         std::fs::create_dir_all(&heads).unwrap();
         let git_dir = crate::paths::plain(std::fs::canonicalize(&dir).unwrap());
         let (sender, receiver) = channel();
-        let sender = std::sync::Arc::new(std::sync::Mutex::new(sender));
+        let sender = std::sync::Arc::new(parking_lot::Mutex::new(sender));
         let _watchers = git(Path::new(&git_dir), move |change: Change| {
-            let _ = sender.lock().unwrap().send(change);
+            let _ = sender.lock().send(change);
         });
         std::thread::sleep(Duration::from_millis(200));
         std::fs::write(dir.join("index"), "index").unwrap();

@@ -65,7 +65,7 @@ impl Writer<'_> {
             .collect();
         let placed: Vec<&str> = placed.iter().map(String::as_str).collect();
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         let file = Path::new(&toplevel).join(".gitignore");
         if file.is_symlink() {
             return Err(said!("ignore.link", "This repository's .gitignore is a link: Haunt leaves it alone."));

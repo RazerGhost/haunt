@@ -3,8 +3,8 @@
 //! makes it the Tauri event `haunt`; while Haunt is worked on, the development bridge's listeners get it too. (No Tauri
 //! types here, so the tests run without a window.)
 
+use parking_lot::Mutex;
 use std::sync::mpsc::{channel, Receiver, Sender};
-use std::sync::Mutex;
 
 use serde_json::Value;
 
@@ -19,24 +19,24 @@ pub struct Events {
 impl Events {
     /// How news reaches the window.
     pub fn attach(&self, window: Sink) {
-        *self.window.lock().unwrap() = Some(window);
+        *self.window.lock() = Some(window);
     }
 
     /// Sends `news` (an object with a `type`) for `repo`.
     pub fn send(&self, repo: Option<&str>, mut news: Value) {
         news["repo"] = repo.map(Value::from).unwrap_or(Value::Null);
-        if let Some(window) = self.window.lock().unwrap().as_ref() {
+        if let Some(window) = self.window.lock().as_ref() {
             window(&news);
         }
         let text = news.to_string();
-        self.listeners.lock().unwrap().retain(|listener| listener.send(text.clone()).is_ok());
+        self.listeners.lock().retain(|listener| listener.send(text.clone()).is_ok());
     }
 
     /// A listener for the development bridge: every message, as JSON text.
     #[cfg_attr(not(debug_assertions), allow(dead_code))]
     pub fn listen(&self) -> Receiver<String> {
         let (sender, receiver) = channel();
-        self.listeners.lock().unwrap().push(sender);
+        self.listeners.lock().push(sender);
         receiver
     }
 }

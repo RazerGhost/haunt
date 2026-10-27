@@ -155,7 +155,7 @@ impl Writer<'_> {
         self.refuse_busy()?;
         let name = crate::git::cli::revision(name)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         let before = self.head();
         match self.git(&["merge", "--no-edit", "--end-of-options", name], None, &[], None) {
@@ -191,7 +191,7 @@ impl Writer<'_> {
         let path = checked(path)?;
         self.refuse_filtered(&[path], false)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         let number = if side == Side::Ours { 2 } else { 3 };
         let present = git_bytes(self.root, &["show", &format!(":{number}:./{path}")]).is_ok();
@@ -209,7 +209,7 @@ impl Writer<'_> {
         let path = checked(path)?;
         self.refuse_filtered(&[path], false)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         if let Some(text) = text {
             std::fs::write(std::path::Path::new(self.root).join(path), text)
@@ -230,7 +230,7 @@ impl Writer<'_> {
         }
         self.refuse_checkout(super::refs::Checkout::Continue)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         let args: &[&str] = match going.kind {
             OperationKind::Merge => &["commit", "--no-edit"],
@@ -256,7 +256,7 @@ impl Writer<'_> {
         };
         self.refuse_checkout(super::refs::Checkout::Abort)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         let command = match going.kind {
             OperationKind::Merge => "merge",

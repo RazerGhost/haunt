@@ -12,11 +12,12 @@
 //! - git's questions (passwords, passphrases, host keys) go to the window (`crate::askpass`); git's progress goes to
 //!   `progress` as it comes; a run can be stopped (`cancel`), which stops git and everything it started.
 
+use parking_lot::Mutex;
 use std::collections::HashMap;
 use std::io::Read;
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, OnceLock};
 use std::time::Instant;
 
 use serde::{Deserialize, Serialize};
@@ -113,17 +114,17 @@ fn runs() -> &'static Running {
 /// queue, taken first; the background fetch alone, so your own writes never wait for it).
 pub(super) fn network_turn(root: &str) -> Arc<Mutex<()>> {
     static TURNS: OnceLock<Mutex<HashMap<String, Arc<Mutex<()>>>>> = OnceLock::new();
-    TURNS.get_or_init(Mutex::default).lock().unwrap().entry(root.to_owned()).or_default().clone()
+    TURNS.get_or_init(Mutex::default).lock().entry(root.to_owned()).or_default().clone()
 }
 
 /// Whether a fetch, pull or push is running in `root`.
 pub fn running(root: &str) -> bool {
-    runs().lock().unwrap().contains_key(root)
+    runs().lock().contains_key(root)
 }
 
 /// Stops the fetch, pull or push running in `root`, with every process git started (a credential helper, ssh).
 pub fn cancel(root: &str) -> bool {
-    let Some((pid, stopped)) = runs().lock().unwrap().get(root).cloned() else {
+    let Some((pid, stopped)) = runs().lock().get(root).cloned() else {
         return false;
     };
     stopped.store(true, Ordering::SeqCst);
@@ -262,7 +263,7 @@ impl Writer<'_> {
             .spawn()
             .map_err(|error| said!("network.couldNotStart", "git could not start: {error}", error = error))?;
         let stopped = Arc::new(AtomicBool::new(false));
-        runs().lock().unwrap().insert(self.root.to_owned(), (child.id(), stopped.clone()));
+        runs().lock().insert(self.root.to_owned(), (child.id(), stopped.clone()));
 
         let mut stdout = child.stdout.take();
         let reading = std::thread::spawn(move || {
@@ -303,7 +304,7 @@ impl Writer<'_> {
         }
         stderr.extend_from_slice(&piece);
         let status = child.wait().map_err(|error| error.to_string());
-        runs().lock().unwrap().remove(self.root);
+        runs().lock().remove(self.root);
         let stdout = reading.join().unwrap_or_default();
         let status = status?;
         let stderr = String::from_utf8_lossy(&stderr).into_owned();
@@ -364,9 +365,9 @@ impl Writer<'_> {
             return Err(said!("network.noRemoteToFetch", "This repository has no remote to fetch from."));
         }
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         let network = network_turn(self.root);
-        let _network = network.lock().unwrap();
+        let _network = network.lock();
         self.fetch_remotes(&remotes, progress)
     }
 
@@ -381,7 +382,7 @@ impl Writer<'_> {
         }
         // Only the network turn: staging, committing and the other writes do not wait for a fetch nobody asked for.
         let network = network_turn(self.root);
-        let _network = network.try_lock().ok()?;
+        let _network = network.try_lock()?;
         Some(quiet.fetch_remotes(&remotes, &|_| {}))
     }
 
@@ -420,9 +421,9 @@ impl Writer<'_> {
                 .ok_or_else(|| said!("network.noRemoteToFetch", "This repository has no remote to fetch from."))?,
         };
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         let network = network_turn(self.root);
-        let _network = network.lock().unwrap();
+        let _network = network.lock();
         let (extra, env) = self.fetch_setup()?;
         let listed = self.network(
             &[
@@ -550,9 +551,9 @@ impl Writer<'_> {
             ));
         }
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         let network = network_turn(self.root);
-        let _network = network.lock().unwrap();
+        let _network = network.lock();
         self.wait_for_lock()?;
         let before = self.head();
         let args: &[&str] = match mode {
@@ -588,9 +589,9 @@ impl Writer<'_> {
         }
         let paths = paths.iter().map(|path| crate::git::local::checked(path)).collect::<Result<Vec<_>, _>>()?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         let network = network_turn(self.root);
-        let _network = network.lock().unwrap();
+        let _network = network.lock();
         self.wait_for_lock()?;
         let mut args = vec!["submodule", "update", "--init", "--progress", "--"];
         args.extend(paths);
@@ -643,9 +644,9 @@ impl Writer<'_> {
             },
         };
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         let network = network_turn(self.root);
-        let _network = network.lock().unwrap();
+        let _network = network.lock();
         let mut args = vec!["push".to_string(), "--progress".to_string()];
         if first {
             args.push("--set-upstream".into());
@@ -699,9 +700,9 @@ impl Writer<'_> {
             return Ok(PushResult::ChooseRemote { remotes: self.remotes()? });
         };
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         let network = network_turn(self.root);
-        let _network = network.lock().unwrap();
+        let _network = network.lock();
         let spec = format!("refs/tags/{name}:refs/tags/{name}");
         let ran = self.network(&["push", "--progress", "--end-of-options", &remote, &spec], &[], &[], progress)?;
         if ran.ok {

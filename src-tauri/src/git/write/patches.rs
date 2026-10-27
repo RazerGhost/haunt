@@ -159,7 +159,7 @@ impl Writer<'_> {
         }
         self.refuse_checkout(super::refs::Checkout::Patches)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         let paths: Vec<&str> = files.iter().map(String::as_str).collect();
         if commit {

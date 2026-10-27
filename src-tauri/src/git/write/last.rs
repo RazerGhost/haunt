@@ -3,8 +3,9 @@
 //! noted; after it, what Undo would do. Undo puts them back, and only while nothing has moved since: any other write
 //! (or a change made outside Haunt) leaves nothing to undo. One step back, no redo; kept while the app runs.
 
+use parking_lot::Mutex;
 use std::collections::HashMap;
-use std::sync::{Mutex, OnceLock};
+use std::sync::OnceLock;
 
 use serde::Serialize;
 use specta::Type;
@@ -56,7 +57,7 @@ fn done() -> &'static Mutex<HashMap<String, Done>> {
 
 /// Another write: what was done before it can no longer be undone.
 pub fn forget_last(root: &str) {
-    done().lock().unwrap().remove(root);
+    done().lock().remove(root);
 }
 
 impl Done {
@@ -126,24 +127,21 @@ impl Writer<'_> {
         }
         let entry = Done { title, before, after, undo };
         let last = LastAction { title: entry.title.clone(), undo: entry.sentence() };
-        done().lock().unwrap().insert(self.root.to_owned(), entry);
+        done().lock().insert(self.root.to_owned(), entry);
         Some(last)
     }
 
     /// What can be undone now, if anything.
     pub fn last_action(&self) -> Option<LastAction> {
-        let done = done().lock().unwrap();
+        let done = done().lock();
         let entry = done.get(self.root)?;
         (self.snapshot() == entry.after).then(|| LastAction { title: entry.title.clone(), undo: entry.sentence() })
     }
 
     /// Undoes the last write; returns its title.
     pub fn undo_last(&self) -> Result<String, String> {
-        let entry = done()
-            .lock()
-            .unwrap()
-            .remove(self.root)
-            .ok_or_else(|| said!("last.nothing", "There is nothing to undo."))?;
+        let entry =
+            done().lock().remove(self.root).ok_or_else(|| said!("last.nothing", "There is nothing to undo."))?;
         if self.snapshot() != entry.after {
             return Err(said!("last.changed", "Something has changed since, so it cannot be undone from here."));
         }
@@ -161,7 +159,7 @@ impl Writer<'_> {
                     self.refuse_checkout(super::refs::Checkout::Undo)?;
                 }
                 let queue = queue(self.root);
-                let _turn = queue.lock().unwrap();
+                let _turn = queue.lock();
                 self.wait_for_lock()?;
                 self.git(&["reset", "-q", flag, sha, "--"], None, &[], None).map_err(|said| {
                     if said.contains("not uptodate") || said.contains("would be overwritten") {

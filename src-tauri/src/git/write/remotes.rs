@@ -34,7 +34,7 @@ impl Writer<'_> {
             return Err(said!("remotes.there", "This repository has a remote \"{name}\" already.", name = name));
         }
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.git(&["remote", "add", "--end-of-options", name, url], None, &[], None).map(drop)
     }
 
@@ -49,7 +49,7 @@ impl Writer<'_> {
             return Err(said!("remotes.there", "This repository has a remote \"{name}\" already.", name = to));
         }
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.git(&["remote", "rename", "--end-of-options", from, to], None, &[], None).map(drop)
     }
 
@@ -57,7 +57,7 @@ impl Writer<'_> {
     pub fn remove_remote(&self, name: &str) -> Result<(), String> {
         self.known_remote(name)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.git(&["remote", "remove", "--end-of-options", name], None, &[], None).map(drop)
     }
 
@@ -65,7 +65,7 @@ impl Writer<'_> {
         self.known_remote(name)?;
         let url = remote_url(url)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.git(&["remote", "set-url", "--end-of-options", name, url], None, &[], None).map(drop)
     }
 }

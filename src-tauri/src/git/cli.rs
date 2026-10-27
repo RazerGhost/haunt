@@ -5,10 +5,11 @@
 //! from a git you are running yourself. Your own git config (system and global) stays: it holds core.autocrlf on
 //! Windows, without which every line of a checked-out file would differ from the repository.
 
+use parking_lot::Mutex;
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Read};
 use std::process::{Child, ChildStdout, Command, Stdio};
-use std::sync::{Mutex, OnceLock};
+use std::sync::OnceLock;
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
@@ -53,7 +54,7 @@ fn filters() -> &'static Mutex<Filters> {
 
 /// Reads the repository's filters again on the next call.
 pub fn forget_config(root: &str) {
-    filters().lock().unwrap().remove(root);
+    filters().lock().remove(root);
 }
 
 /// The longest a read may take: a pickaxe search or blame over a huge history is stopped rather than holding on for ever.
@@ -106,7 +107,6 @@ fn safe_config(root: &str) -> Vec<String> {
     let names = {
         let known = filters()
             .lock()
-            .unwrap()
             .get(root)
             .filter(|(read, _)| read.elapsed() < FILTERS_FRESH)
             .map(|(_, names)| names.clone());
@@ -128,7 +128,7 @@ fn safe_config(root: &str) -> Vec<String> {
                         }
                     }
                 }
-                filters().lock().unwrap().insert(root.to_owned(), (Instant::now(), names.clone()));
+                filters().lock().insert(root.to_owned(), (Instant::now(), names.clone()));
                 names
             }
         }

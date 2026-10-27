@@ -5,11 +5,12 @@
 //! nothing leaves the machine, so no TLS and no HTTP library. A general API client (sign-in flows, proxies,
 //! collections) is left to the tools made for it.
 
+use parking_lot::Mutex;
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
 use std::path::{Path, PathBuf};
-use std::sync::{Mutex, OnceLock};
+use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
@@ -143,7 +144,7 @@ pub fn send(request: &HttpRequest) -> Result<HttpResponse, String> {
         return Err(said!("tryit.notThisMachine", "{host} does not lead to this machine.", host = host));
     }
     let key = (host.to_ascii_lowercase(), port);
-    if let Some(last) = answered.lock().unwrap().get(&key) {
+    if let Some(last) = answered.lock().get(&key) {
         addresses.sort_by_key(|address| address != last);
     }
     let mut refused = String::new();
@@ -151,7 +152,7 @@ pub fn send(request: &HttpRequest) -> Result<HttpResponse, String> {
     for address in &addresses {
         match TcpStream::connect_timeout(address, Duration::from_secs(5)) {
             Ok(stream) => {
-                answered.lock().unwrap().insert(key, *address);
+                answered.lock().insert(key, *address);
                 connected = Some(stream);
                 break;
             }

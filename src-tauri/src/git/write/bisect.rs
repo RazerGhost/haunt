@@ -112,7 +112,7 @@ impl Writer<'_> {
         let good = revision(good)?;
         self.refuse_checkout(super::refs::Checkout::Bisect)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         // `bisect start` takes no --end-of-options; `revision` already refused anything starting with a dash.
         self.git(&["bisect", "start", bad, good, "--"], None, &[], None).map(drop)
@@ -127,7 +127,7 @@ impl Writer<'_> {
         };
         self.refuse_checkout(super::refs::Checkout::Bisect)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         self.git(&["bisect", term], None, &[], None).map(drop)
     }
@@ -140,7 +140,7 @@ impl Writer<'_> {
         }
         self.refuse_checkout(super::refs::Checkout::Bisect)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         self.git(&["checkout", "--detach", "--end-of-options", sha], None, &[], None).map(drop)
     }
@@ -148,7 +148,7 @@ impl Writer<'_> {
     /// Stops bisecting: back to the branch it started from.
     pub fn bisect_stop(&self) -> Result<(), String> {
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         self.git(&["bisect", "reset"], None, &[], None).map(drop)
     }

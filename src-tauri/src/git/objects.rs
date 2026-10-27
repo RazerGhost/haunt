@@ -3,9 +3,10 @@
 //! repository runs (the tree diff reads blobs straight from the object database, and line diffs are worked out here).
 //! Paths are relative to the opened folder, like the scan's, when the folder is inside a larger repository.
 
+use parking_lot::Mutex;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::{Mutex, OnceLock};
+use std::sync::OnceLock;
 
 use gix::bstr::ByteSlice;
 use gix::diff::blob::{Algorithm, Diff, InternedInput};
@@ -19,7 +20,7 @@ use super::types::{
 /// A repository opened once per folder, shared between threads.
 fn open(root: &str) -> Result<(gix::Repository, String), String> {
     static OPEN: OnceLock<Mutex<HashMap<String, (gix::ThreadSafeRepository, String)>>> = OnceLock::new();
-    let mut known = OPEN.get_or_init(Mutex::default).lock().unwrap();
+    let mut known = OPEN.get_or_init(Mutex::default).lock();
     if let Some((repo, prefix)) = known.get(root) {
         return Ok((repo.to_thread_local(), prefix.clone()));
     }

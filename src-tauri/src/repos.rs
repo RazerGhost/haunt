@@ -4,10 +4,11 @@
 //! a new one that reads everything. Every call names its repository; a call for one that is not shown is refused, so an
 //! answer can never land in the wrong tab.
 
+use parking_lot::Mutex;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::Receiver;
-use std::sync::{Arc, Mutex, Weak};
+use std::sync::{Arc, Weak};
 use std::time::{Duration, Instant};
 
 use serde::Serialize;
@@ -282,9 +283,9 @@ impl Repos {
 
     /// Shows the repository shown last time, if it can still be opened.
     pub fn start(&self) {
-        let root = self.inner.lock().unwrap().settings.root.clone();
+        let root = self.inner.lock().settings.root.clone();
         if let Some(root) = root.filter(|root| paths::openable(Path::new(root))) {
-            let mut inner = self.inner.lock().unwrap();
+            let mut inner = self.inner.lock();
             self.show(&mut inner, &root);
         }
     }
@@ -292,7 +293,7 @@ impl Repos {
     /// The repository shown, the tabs, the recent ones, its trust and what it would run if trusted.
     pub fn info(&self) -> RootInfo {
         let mut info = {
-            let inner = self.inner.lock().unwrap();
+            let inner = self.inner.lock();
             self.info_of(&inner)
         };
         // What the folder would run is found by starting git (its hooks): after the lock is let go, so no other call
@@ -339,7 +340,7 @@ impl Repos {
         change: impl FnOnce(&mut crate::settings::Settings) -> Result<(), String>,
     ) -> Result<RootInfo, String> {
         {
-            let mut inner = self.inner.lock().unwrap();
+            let mut inner = self.inner.lock();
             change(&mut inner.settings)?;
             let wanted = inner.settings.root.clone().filter(|root| paths::openable(Path::new(root)));
             let shown = inner.shown.as_ref().map(|shown| shown.root.clone());
@@ -359,7 +360,7 @@ impl Repos {
 
     /// The git settings, the trusted folders and Haunt's own folders, for the Settings window.
     pub fn app_settings(&self) -> AppSettings {
-        let inner = self.inner.lock().unwrap();
+        let inner = self.inner.lock();
         let text = |path: &Path| path.to_string_lossy().into_owned();
         AppSettings {
             pull: inner.settings.pull,
@@ -391,7 +392,7 @@ impl Repos {
             ));
         }
         {
-            let mut inner = self.inner.lock().unwrap();
+            let mut inner = self.inner.lock();
             inner.settings.pull = pull;
             inner.settings.fetch_every = fetch_every;
             inner.settings.save(&self.context.settings);
@@ -403,7 +404,7 @@ impl Repos {
     /// check.
     pub fn set_online(&self, host_tools: bool, update_check: bool) -> AppSettings {
         {
-            let mut inner = self.inner.lock().unwrap();
+            let mut inner = self.inner.lock();
             inner.settings.host_tools = host_tools;
             inner.settings.update_check = update_check;
             inner.settings.save(&self.context.settings);
@@ -412,17 +413,17 @@ impl Repos {
     }
 
     pub fn host_tools(&self) -> bool {
-        self.inner.lock().unwrap().settings.host_tools
+        self.inner.lock().settings.host_tools
     }
 
     /// Stops trusting a folder, shown or not. A tab of it that keeps its scanner running loses the scanner, which ran
     /// the folder's own code; the next time it is shown it is scanned as untrusted.
     pub fn forget_trust(&self, path: &str) -> AppSettings {
-        let shown = self.inner.lock().unwrap().shown.as_ref().is_some_and(|shown| shown.root == path);
+        let shown = self.inner.lock().shown.as_ref().is_some_and(|shown| shown.root == path);
         if shown {
             let _ = self.set_trust(path, false);
         } else {
-            let mut inner = self.inner.lock().unwrap();
+            let mut inner = self.inner.lock();
             inner.settings.set_trust(path, false);
             inner.settings.save(&self.context.settings);
             for kept in inner.kept.iter_mut().filter(|kept| kept.root == path) {
@@ -455,14 +456,14 @@ impl Repos {
 
     /// How often to fetch in the background (minutes, 0 off) and the repository shown, for the background fetch.
     pub fn fetch_schedule(&self) -> (u32, Option<String>) {
-        let inner = self.inner.lock().unwrap();
+        let inner = self.inner.lock();
         (inner.settings.fetch_every, inner.shown.as_ref().map(|shown| shown.root.clone()))
     }
 
     /// The shown repository's scanner, as the generation it was started as.
     #[cfg(test)]
     pub fn scanner(&self) -> Option<u64> {
-        let inner = self.inner.lock().unwrap();
+        let inner = self.inner.lock();
         inner.shown.as_ref().filter(|shown| shown.sidecar.is_some()).map(|shown| shown.generation)
     }
 
@@ -471,7 +472,7 @@ impl Repos {
     /// when first needed, and again if it stopped.
     pub fn read_functions(&self, repo: &str, path: &str, text: &str) -> Result<Receiver<Reply>, String> {
         self.require(repo)?;
-        let mut reader = self.reader.lock().unwrap();
+        let mut reader = self.reader.lock();
         if !reader.as_ref().is_some_and(Sidecar::running) {
             let runtime = self.context.runtime.clone()?;
             let script = self.context.script.with_file_name("read.ts");
@@ -501,7 +502,7 @@ impl Repos {
 
     /// Refuses a call for a repository that is not the one shown.
     pub fn require(&self, repo: &str) -> Result<(), String> {
-        let inner = self.inner.lock().unwrap();
+        let inner = self.inner.lock();
         self.check(&inner, repo)
     }
 
@@ -518,7 +519,7 @@ impl Repos {
 
     /// Whether the shown repository's own code may run (its hooks and filters, for writing); refused for another one.
     pub fn trusted(&self, repo: &str) -> Result<bool, String> {
-        let inner = self.inner.lock().unwrap();
+        let inner = self.inner.lock();
         self.check(&inner, repo)?;
         Ok(inner.settings.trusts(repo))
     }
@@ -541,13 +542,13 @@ impl Repos {
     /// Tells the window that Haunt changed `parts` of git itself (a write), whether or not a watcher notices.
     pub fn announce_git(&self, repo: &str, parts: &[&str]) {
         let names = parts.iter().map(|part| part.to_string()).collect();
-        self.announced.lock().unwrap().insert(repo.to_owned(), (Instant::now(), names));
+        self.announced.lock().insert(repo.to_owned(), (Instant::now(), names));
         self.events.send(Some(repo), json!({ "type": "git", "parts": parts }));
     }
 
     /// Whether the watcher's news about `parts` is Haunt's own last write, announced a moment ago already.
     fn just_announced(&self, repo: &str, parts: &[&str]) -> bool {
-        self.announced.lock().unwrap().get(repo).is_some_and(|(at, announced)| {
+        self.announced.lock().get(repo).is_some_and(|(at, announced)| {
             at.elapsed() < ANNOUNCED_FOR && parts.iter().all(|part| announced.iter().any(|known| known == part))
         })
     }
@@ -560,7 +561,7 @@ impl Repos {
             return Err(said!("repos.notProject", "{root} is not a project or a git repository.", root = root));
         }
         {
-            let mut inner = self.inner.lock().unwrap();
+            let mut inner = self.inner.lock();
             if inner.shown.as_ref().map(|shown| shown.root.as_str()) != Some(root.as_str()) {
                 self.show(&mut inner, &root);
             }
@@ -573,7 +574,7 @@ impl Repos {
     /// Puts the tabs in a new order (the same tabs, moved).
     pub fn reorder(&self, tabs: &[String]) -> Result<RootInfo, String> {
         {
-            let mut inner = self.inner.lock().unwrap();
+            let mut inner = self.inner.lock();
             let mut wanted: Vec<&String> = tabs.iter().collect();
             let mut known: Vec<&String> = inner.settings.tabs.iter().collect();
             wanted.sort();
@@ -591,7 +592,7 @@ impl Repos {
 
     /// An open tab's folder, or a recent one's, for the file manager; any other path is refused.
     pub fn tab_folder(&self, path: &str) -> Result<PathBuf, String> {
-        let inner = self.inner.lock().unwrap();
+        let inner = self.inner.lock();
         let known = inner.settings.tabs.iter().chain(inner.settings.recent.iter()).find(|tab| *tab == path);
         if let Some(known) = known {
             return Ok(PathBuf::from(known));
@@ -608,7 +609,7 @@ impl Repos {
     /// The recent repositories of the profile in use, with what the open screen shows of each (only these folders are
     /// read: what the settings already name).
     pub fn recent_details(&self) -> Vec<RecentRepo> {
-        let recent = self.inner.lock().unwrap().settings.recent.clone();
+        let recent = self.inner.lock().settings.recent.clone();
         // Each costs a few git calls (its branch, status and last commit): read side by side, in the list's order.
         std::thread::scope(|scope| {
             let reading: Vec<_> = recent.iter().map(|path| scope.spawn(move || RecentRepo::read(path))).collect();
@@ -622,7 +623,7 @@ impl Repos {
 
     /// The repository folders, each with the repositories found in it, looked through side by side.
     pub fn repository_folders(&self) -> Vec<crate::folders::RepoFolder> {
-        let folders = self.inner.lock().unwrap().settings.repository_folders.clone();
+        let folders = self.inner.lock().settings.repository_folders.clone();
         std::thread::scope(|scope| {
             let reading: Vec<_> = folders.iter().map(|path| scope.spawn(move || crate::folders::read(path))).collect();
             reading
@@ -635,7 +636,7 @@ impl Repos {
 
     pub fn add_repository_folder(&self, path: &str) -> Result<Vec<crate::folders::RepoFolder>, String> {
         {
-            let mut inner = self.inner.lock().unwrap();
+            let mut inner = self.inner.lock();
             inner.settings.add_repository_folder(path)?;
             inner.settings.save(&self.context.settings);
         }
@@ -644,7 +645,7 @@ impl Repos {
 
     pub fn remove_repository_folder(&self, path: &str) -> Vec<crate::folders::RepoFolder> {
         {
-            let mut inner = self.inner.lock().unwrap();
+            let mut inner = self.inner.lock();
             inner.settings.remove_repository_folder(path);
             inner.settings.save(&self.context.settings);
         }
@@ -654,7 +655,7 @@ impl Repos {
     /// Takes a folder off the recent list.
     pub fn forget_recent(&self, path: &str) -> RootInfo {
         {
-            let mut inner = self.inner.lock().unwrap();
+            let mut inner = self.inner.lock();
             inner.settings.forget_recent(path);
             inner.settings.save(&self.context.settings);
         }
@@ -665,7 +666,7 @@ impl Repos {
     pub fn close(&self, path: &str) -> RootInfo {
         let root = paths::canonical(path).unwrap_or_else(|| path.to_owned());
         {
-            let mut inner = self.inner.lock().unwrap();
+            let mut inner = self.inner.lock();
             inner.kept.retain(|kept| kept.root != root);
             crate::code::others::forget(&root);
             crate::git::forget_config(&root);
@@ -688,7 +689,7 @@ impl Repos {
     /// Lets the shown repository's own code run, or stops it; the scanner starts again either way.
     pub fn set_trust(&self, repo: &str, trusted: bool) -> Result<RootInfo, String> {
         {
-            let mut inner = self.inner.lock().unwrap();
+            let mut inner = self.inner.lock();
             self.check(&inner, repo)?;
             inner.settings.set_trust(repo, trusted);
             inner.settings.save(&self.context.settings);
@@ -699,7 +700,7 @@ impl Repos {
     }
 
     pub fn rescan(&self, repo: &str) -> Result<(), String> {
-        let mut inner = self.inner.lock().unwrap();
+        let mut inner = self.inner.lock();
         self.check(&inner, repo)?;
         self.scan(&mut inner, "a rescan");
         Ok(())
@@ -708,14 +709,14 @@ impl Repos {
     /// The latest structure as JSON text, or None until the first scan is in. It never waits: a call held open would
     /// take one of the few connections the window has, and the `scan` event says when to ask again.
     pub fn structure(&self, repo: &str) -> Result<Option<String>, String> {
-        let inner = self.inner.lock().unwrap();
+        let inner = self.inner.lock();
         self.check(&inner, repo)?;
         Ok(inner.shown.as_ref().expect("checked").code.structure.clone())
     }
 
     /// The call graph of the latest structure (`scannedAt`, `calls`) as JSON text, or null until it is worked out.
     pub fn calls(&self, repo: &str) -> Result<String, String> {
-        let inner = self.inner.lock().unwrap();
+        let inner = self.inner.lock();
         self.check(&inner, repo)?;
         Ok(inner.shown.as_ref().and_then(|shown| shown.code.calls.clone()).unwrap_or_else(|| "null".into()))
     }
@@ -724,7 +725,7 @@ impl Repos {
     /// the first structure, between the parts of a scan.
     pub fn ask_scanner(&self, repo: &str, request: serde_json::Value) -> Result<String, String> {
         let asked = {
-            let inner = self.inner.lock().unwrap();
+            let inner = self.inner.lock();
             self.check(&inner, repo)?;
             let shown = inner.shown.as_ref().unwrap();
             if shown.code.structure.is_none() {
@@ -746,7 +747,7 @@ impl Repos {
 
     /// A file of the shown repository's last scan, as a path inside it; the editor and the source view take only these.
     pub fn scanned(&self, repo: &str, path: &str) -> Result<PathBuf, String> {
-        let inner = self.inner.lock().unwrap();
+        let inner = self.inner.lock();
         self.check(&inner, repo)?;
         let known = inner
             .shown
@@ -826,7 +827,7 @@ impl Repos {
         let root = root.to_owned();
         move |change: Change| {
             let Some(repos) = me.upgrade() else { return };
-            let mut inner = repos.inner.lock().unwrap();
+            let mut inner = repos.inner.lock();
             if inner.shown.as_ref().map(|shown| shown.root.as_str()) != Some(root.as_str()) {
                 return;
             }
@@ -941,7 +942,7 @@ impl Repos {
 
     /// What a scanner said, if it is still the shown repository's current one.
     fn heard(&self, root: &str, generation: u64, said: Said) {
-        let mut inner = self.inner.lock().unwrap();
+        let mut inner = self.inner.lock();
         let current = inner.shown.as_ref().is_some_and(|shown| shown.root == root && shown.generation == generation);
         if !current {
             return;

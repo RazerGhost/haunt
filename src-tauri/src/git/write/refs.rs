@@ -141,7 +141,7 @@ impl Writer<'_> {
             self.refuse_checkout(Checkout::Switch)?;
         }
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         if switch {
             self.git(&["switch", "--no-track", "-c", name, "--end-of-options", at], None, &[], None).map(drop)
@@ -155,7 +155,7 @@ impl Writer<'_> {
         let name = revision(name)?;
         self.refuse_checkout(Checkout::Switch)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         let local = read(self.root, &["rev-parse", "--verify", "--quiet", &format!("refs/heads/{name}")]).is_ok();
         let remote =
@@ -186,7 +186,7 @@ impl Writer<'_> {
         let from = self.branch_name(from)?;
         let to = self.branch_name(to)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         self.git(&["branch", "-m", "--end-of-options", from, to], None, &[], None).map(drop)
     }
@@ -214,7 +214,7 @@ impl Writer<'_> {
             ));
         }
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         self.git(&["branch", "-D", "--end-of-options", name], None, &[], None).map(drop)
     }
@@ -227,7 +227,7 @@ impl Writer<'_> {
         self.refuse_checkout(Checkout::Stash)?;
         let paths = if paths.is_empty() { Vec::new() } else { super::checked_all(paths)? };
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         let mut args = vec!["stash", "push"];
         if untracked {
@@ -255,7 +255,7 @@ impl Writer<'_> {
     pub fn apply_stash(&self, index: u32, pop: bool) -> Result<(), String> {
         self.refuse_checkout(Checkout::ApplyStash)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         let reference = Self::stash_ref(index);
         self.git(&["stash", if pop { "pop" } else { "apply" }, &reference], None, &[], None).map(drop)
@@ -264,7 +264,7 @@ impl Writer<'_> {
     /// Drops a stash, keeping it under refs/haunt/dropped so it can be brought back; removes keeps older than 30 days.
     pub fn drop_stash(&self, index: u32) -> Result<(), String> {
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         let reference = Self::stash_ref(index);
         let sha = read(self.root, &["rev-parse", "--verify", "--quiet", &reference])?.trim().to_owned();
@@ -314,7 +314,7 @@ impl Writer<'_> {
             .find(|entry| entry.id == id)
             .ok_or_else(|| said!("refs.stashUnknown", "That stash is not known."))?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         let sha = read(self.root, &["rev-parse", "--verify", "--quiet", &reference])?.trim().to_owned();
         self.git(&["stash", "store", "-m", &saved.message, &sha], None, &[], None)?;
@@ -328,7 +328,7 @@ impl Writer<'_> {
         let name = self.tag_name(name)?;
         let at = at.map(revision).transpose()?.unwrap_or("HEAD");
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         match message.map(str::trim).filter(|message| !message.is_empty()) {
             Some(message) => {
@@ -342,7 +342,7 @@ impl Writer<'_> {
     pub fn delete_tag(&self, name: &str) -> Result<(), String> {
         let name = self.tag_name(name)?;
         let queue = queue(self.root);
-        let _turn = queue.lock().unwrap();
+        let _turn = queue.lock();
         self.wait_for_lock()?;
         self.git(&["tag", "-d", "--end-of-options", name], None, &[], None).map(drop)
     }

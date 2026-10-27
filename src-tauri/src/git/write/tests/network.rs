@@ -175,13 +175,13 @@ fn a_background_fetch_runs_beside_your_writes_and_skips_while_another_fetch_runs
 
     // Another network run holds the repository: the background fetch skips rather than waits.
     let network = crate::git::write::network::network_turn(&b.root);
-    let held = network.lock().unwrap();
+    let held = network.lock();
     assert!(Writer::new(&b.root, false).fetch_in_background().is_none());
     drop(held);
     // A write (staging, a commit) holds the write queue: the background fetch runs beside it, and the write never
     // waits for the fetch.
     let queue = crate::git::write::queue(&b.root);
-    let held = queue.lock().unwrap();
+    let held = queue.lock();
     assert_eq!(Writer::new(&b.root, false).fetch_in_background(), Some(Ok(())));
     drop(held);
     assert_eq!(b.sh(&["rev-parse", "origin/main"]).trim(), head(&a));
