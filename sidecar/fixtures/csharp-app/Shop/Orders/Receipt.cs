@@ -15,6 +15,14 @@ public class Receipt
         get { return Format(Amount); }
     }
 
+    private string _note = "";
+
+    public string Note
+    {
+        get => _note;
+        set => _note = Format(value.Length);
+    }
+
     public static Receipt operator +(Receipt a, Receipt b) => Merge(a, b);
 
     public static implicit operator int(Receipt receipt) => receipt.Amount;

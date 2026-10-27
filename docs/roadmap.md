@@ -39,10 +39,9 @@ Done: ignoring files and stashing some from Local changes, side-by-side diffs th
 ## 6. Code map
 
 Done: bookmarked files, who changed each function last, exporting the canvas and the layer map, and Java, C#, Ruby,
-C and C++. What is left, small:
-
-- Reading a C# property (`order.Amount`) or using an operator (`a + b`) is not a call to it; C# event accessors and
-  C++ conversion-operator declarations are not read; a Ruby local assigned after a call of the same name hides it.
+C and C++ (C# property reads, operators and event accessors; C++ conversion operators; Ruby locals by position). What
+reading by name cannot see stays out: C# implicit conversions and operators whose operand types the source does not
+show, indexer use (`order[1]`), and operator uses in C++.
 
 ## 7. Signed installers and updates
 

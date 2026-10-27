@@ -199,9 +199,17 @@ fn a_csharp_project_namespaces_to_folders_and_calls_by_name() {
     let seen = seen("csharp-app", &[]);
     assert_eq!(
         seen.outline["Shop/Orders/Order.cs"],
-        ["class Order exp :3", "  method Order exp :7", "  method Create exp :9", "  method Total exp :11"]
+        [
+            "class Order exp :3",
+            "  method Order exp :9",
+            "  method Create exp :11",
+            "  method Total exp :13",
+            "  method Changed exp :15",
+            "  method Log :23"
+        ]
     );
-    // Properties with code and operators are methods with their calls; the auto-property Lines is left out.
+    // Properties with code, operators and an event with accessors are methods with their calls; the auto-property
+    // Lines and the field-like event Closed are left out.
     assert_eq!(
         seen.outline["Shop/Orders/Receipt.cs"],
         [
@@ -209,25 +217,38 @@ fn a_csharp_project_namespaces_to_folders_and_calls_by_name() {
             "  method Receipt exp :7",
             "  method Amount exp :11",
             "  method Text exp :13",
-            "  method operator + exp :18",
-            "  method implicit operator int exp :20",
-            "  method Fee :22",
-            "  method Format :24",
-            "  method Merge :26"
+            "  method Note exp :20",
+            "  method operator + exp :26",
+            "  method implicit operator int exp :28",
+            "  method Fee :30",
+            "  method Format :32",
+            "  method Merge :34"
         ]
     );
+    // Reading or setting a property calls it (Text → Amount, Main → Note; Lines has no code), `receipt + receipt` calls
+    // Receipt's operator and `(int)receipt` its implicit conversion; `_changed += value` adds to a delegate, no operator
+    // of ours.
     assert_eq!(
         seen.calls,
         [
             "Amount → Fee",
             "Amount → Total",
+            "Changed → Log",
             "Create → Order",
             "Fee → Rate",
+            "Main → Changed",
             "Main → Create",
+            "Main → Note",
+            "Main → Receipt",
             "Main → Total",
+            "Main → implicit operator int",
+            "Main → operator +",
             "Merge → Receipt",
+            "Note → Format",
+            "Text → Amount",
             "Text → Format",
             "Total → Rate",
+            "implicit operator int → Amount",
             "operator + → Merge"
         ]
     );
@@ -249,12 +270,14 @@ fn a_ruby_project_require_relative_modules_and_private_methods() {
             "    method round :20"
         ]
     );
-    // Names alone (`lines`, `footer`, `header`) are calls unless they are locals; a block's calls count for its method.
+    // Names alone (`lines`, `footer`, `header`) are calls unless they are locals made before them: summary calls footer
+    // before it assigns a local of that name. A block's calls count for its method.
     assert_eq!(
         seen.calls,
         [
             "main → self.make",
             "main → total",
+            "summary → footer",
             "text → footer",
             "text → format_line",
             "text → header",
@@ -314,14 +337,46 @@ fn a_cpp_project_namespaces_classes_and_methods_written_outside_them() {
         seen.outline["src/shop/order.cpp"],
         ["class shop exp :4", "  method Order::make exp :6", "  method Order::total exp :10"]
     );
+    // Conversion operators are declared like other methods and defined outside the class by their type.
+    assert_eq!(
+        seen.outline["src/shop/money.hpp"],
+        [
+            "class shop exp :5",
+            "  class Money exp :7",
+            "    method Money exp :9",
+            "    method operator int exp :10",
+            "    method operator bool exp :11",
+            "    method operator string exp :12",
+            "    method label :15"
+        ]
+    );
+    assert_eq!(
+        seen.outline["src/shop/money.cpp"],
+        [
+            "class shop exp :3",
+            "  method Money::operator int exp :5",
+            "  method Money::operator bool exp :9",
+            "  method Money::label exp :13"
+        ]
+    );
     // The header declares make and total and order.cpp defines them: calls go to the definitions, where their calls
     // are; a method only declared (count) is called as its declaration.
-    assert_eq!(seen.calls, ["Basket::sum → count", "Order::total → rate", "main → Order::make", "main → Order::total"]);
+    assert_eq!(
+        seen.calls,
+        [
+            "Basket::sum → count",
+            "Order::total → rate",
+            "main → Order::make",
+            "main → Order::total",
+            "operator string → Money::label"
+        ]
+    );
     assert_eq!(
         seen.imports,
         [
             "src/main.cpp → src/shop/order.hpp",
             "src/shop/basket.hpp → src/shop/order.hpp",
+            "src/shop/money.cpp → src/shop/money.hpp",
             "src/shop/order.cpp → src/shop/order.hpp",
             "src/shop/order.cpp → src/shop/pricing.hpp"
         ]

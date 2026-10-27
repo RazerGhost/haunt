@@ -1,11 +1,13 @@
 //! The calls between the functions read with tree-sitter, by name: there is no type checker, so a call goes to a function of
 //! that name in the caller's class or impl first, then its file, then the files it imports, then the one function
 //! anywhere with that name. Calls found this way are marked `guessed`; an ambiguous name is left out rather than guessed
-//! wrong. A C++ method declared in its class and defined elsewhere is called as its definition.
+//! wrong. A C++ method declared in its class and defined elsewhere is called as its definition. A C# property read
+//! reaches only a property (or an event with accessors), and an operator used only an operator, so neither makes a
+//! method of the same name look called.
 
 use std::collections::{HashMap, HashSet};
 
-use super::read::{scope_of, FileReading, Receiver};
+use super::read::{scope_of, FileReading, Receiver, Target};
 use super::types::{CallEdge, FunctionKind, FunctionNode};
 
 struct Entry<'a> {
@@ -24,6 +26,11 @@ fn call_name(name: &str) -> &str {
         None => name,
     };
     name.rsplit(['.', ':']).next().unwrap_or(name)
+}
+
+/// A C# operator's name: `operator +`, `implicit operator Money`.
+fn is_operator(name: &str) -> bool {
+    name.starts_with("operator ") || name.starts_with("implicit operator ") || name.starts_with("explicit operator ")
 }
 
 fn entries<'a>(path: &'a str, items: &'a [FunctionNode], container: Option<&'a str>, out: &mut Vec<Entry<'a>>) {
@@ -60,6 +67,8 @@ pub fn guessed_calls(readings: &[(String, &FileReading)], imports: &[(String, St
         }
         by_name.entry(call_name(entry.name)).or_default().push(entry);
     }
+    let properties: HashSet<&str> =
+        readings.iter().flat_map(|(_, reading)| reading.properties.iter().map(String::as_str)).collect();
     let mut imported: HashMap<&str, HashSet<&str>> = HashMap::new();
     for (from, to) in imports {
         imported.entry(from.as_str()).or_default().insert(to.as_str());
@@ -70,6 +79,18 @@ pub fn guessed_calls(readings: &[(String, &FileReading)], imports: &[(String, St
     for (path, reading) in readings {
         for call in &reading.calls {
             let mut candidates: Vec<&Entry> = by_name.get(call.name.as_str()).cloned().unwrap_or_default();
+            // A cast (`explicit operator Money`) can use an implicit conversion too.
+            if candidates.is_empty() {
+                if let Some(type_) = call.name.strip_prefix("explicit operator ") {
+                    let implicit = format!("implicit operator {type_}");
+                    candidates = by_name.get(implicit.as_str()).cloned().unwrap_or_default();
+                }
+            }
+            match call.target {
+                Target::Any => {}
+                Target::Property => candidates.retain(|entry| properties.contains(entry.id)),
+                Target::Operator => candidates.retain(|entry| is_operator(entry.name)),
+            }
             match &call.receiver {
                 Receiver::Type(type_) => {
                     let suffix = format!(" {type_}");
@@ -158,5 +179,81 @@ mod tests {
         assert_eq!(scope_of("Order::total"), Some("Order"));
         assert_eq!(scope_of("shop::Box<T>::get"), Some("Box"));
         assert_eq!(scope_of("total"), None);
+    }
+
+    fn guessed(files: &[(&str, &str)]) -> Vec<String> {
+        use super::super::languages::Language;
+        use super::super::read::{read_file, Context};
+        let crates = HashMap::new();
+        let readings: Vec<(String, FileReading)> = files
+            .iter()
+            .map(|(path, source)| {
+                let ctx = Context { root: ".", path, psr4: &[], crates: &crates, go_module: "" };
+                (path.to_string(), read_file(Language::Csharp, &ctx, source))
+            })
+            .collect();
+        let mut names = HashMap::new();
+        fn walk<'a>(items: &'a [FunctionNode], out: &mut HashMap<&'a str, &'a str>) {
+            for item in items {
+                out.insert(item.id.as_str(), item.name.as_str());
+                walk(&item.children, out);
+            }
+        }
+        for (_, reading) in &readings {
+            walk(&reading.tree, &mut names);
+        }
+        let by_path: Vec<(String, &FileReading)> =
+            readings.iter().map(|(path, reading)| (path.clone(), reading)).collect();
+        let mut out: Vec<String> = guessed_calls(&by_path, &[])
+            .iter()
+            .map(|edge| format!("{} → {}", names[edge.from.as_str()], names[edge.to.as_str()]))
+            .collect();
+        out.sort();
+        out
+    }
+
+    #[test]
+    fn a_csharp_property_read_reaches_only_a_property_and_an_operator_only_an_operator() {
+        let calls = guessed(&[
+            (
+                "Shop/Order.cs",
+                "public class Order {
+  public int Amount { get { return Sum(); } }
+  public int Total() { return 1; }
+  public int Sum() { return 2; }
+  public int Count;
+  public static Order operator +(Order a, Order b) => a;
+  public static implicit operator int(Order o) => o.Amount;
+}
+",
+            ),
+            (
+                "Shop/Use.cs",
+                "public class Use {
+  public int Run(Order order, Order other) {
+    var amount = order.Amount;
+    var total = order.Total;
+    var count = order.Count;
+    var both = order + other;
+    var sum = 1 + 2;
+    return (int)order;
+  }
+  public int Sum => 3;
+}
+",
+            ),
+        ]);
+        // `order.Total` names the method without calling it and Count is a field: neither is a call. `(int)order`
+        // uses the implicit conversion. Use's own property Sum is not what Amount's `Sum()` calls.
+        assert_eq!(
+            calls,
+            [
+                "Amount → Sum",
+                "Run → Amount",
+                "Run → implicit operator int",
+                "Run → operator +",
+                "implicit operator int → Amount"
+            ]
+        );
     }
 }

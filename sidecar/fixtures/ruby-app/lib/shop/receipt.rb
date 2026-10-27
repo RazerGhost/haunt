@@ -18,6 +18,12 @@ module Shop
       header + body.join + count.to_s
     end
 
+    def summary
+      total = footer
+      footer = total * 2
+      footer + total
+    end
+
     private
 
     def header

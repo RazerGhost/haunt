@@ -7,9 +7,13 @@
 //!   go.mod, to a file of that package; Java `import` from the file's source folder; C# `using` of a namespace, to its
 //!   folder's first file; Ruby `require` and `require_relative`; C and C++ `#include "…"`, not `<…>`).
 //! - Calls: by the callee's name and how it is called; `guess.rs` matches them to functions across files. A Ruby name
-//!   alone (`total`) is a call unless it is a local variable of its method; a block's calls count for its method.
-//! - C++ methods only declared in their class are listed as methods without calls, unless the file defines them.
-//! - C# properties and indexers with code, and operators (`operator +`, `implicit operator Money`), are methods.
+//!   alone (`total`) is a call unless a local variable of that name is made before it; a block's calls count for its
+//!   method.
+//! - C++ methods only declared in their class (conversion operators too) are listed as methods without calls, unless
+//!   the file defines them.
+//! - C# properties, indexers and events with code, and operators (`operator +`, `implicit operator Money`), are
+//!   methods. Reading or writing a property calls it, and an operator or a cast whose operand has a known type of its
+//!   own calls that type's operator; implicit conversions do not show in the source and are left out.
 
 use std::collections::{HashMap, HashSet};
 
@@ -27,12 +31,21 @@ pub enum Receiver {
     Type(String),
 }
 
+/// What a call can reach: any function, or (C#) only a property's or event's accessors, or only an operator.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Target {
+    Any,
+    Property,
+    Operator,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Call {
     /// The id of the calling function.
     pub from: String,
     pub name: String,
     pub receiver: Receiver,
+    pub target: Target,
 }
 
 /// What one file holds, before calls are matched across files.
@@ -45,6 +58,8 @@ pub struct FileReading {
     pub classes: Vec<String>,
     /// For C++: the ids of the methods only declared in their class (`int total();`), with no body here.
     pub declarations: Vec<String>,
+    /// For C#: the ids of the properties and events with code, which reading or writing them calls.
+    pub properties: Vec<String>,
 }
 
 /// What resolving a file's imports needs.
@@ -154,7 +169,11 @@ fn kind_of(language: Language, kind: &str) -> Option<FunctionKind> {
         (Language::Csharp, "local_function_statement" | "anonymous_method_expression") => Function,
         (
             Language::Csharp,
-            "property_declaration" | "indexer_declaration" | "operator_declaration" | "conversion_operator_declaration",
+            "property_declaration"
+            | "indexer_declaration"
+            | "event_declaration"
+            | "operator_declaration"
+            | "conversion_operator_declaration",
         ) => Method,
         (
             Language::Csharp,
@@ -176,15 +195,15 @@ fn kind_of(language: Language, kind: &str) -> Option<FunctionKind> {
 }
 
 /// Items that are containers only when they have a body: Rust's `mod util;` declares a file and C++'s `class Order;`
-/// (or `struct order *o`) names a type; they hold nothing. A C# property or indexer counts when it has code: `=> …` or
-/// an accessor with a body; an auto-property (`{ get; set; }`) is a field.
+/// (or `struct order *o`) names a type; they hold nothing. A C# property, indexer or event counts when it has code:
+/// `=> …` or an accessor with a body; an auto-property (`{ get; set; }`) is a field, as a field-like event is.
 fn is_container(language: Language, node: Node) -> bool {
     if kind_of(language, node.kind()).is_none() {
         return false;
     }
     match node.kind() {
         "mod_item" | "class_specifier" | "struct_specifier" => field(node, "body").is_some(),
-        "property_declaration" | "indexer_declaration" => {
+        "property_declaration" | "indexer_declaration" | "event_declaration" => {
             field(node, "value").is_some_and(|value| value.kind() == "arrow_expression_clause")
                 || field(node, "accessors").is_some_and(|accessors| {
                     named_children(accessors).iter().any(|accessor| field(*accessor, "body").is_some())
@@ -227,8 +246,11 @@ fn assigned_name(node: Node, source: &str) -> Option<String> {
 }
 
 /// A C or C++ function's name, from inside its declarator: `int *next(void)` is next, `void Order::total()` is
-/// Order::total.
+/// Order::total, `Money::operator int()` is Money::operator int.
 fn c_function_name(node: Node, source: &str) -> Option<String> {
+    if let Some(name) = field(node, "declarator").and_then(|declarator| cpp_conversion_name(declarator, source)) {
+        return Some(name);
+    }
     let name: String = text(field(c_function_declarator(node)?, "declarator"), source).split_whitespace().collect();
     (!name.is_empty()).then_some(name)
 }
@@ -243,14 +265,38 @@ fn c_function_declarator(node: Node) -> Option<Node> {
     Some(declarator)
 }
 
-/// C++: a method only declared in its class (`int total() const;`, `virtual void f() = 0;`, `Order();`), by its name;
-/// not a field holding a function pointer (`int (*f)(int);`) nor a friend.
+/// C++: a conversion operator by the type it converts to, without its namespace: `operator int() const` is operator int,
+/// `Money::operator std::string()` is Money::operator string. It has no function_declarator of its own to name it.
+fn cpp_conversion_name(declarator: Node, source: &str) -> Option<String> {
+    match declarator.kind() {
+        "operator_cast" => {
+            let mut type_ = field(declarator, "type")?;
+            while type_.kind() == "qualified_identifier" {
+                type_ = field(type_, "name")?;
+            }
+            let type_: Vec<&str> = text(Some(type_), source).split_whitespace().collect();
+            Some(format!("operator {}", type_.join(" ")))
+        }
+        "qualified_identifier" => {
+            let name = cpp_conversion_name(field(declarator, "name")?, source)?;
+            let scope: String = text(field(declarator, "scope"), source).split_whitespace().collect();
+            Some(format!("{scope}::{name}"))
+        }
+        _ => None,
+    }
+}
+
+/// C++: a method only declared in its class (`int total() const;`, `virtual void f() = 0;`, `Order();`,
+/// `operator int() const;`), by its name; not a field holding a function pointer (`int (*f)(int);`) nor a friend.
 fn cpp_declared_method(node: Node, source: &str) -> Option<String> {
     if !matches!(node.kind(), "field_declaration" | "declaration") {
         return None;
     }
     let at = node.parent().filter(|parent| parent.kind() == "template_declaration").unwrap_or(node);
     at.parent().filter(|parent| parent.kind() == "field_declaration_list")?;
+    if let Some(name) = field(node, "declarator").filter(|declarator| declarator.kind() == "operator_cast") {
+        return cpp_conversion_name(name, source);
+    }
     let name = field(c_function_declarator(node)?, "declarator")?;
     if !matches!(name.kind(), "field_identifier" | "identifier" | "destructor_name" | "operator_name") {
         return None;
@@ -314,7 +360,7 @@ fn name_of(language: Language, node: Node, source: &str) -> Option<String> {
                     .find(|child| matches!(child.kind(), "implicit" | "explicit"))
                     .map(|child| format!("{} ", child.kind()))
                     .unwrap_or_default();
-                Some(format!("{way}operator {}", text(field(node, "type"), source)))
+                Some(format!("{way}operator {}", csharp_short_type(text(field(node, "type"), source))))
             }
             "indexer_declaration" => Some("this[]".into()),
             _ => own(),
@@ -432,7 +478,10 @@ struct Reader<'a> {
     reading: FileReading,
     namespace: String,
     /// Ruby: the local variables of each method (or class body, or file), by the scope node's id.
-    ruby_locals: HashMap<usize, HashSet<String>>,
+    ruby_locals: HashMap<usize, RubyLocals>,
+    /// C#: the names a member declares, and those its type declares, with their types, by the member's or type body's
+    /// node id.
+    csharp_names: HashMap<usize, HashMap<String, String>>,
     /// C++: the methods only declared in their class, as (id, class, name).
     declared: Vec<(String, String, String)>,
 }
@@ -476,6 +525,10 @@ impl Reader<'_> {
                 children: Vec::new(),
             };
             let is_type = kind == FunctionKind::Class;
+            if self.language == Language::Csharp && matches!(node.kind(), "property_declaration" | "event_declaration")
+            {
+                self.reading.properties.push(item.id.clone());
+            }
             if self.language == Language::Php && is_type {
                 if let Some(name) = &name {
                     let qualified =
@@ -536,13 +589,21 @@ impl Reader<'_> {
             }
         }
         if let (Some((name, receiver)), Some(owner)) = (call_of(self.language, node, container, source), owner) {
-            self.reading.calls.push(Call { from: owner.to_owned(), name, receiver });
+            self.reading.calls.push(Call { from: owner.to_owned(), name, receiver, target: Target::Any });
         }
         // Ruby `total` alone: a call when it is not a local variable of its method.
         if self.language == Language::Ruby && node.kind() == "identifier" {
             if let Some(owner) = owner {
                 if let Some(name) = self.ruby_bare_call(node) {
-                    self.reading.calls.push(Call { from: owner.to_owned(), name, receiver: Receiver::Plain });
+                    let receiver = Receiver::Plain;
+                    self.reading.calls.push(Call { from: owner.to_owned(), name, receiver, target: Target::Any });
+                }
+            }
+        }
+        if self.language == Language::Csharp {
+            if let Some(owner) = owner {
+                if let Some((name, receiver, target)) = self.csharp_use(node, container) {
+                    self.reading.calls.push(Call { from: owner.to_owned(), name, receiver, target });
                 }
             }
         }
@@ -559,7 +620,8 @@ impl Reader<'_> {
     }
 
     /// A Ruby identifier that calls a method: written as a statement or an expression (not a parameter, an assignment's
-    /// target or a call's method name) and not a local variable of its method, a block's parameters included.
+    /// target or a call's method name) and not a local variable made before it, as Ruby decides when it parses: an
+    /// assignment or a parameter earlier in the method, or in the block it is in.
     fn ruby_bare_call(&mut self, node: Node) -> Option<String> {
         let source = self.source;
         let name = text(Some(node), source);
@@ -574,7 +636,366 @@ impl Reader<'_> {
             scope = scope.parent()?;
         }
         let locals = self.ruby_locals.entry(scope.id()).or_insert_with(|| ruby_locals(scope, source));
-        (!locals.contains(name)).then(|| name.to_owned())
+        let at = node.start_byte();
+        let local = locals.get(name).is_some_and(|made| {
+            made.iter().any(|&(from, start, end)| from < at && start <= at && node.end_byte() <= end)
+        });
+        (!local).then(|| name.to_owned())
+    }
+
+    /// C#: a property read or written (`order.Amount`, `this.Amount`, `Amount`, `new Order { Amount = 1 }`) as a call
+    /// to it, and an operator used (`a + b`, `-a`, `a += b`) or a cast (`(Money)x`) as a call to the operator of the
+    /// operand's type, only when that type is known and is not a built-in one: numbers and strings use no operator of
+    /// ours, and without types every `+` would look like a call to the one `operator +` there is.
+    fn csharp_use(&mut self, node: Node, container: Option<&str>) -> Option<(String, Receiver, Target)> {
+        let source = self.source;
+        let own = || Receiver::SelfOf(container.map(str::to_owned));
+        match node.kind() {
+            // `order.Amount`, and `order?.Amount` unless it is called.
+            "member_access_expression" | "member_binding_expression" => {
+                let name = field(node, "name").filter(|name| name.kind() == "identifier")?;
+                let object = if node.kind() == "member_access_expression" {
+                    if !csharp_read(node, source) {
+                        return None;
+                    }
+                    field(node, "expression")?
+                } else {
+                    let access = node.parent().filter(|parent| parent.kind() == "conditional_access_expression")?;
+                    if access.parent().is_some_and(|call| is_field(call, "function", access)) {
+                        return None;
+                    }
+                    field(access, "condition")?
+                };
+                let receiver = if object.kind() == "this" {
+                    own()
+                } else {
+                    match self.csharp_type_of(object) {
+                        Some(type_) if csharp_built_in(&type_) => return None,
+                        Some(type_) => Receiver::Type(type_),
+                        None if object.kind() == "identifier" => on_name(text(Some(object), source)),
+                        None => Receiver::Plain,
+                    }
+                };
+                Some((text(Some(name), source).to_owned(), receiver, Target::Property))
+            }
+            "identifier" => {
+                if !csharp_read(node, source) {
+                    return None;
+                }
+                let name = text(Some(node), source);
+                // `new Order { Amount = 1 }` sets the created type's property.
+                let created = node
+                    .parent()
+                    .filter(|set| set.kind() == "assignment_expression" && is_field(*set, "left", node))
+                    .and_then(|set| set.parent())
+                    .filter(|list| list.kind() == "initializer_expression")
+                    .and_then(|list| list.parent())
+                    .filter(|new| new.kind() == "object_creation_expression");
+                if let Some(created) = created {
+                    let type_ = csharp_type_name(text(field(created, "type"), source));
+                    return Some((name.to_owned(), Receiver::Type(type_), Target::Property));
+                }
+                // An accessor's `value` is its parameter.
+                let accessor =
+                    || std::iter::successors(node.parent(), Node::parent).any(|up| up.kind() == "accessor_declaration");
+                if self.csharp_local(node, name).is_some() || (name == "value" && accessor()) {
+                    return None;
+                }
+                Some((name.to_owned(), own(), Target::Property))
+            }
+            "binary_expression" => {
+                let operator = text(field(node, "operator"), source);
+                if !CSHARP_BINARY.contains(&operator) {
+                    return None;
+                }
+                let type_ = self.csharp_own_type(&[field(node, "left")?, field(node, "right")?])?;
+                Some((format!("operator {operator}"), Receiver::Type(type_), Target::Operator))
+            }
+            "prefix_unary_expression" | "postfix_unary_expression" => {
+                let (operator, operand) = csharp_unary(node, source)?;
+                if !matches!(operator, "+" | "-" | "!" | "~" | "++" | "--") {
+                    return None;
+                }
+                let type_ = self.csharp_own_type(&[operand])?;
+                Some((format!("operator {operator}"), Receiver::Type(type_), Target::Operator))
+            }
+            // `a += b` uses `operator +`.
+            "assignment_expression" => {
+                let operator = text(field(node, "operator"), source).strip_suffix('=')?;
+                if !CSHARP_BINARY.contains(&operator) {
+                    return None;
+                }
+                let type_ = self.csharp_own_type(&[field(node, "left")?, field(node, "right")?])?;
+                Some((format!("operator {operator}"), Receiver::Type(type_), Target::Operator))
+            }
+            // `(Money)x` is `explicit operator Money`, in Money or in x's type; to a built-in type, in x's.
+            "cast_expression" => {
+                let written = text(field(node, "type"), source);
+                let to = csharp_type_name(written);
+                let from = self.csharp_type_of(field(node, "value")?).filter(|from| !csharp_built_in(from));
+                let receiver = match (csharp_built_in(&to), from) {
+                    (false, Some(_)) => Receiver::Plain,
+                    (false, None) => Receiver::Type(to),
+                    (true, Some(from)) => Receiver::Type(from),
+                    (true, None) => return None,
+                };
+                Some((format!("explicit operator {}", csharp_short_type(written)), receiver, Target::Operator))
+            }
+            _ => None,
+        }
+    }
+
+    /// The first of these operands whose type is known and not built in.
+    fn csharp_own_type(&mut self, operands: &[Node]) -> Option<String> {
+        operands.iter().find_map(|operand| self.csharp_type_of(*operand).filter(|type_| !csharp_built_in(type_)))
+    }
+
+    /// C#: the type of an expression, when the source shows it: a literal; a local, a parameter or a member of the
+    /// type it is written in, by its declared type; `new T()` and `(T)x`; a call of the type's own method, by what it
+    /// returns; and operators on those.
+    fn csharp_type_of(&mut self, node: Node) -> Option<String> {
+        let source = self.source;
+        let known = |type_: String| (!type_.is_empty()).then_some(type_);
+        let on_this = |access: Node| field(access, "expression").is_some_and(|object| object.kind() == "this");
+        match node.kind() {
+            "integer_literal" | "real_literal" => Some("int".into()),
+            "string_literal"
+            | "verbatim_string_literal"
+            | "raw_string_literal"
+            | "interpolated_string_expression"
+            | "character_literal" => Some("string".into()),
+            "boolean_literal" => Some("bool".into()),
+            "null_literal" => Some("null".into()),
+            "parenthesized_expression" => self.csharp_type_of(named_children(node).into_iter().next()?),
+            "object_creation_expression" | "cast_expression" => {
+                known(csharp_type_name(text(field(node, "type"), source)))
+            }
+            "identifier" => {
+                let name = text(Some(node), source);
+                match self.csharp_local(node, name) {
+                    Some(type_) => known(type_),
+                    None => known(self.csharp_member_of_type(node, name)?),
+                }
+            }
+            "member_access_expression" if on_this(node) => {
+                known(self.csharp_member_of_type(node, text(field(node, "name"), source))?)
+            }
+            "invocation_expression" => {
+                let callee = field(node, "function")?;
+                let name = match callee.kind() {
+                    "identifier" => text(Some(callee), source),
+                    "member_access_expression" if on_this(callee) => text(field(callee, "name"), source),
+                    _ => return None,
+                };
+                known(self.csharp_member_of_type(node, name)?)
+            }
+            "prefix_unary_expression" | "postfix_unary_expression" => {
+                let (operator, operand) = csharp_unary(node, source)?;
+                let type_ = self.csharp_type_of(operand)?;
+                match operator {
+                    "+" | "-" | "~" | "++" | "--" => Some(type_),
+                    "!" if csharp_built_in(&type_) => Some("bool".into()),
+                    _ => None,
+                }
+            }
+            "binary_expression" => {
+                let operator = text(field(node, "operator"), source);
+                if matches!(operator, "==" | "!=" | "<" | ">" | "<=" | ">=" | "&&" | "||" | "is") {
+                    return Some("bool".into());
+                }
+                let operands = [field(node, "left")?, field(node, "right")?];
+                let types: Vec<String> = operands.iter().filter_map(|operand| self.csharp_type_of(*operand)).collect();
+                types.iter().find(|type_| !csharp_built_in(type_)).or(types.first()).cloned()
+            }
+            _ => None,
+        }
+    }
+
+    /// A local or parameter of the member `node` is written in, by name: its type, or "" when it is not written.
+    fn csharp_local(&mut self, node: Node, name: &str) -> Option<String> {
+        let member = csharp_member(node)?;
+        let source = self.source;
+        self.csharp_names.entry(member.id()).or_insert_with(|| csharp_locals(member, source)).get(name).cloned()
+    }
+
+    /// A field, property, event or method of the type `node` is written in, by name: its type, or what it returns.
+    fn csharp_member_of_type(&mut self, node: Node, name: &str) -> Option<String> {
+        let mut holder = node.parent()?;
+        while !matches!(
+            holder.kind(),
+            "class_declaration" | "struct_declaration" | "record_declaration" | "interface_declaration"
+        ) {
+            holder = holder.parent()?;
+        }
+        let body = field(holder, "body")?;
+        let source = self.source;
+        self.csharp_names.entry(body.id()).or_insert_with(|| csharp_members(body, source)).get(name).cloned()
+    }
+}
+
+/// The C# operators of two operands a type can declare (`&&` and `||` go through `&`, `|`, `true` and `false`).
+const CSHARP_BINARY: [&str; 17] =
+    ["+", "-", "*", "/", "%", "&", "|", "^", "<<", ">>", ">>>", "==", "!=", "<", ">", "<=", ">="];
+
+/// The built-in C# types, whose operators are the language's own.
+fn csharp_built_in(type_: &str) -> bool {
+    matches!(
+        type_,
+        "int"
+            | "long"
+            | "short"
+            | "byte"
+            | "sbyte"
+            | "uint"
+            | "ulong"
+            | "ushort"
+            | "nint"
+            | "nuint"
+            | "float"
+            | "double"
+            | "decimal"
+            | "bool"
+            | "char"
+            | "string"
+            | "object"
+            | "dynamic"
+            | "void"
+            | "null"
+    )
+}
+
+fn is_field(parent: Node, name: &str, node: Node) -> bool {
+    field(parent, name).is_some_and(|value| value.id() == node.id())
+}
+
+/// A C# unary expression's operator and operand: `-a`, `a++`.
+fn csharp_unary<'t>(node: Node<'t>, source: &'t str) -> Option<(&'t str, Node<'t>)> {
+    let mut cursor = node.walk();
+    let operator = node.children(&mut cursor).find(|child| !child.is_named())?;
+    Some((text(Some(operator), source), named_children(node).into_iter().next()?))
+}
+
+/// A C# type's name as types are matched: `Shop.Money?` and `Money<T>` are Money.
+fn csharp_type_name(written: &str) -> String {
+    last(&without_generics(written.trim_end_matches('?'))).to_owned()
+}
+
+/// A C# type as a conversion operator is named after it: without its namespace (`Shop.Money` is Money).
+fn csharp_short_type(written: &str) -> String {
+    let (head, generics) = written.split_at(written.find('<').unwrap_or(written.len()));
+    format!("{}{generics}", head.rsplit('.').next().unwrap_or(head).trim())
+}
+
+/// The member of its type (a method, property, field…) a C# node is written in.
+fn csharp_member(node: Node) -> Option<Node> {
+    let mut member = node;
+    while member.parent()?.kind() != "declaration_list" {
+        member = member.parent()?;
+    }
+    Some(member)
+}
+
+/// The names a C# member declares (parameters, locals, `foreach`, `catch`, `out var` and pattern variables, a
+/// lambda's parameters) with their written types; `var` takes the type of `new T()` or `(T)x`, else none.
+fn csharp_locals(member: Node, source: &str) -> HashMap<String, String> {
+    let kinds = [
+        "parameter",
+        "implicit_parameter",
+        "variable_declarator",
+        "foreach_statement",
+        "catch_declaration",
+        "declaration_expression",
+        "declaration_pattern",
+    ];
+    let mut out = HashMap::new();
+    for node in descendants(member, &kinds) {
+        let (name, type_) = match node.kind() {
+            "implicit_parameter" => (Some(node), None),
+            "foreach_statement" => (field(node, "left"), field(node, "type")),
+            "variable_declarator" => {
+                let declared = node.parent().and_then(|declaration| field(declaration, "type"));
+                let type_ = match declared {
+                    Some(declared) if declared.kind() == "implicit_type" => named_children(node)
+                        .into_iter()
+                        .find(|value| matches!(value.kind(), "object_creation_expression" | "cast_expression"))
+                        .and_then(|value| field(value, "type")),
+                    declared => declared,
+                };
+                (field(node, "name"), type_)
+            }
+            _ => (field(node, "name"), field(node, "type")),
+        };
+        let Some(name) = name else { continue };
+        let type_ = type_.filter(|type_| type_.kind() != "implicit_type");
+        let type_ = type_.map(|type_| csharp_type_name(text(Some(type_), source))).unwrap_or_default();
+        out.insert(text(Some(name), source).to_owned(), type_);
+    }
+    out
+}
+
+/// The fields, properties and events of a C# type with their types, and its methods with what they return.
+fn csharp_members(body: Node, source: &str) -> HashMap<String, String> {
+    let mut out = HashMap::new();
+    for member in named_children(body) {
+        match member.kind() {
+            "field_declaration" | "event_field_declaration" => {
+                let declarations = named_children(member).into_iter().filter(|d| d.kind() == "variable_declaration");
+                for declaration in declarations {
+                    let type_ = csharp_type_name(text(field(declaration, "type"), source));
+                    for declarator in named_children(declaration) {
+                        if declarator.kind() == "variable_declarator" {
+                            out.insert(text(field(declarator, "name"), source).to_owned(), type_.clone());
+                        }
+                    }
+                }
+            }
+            "property_declaration" | "event_declaration" | "method_declaration" => {
+                let type_ = field(member, "type").or_else(|| field(member, "returns"));
+                out.insert(text(field(member, "name"), source).to_owned(), csharp_type_name(text(type_, source)));
+            }
+            _ => {}
+        }
+    }
+    out
+}
+
+/// C#: whether a name or member access stands where a value is read or written, not where it is declared, called (a
+/// member access that is the function of a call is a call already), named as a type, or asked about with `nameof`.
+fn csharp_read(node: Node, source: &str) -> bool {
+    let Some(parent) = node.parent() else { return false };
+    let is = |name: &str| is_field(parent, name, node);
+    let in_nameof = parent.kind() == "argument"
+        && parent.parent().and_then(|list| list.parent()).is_some_and(|call| {
+            call.kind() == "invocation_expression" && text(field(call, "function"), source) == "nameof"
+        });
+    if in_nameof {
+        return false;
+    }
+    match parent.kind() {
+        "binary_expression"
+        | "prefix_unary_expression"
+        | "postfix_unary_expression"
+        | "parenthesized_expression"
+        | "argument"
+        | "arrow_expression_clause"
+        | "return_statement"
+        | "yield_statement"
+        | "throw_statement"
+        | "throw_expression"
+        | "await_expression"
+        | "interpolation"
+        | "conditional_expression"
+        | "initializer_expression"
+        | "assignment_expression"
+        | "equals_value_clause" => true,
+        "member_access_expression" | "element_access_expression" | "is_pattern_expression" => is("expression"),
+        "conditional_access_expression" => is("condition"),
+        "cast_expression" => is("value"),
+        "variable_declarator" => !is("name"),
+        "if_statement" | "while_statement" | "do_statement" => is("condition"),
+        "foreach_statement" => is("right"),
+        "lambda_expression" => is("body"),
+        _ => false,
     }
 }
 
@@ -618,7 +1039,6 @@ fn ruby_expression(node: Node) -> bool {
         | "while_modifier"
         | "until_modifier"
         | "elsif"
-        | "case"
         | "element_reference"
         | "splat_argument"
         | "hash_splat_argument"
@@ -629,21 +1049,39 @@ fn ruby_expression(node: Node) -> bool {
         "pair" => is("value"),
         "assignment" | "operator_assignment" => is("right"),
         "call" => is("receiver"),
+        // `for row in rows`, `case input`
+        "in" => true,
+        "case" | "case_match" => is("value"),
         _ => false,
     }
 }
 
+/// Where a Ruby scope makes each local, by name: (where it is made, the start and end of where it lives), all byte
+/// offsets.
+type RubyLocals = HashMap<String, Vec<(usize, usize, usize)>>;
+
 /// The names a Ruby scope makes local: parameters (a block's too), assignments' targets, `rescue => e`, a `for`'s
-/// variable and pattern variables; nested methods and classes have their own.
-fn ruby_locals(scope: Node, source: &str) -> HashSet<String> {
-    let mut out = HashSet::new();
+/// variable and pattern variables; nested methods and classes have their own. Each lives from where it is made to the
+/// end of the block or lambda it is made in, or else of the scope.
+fn ruby_locals(scope: Node, source: &str) -> RubyLocals {
+    let mut out = RubyLocals::new();
     let mut stack = named_children(scope);
     while let Some(node) = stack.pop() {
         if RUBY_SCOPES.contains(&node.kind()) {
             continue;
         }
         if node.kind() == "identifier" && ruby_declares(node) {
-            out.insert(text(Some(node), source).to_owned());
+            let mut lives = scope;
+            let mut at = node;
+            while let Some(parent) = at.parent().filter(|parent| parent.id() != scope.id()) {
+                if matches!(parent.kind(), "block" | "do_block" | "lambda") {
+                    lives = parent;
+                    break;
+                }
+                at = parent;
+            }
+            let made = (node.start_byte(), lives.start_byte(), lives.end_byte());
+            out.entry(text(Some(node), source).to_owned()).or_default().push(made);
         }
         stack.extend(named_children(node));
     }
@@ -687,6 +1125,7 @@ pub fn read_file(language: Language, ctx: &Context, source: &str) -> FileReading
         reading: FileReading::default(),
         namespace: String::new(),
         ruby_locals: HashMap::new(),
+        csharp_names: HashMap::new(),
         declared: Vec::new(),
     };
     let mut top = Vec::new();
@@ -862,6 +1301,8 @@ fn call_of(language: Language, node: Node, container: Option<&str>, source: &str
                         };
                         Some((without_generics(text(field(callee, "name"), source)), receiver))
                     }
+                    // `nameof(x)` names x without calling anything.
+                    "identifier" if text(Some(callee), source) == "nameof" => None,
                     "identifier" | "generic_name" => {
                         Some((without_generics(text(Some(callee), source)), Receiver::Plain))
                     }
@@ -958,14 +1399,19 @@ fn php_hook_callback(node: Node, owner: &str, source: &str) -> Option<Call> {
     match value.kind() {
         "string" | "encapsed_string" => {
             let name = unquote(text(Some(value), source)).split("::").last().unwrap_or("").to_owned();
-            (!name.is_empty()).then(|| Call { from: owner.to_owned(), name, receiver: Receiver::Plain })
+            (!name.is_empty()).then(|| Call {
+                from: owner.to_owned(),
+                name,
+                receiver: Receiver::Plain,
+                target: Target::Any,
+            })
         }
         "array_creation_expression" => {
             let elements: Vec<&str> =
                 named_children(value).into_iter().map(|element| text(Some(element), source)).collect();
             let method = unquote(elements.get(1)?).to_owned();
             let receiver = if elements[0].contains("$this") { Receiver::SelfOf(None) } else { Receiver::Plain };
-            (!method.is_empty()).then(|| Call { from: owner.to_owned(), name: method, receiver })
+            (!method.is_empty()).then(|| Call { from: owner.to_owned(), name: method, receiver, target: Target::Any })
         }
         _ => None,
     }
@@ -1491,6 +1937,8 @@ mod tests {
             [
                 ("Sum".into(), own()),
                 ("Of".into(), Receiver::Type("Rate".into())),
+                // Rate could be a property of Order's: a read that only a property can answer.
+                ("Rate".into(), own()),
                 ("Helper".into(), Receiver::Plain),
                 ("Local".into(), Receiver::Plain),
                 ("Rate".into(), Receiver::Plain),
@@ -1712,9 +2160,219 @@ int Order::total() const { return sum(); }
             ]
         );
         let names: Vec<&str> = reading.calls.iter().map(|call| call.name.as_str()).collect();
-        assert_eq!(names, ["Read", "Write", "Divide", "Start", "Add", "Money", "Digit"]);
+        // `m.Cents` reads the property; the setter's `value` is its parameter.
+        assert_eq!(names, ["Read", "Write", "Divide", "Start", "Add", "Money", "Cents", "Digit"]);
         let cents = &reading.tree[0].children[0].id;
         assert_eq!(reading.calls.iter().filter(|call| &call.from == cents).count(), 2);
+    }
+
+    fn targeted(reading: &FileReading) -> Vec<(String, Receiver, Target)> {
+        reading.calls.iter().map(|call| (call.name.clone(), call.receiver.clone(), call.target)).collect()
+    }
+
+    #[test]
+    fn reads_csharp_property_reads_and_writes_as_calls_to_properties() {
+        let (_, reading) = read(
+            Language::Csharp,
+            "Shop/Order.cs",
+            "public class Order {
+  private int _count;
+  public int Amount { get => _count; set { _count = value; } }
+  public int Total() { return Amount + this.Amount; }
+  public void Copy(Order other, Line line) {
+    other.Amount = 5;
+    var made = new Order { Amount = other.Total() };
+    line.Text.Trim();
+    Use(nameof(Amount), other?.Amount);
+  }
+  public void Shadow() { int Amount = 3; Use(Amount); }
+}
+",
+        );
+        let own = || Receiver::SelfOf(Some("Order".into()));
+        let order = || Receiver::Type("Order".into());
+        let property = |name: &str, receiver: Receiver| (name.to_owned(), receiver, Target::Property);
+        // `_count` is read too, but only a property answers a property read and a field is none. A local named like
+        // the property hides it, `nameof` reads nothing, and a call (`other.Total()`, `Trim()`) is a call already.
+        assert_eq!(
+            targeted(&reading),
+            [
+                property("_count", own()),
+                property("_count", own()),
+                property("Amount", own()),
+                property("Amount", own()),
+                property("Amount", order()),
+                ("Order".into(), order(), Target::Any),
+                property("Amount", order()),
+                ("Total".into(), Receiver::Plain, Target::Any),
+                ("Trim".into(), Receiver::Plain, Target::Any),
+                property("Text", Receiver::Type("Line".into())),
+                ("Use".into(), Receiver::Plain, Target::Any),
+                property("Amount", order()),
+                ("Use".into(), Receiver::Plain, Target::Any)
+            ]
+        );
+        assert_eq!(reading.properties, [reading.tree[0].children[0].id.clone()]);
+    }
+
+    #[test]
+    fn reads_csharp_operators_and_casts_on_known_types_as_calls_to_operators() {
+        let (_, reading) = read(
+            Language::Csharp,
+            "Shop/Money.cs",
+            r#"public struct Money {
+  public static Money operator +(Money a, Money b) => a;
+  int Use(Money a, Money b, int i, Shop.Money? maybe) {
+    var c = a + b + a;
+    var n = 1 + 2 + i;
+    var s = "x" + i;
+    c += a;
+    var d = -a;
+    var e = (Money)i;
+    int f = (int)a;
+    int g = (int)3.5;
+    bool same = maybe == null;
+    var h = new Money() * 2;
+    return Count() * Total();
+  }
+  int Count() => 1;
+}
+"#,
+        );
+        let operators: Vec<(String, Receiver)> = targeted(&reading)
+            .into_iter()
+            .filter(|(_, _, target)| *target == Target::Operator)
+            .map(|(name, receiver, _)| (name, receiver))
+            .collect();
+        let money = || Receiver::Type("Money".into());
+        // Numbers, strings and calls of unknown type use no operator of ours; `Count()` returns an int.
+        assert_eq!(
+            operators,
+            [
+                ("operator +".into(), money()),
+                ("operator +".into(), money()),
+                ("operator +".into(), money()),
+                ("operator -".into(), money()),
+                ("explicit operator Money".into(), money()),
+                ("explicit operator int".into(), money()),
+                ("operator ==".into(), money()),
+                ("operator *".into(), money())
+            ]
+        );
+    }
+
+    #[test]
+    fn reads_csharp_event_accessors_as_methods() {
+        let (tree, reading) = read(
+            Language::Csharp,
+            "Shop/Shop.cs",
+            "public class Shop {
+  public event EventHandler Changed { add { Attach(value); } remove { Detach(value); } }
+  public event EventHandler Plain;
+  void Fire() { Changed += OnChange; }
+}
+",
+        );
+        // A field-like event holds no code and is left out, as an auto-property is.
+        assert_eq!(tree, ["Class Shop exp :1", "  Method Changed exp :2", "  Method Fire :4"]);
+        let changed = &reading.tree[0].children[0].id;
+        let names: Vec<&str> =
+            reading.calls.iter().filter(|call| &call.from == changed).map(|call| call.name.as_str()).collect();
+        assert_eq!(names, ["Attach", "Detach"]);
+        assert_eq!(reading.properties, std::slice::from_ref(changed));
+    }
+
+    #[test]
+    fn lists_cpp_conversion_operators_like_other_methods() {
+        let (tree, reading) = read(
+            Language::Cpp,
+            "src/money.hpp",
+            "namespace shop {
+class Money {
+public:
+  operator int() const;
+  explicit operator bool() const;
+  operator std::string() const { return text(); }
+};
+
+Money::operator int() const { return cents(); }
+}
+",
+        );
+        // operator int is defined in the same file, so it is listed once, as its definition.
+        assert_eq!(
+            tree,
+            [
+                "Class shop exp :1",
+                "  Class Money exp :2",
+                "    Method operator bool exp :5",
+                "    Method operator string exp :6",
+                "  Method Money::operator int exp :9"
+            ]
+        );
+        let declared: Vec<&str> = reading.tree[0].children[0]
+            .children
+            .iter()
+            .filter(|item| reading.declarations.contains(&item.id))
+            .map(|item| item.name.as_str())
+            .collect();
+        assert_eq!(declared, ["operator bool"]);
+        let names: Vec<&str> = reading.calls.iter().map(|call| call.name.as_str()).collect();
+        assert_eq!(names, ["text", "cents"]);
+    }
+
+    #[test]
+    fn a_ruby_local_hides_a_call_only_after_it_is_made() {
+        let (_, reading) = read(
+            Language::Ruby,
+            "lib/order.rb",
+            "def total
+  tax
+  tax = 1
+  tax
+  items.each { |item| price = item; price }
+  price
+  [1].map do |x|
+    fee = x
+    fee
+  end
+  fee
+  x
+  shipping = rate { shipping }
+  for row in rows
+    row
+  end
+  row
+  begin
+    risky
+  rescue => err
+    err
+  end
+  err
+  case input
+  in [first, *]
+    first
+  end
+  first
+  count += 1
+  count
+  a, b = pair
+  a + b
+  late
+  late = 2
+  ->(y) { y }
+  y
+end
+",
+        );
+        let names: Vec<&str> = reading.calls.iter().map(|call| call.name.as_str()).collect();
+        // A block's parameters and the locals first assigned in a block end with it; `for`, `rescue =>`, patterns,
+        // `+=` and multiple assignment make locals from there on. An assignment's own value already sees its local
+        // (`shipping = rate { shipping }`), as Ruby reads it.
+        assert_eq!(
+            names,
+            ["tax", "each", "items", "price", "map", "fee", "x", "rate", "rows", "risky", "input", "pair", "late", "y"]
+        );
     }
 
     #[test]
