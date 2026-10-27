@@ -14,8 +14,8 @@ answer, and a release build has none of this.
 
 `pnpm app:build` builds an installer. It needs Rust and, on Windows, the Visual Studio C++ Build Tools ("Desktop
 development with C++"); on Linux the WebKitGTK libraries listed in `.github/workflows/release.yml`. A version tag
-(`git tag v0.1.0 && git push --tags`), or running the Release workflow by hand, builds every platform on GitHub Actions
-and attaches the installers to a draft release.
+(`git tag v0.2.0 && git push --tags`), or running the Release workflow by hand, builds every platform on GitHub Actions
+and attaches the installers to a draft release, with `docs/releases/<tag>.md` as its notes when that file exists.
 
 ## How it is put together
 

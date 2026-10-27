@@ -51,12 +51,28 @@ jobs:
       # Its own lockfile, outside any pnpm workspace it may be checked out in.
       - run: pnpm install --frozen-lockfile --ignore-workspace
 
+      # The release's notes: docs/releases/<tag>.md when there is one, else a line on what to install.
+      - name: Release notes
+        id: notes
+        shell: bash
+        run: |
+          file="docs/releases/${GITHUB_REF_NAME}.md"
+          {
+            echo 'body<<HAUNT_NOTES_END'
+            if [ "$GITHUB_REF_TYPE" = tag ] && [ -f "$file" ]; then
+              cat "$file"
+            else
+              echo 'Install the file for your system. Haunt needs git 2.24 or later, and reads TypeScript with Node 22.18 or later, Bun or Deno.'
+            fi
+            echo 'HAUNT_NOTES_END'
+          } >> "$GITHUB_OUTPUT"
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}
           releaseName: Haunt __VERSION__
-          releaseBody: Install the file for your system. Haunt needs git 2.24 or later, and reads TypeScript with Node 22.18 or later, Bun or Deno.
+          releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: true
           args: ${{ matrix.args }}
