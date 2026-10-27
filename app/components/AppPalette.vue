@@ -81,6 +81,7 @@ const groups = computed(() => {
         { label: t('AppPalette.allCommits'), icon: 'i-lucide-git-commit-vertical', to: '/commits' },
         { label: t('AppPalette.pullRequests'), icon: 'i-lucide-git-pull-request', to: '/pulls' },
         { label: t('AppPalette.bisect'), suffix: t('AppPalette.bisectHelp'), icon: 'i-lucide-crosshair', to: '/bisect' },
+        { label: t('AppPalette.reflog'), suffix: t('AppPalette.reflogHelp'), icon: 'i-lucide-footprints', to: '/reflog' },
         { label: t('AppPalette.releaseNotes'), suffix: t('AppPalette.releaseNotesHelp'), icon: 'i-lucide-scroll-text', to: '/release' },
         { label: t('AppPalette.patches'), icon: 'i-lucide-file-diff', to: '/patches' },
         { label: t('AppPalette.health'), suffix: t('AppPalette.healthHelp'), icon: 'i-lucide-heart-pulse', to: '/health' },

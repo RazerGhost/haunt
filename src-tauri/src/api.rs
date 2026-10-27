@@ -605,6 +605,8 @@ commands! {
     fn update_submodules(api, repo: String, paths: Vec<String>) -> () {
         api.network(&repo, "submodules", &["head", "index"], |writer, progress| writer.update_submodules(&paths, progress))
     }
+    /// Where HEAD, or a local branch, pointed before, newest first, with the commits only the reflog keeps marked.
+    fn reflog(api, repo: String, reference: String) -> crate::git::reflog::Reflog { api.repos.require(&repo)?; crate::git::reflog::reflog(&repo, &reference) }
     /// The room the history takes, its largest files, and the files that belong in Git LFS.
     fn health(api, repo: String) -> crate::git::Health { api.repos.require(&repo)?; crate::git::health(&repo) }
     /// What the folder would run once trusted (hooks, its architecture script, its TypeScript), with each file's text.

@@ -20,6 +20,7 @@ const when = (seconds: number) => new Date(seconds * 1000).toLocaleString()
 const shut = usePersisted<Record<string, boolean>>('sidebar-shut', {}, value => !!value && typeof value === 'object' && !Array.isArray(value))
 /** The Git screens without a place of their own in the sidebar. */
 const tools = computed(() => [[
+  { label: t('AppSidebar.reflog'), icon: 'i-lucide-footprints', to: '/reflog' },
   { label: t('AppSidebar.bisect'), icon: 'i-lucide-crosshair', to: '/bisect' },
   { label: t('AppSidebar.releaseNotes'), icon: 'i-lucide-scroll-text', to: '/release' },
   { label: t('AppSidebar.patches'), icon: 'i-lucide-file-diff', to: '/patches' },

@@ -1,0 +1,57 @@
+{
+  "title": "Reflog",
+  "intro": "Waar HEAD of een branch eerder naar wees, nieuwste eerst. Een commit die een reset, rebase of amend achterliet, of waarvan de branch verwijderd is, staat hier nog: zet er een branch op om hem te houden. git bewaart deze 90 dagen (30 voor commits die nooit op een branch stonden).",
+  "readAgain": "Opnieuw lezen",
+  "readFailed": "De reflog kon niet gelezen worden",
+  "reading": "De reflog wordt gelezen…",
+  "whose": "Van wie de reflog",
+  "onlyLost": "Alleen verloren commits",
+  "lostCount": {
+    "one": "{count} verloren commit",
+    "other": "{count} verloren commits"
+  },
+  "empty": "Nog niets in deze reflog.",
+  "noLost": "Geen verloren commits: elke commit hier staat nog op een branch, tag of stash.",
+  "lost": "verloren",
+  "lostHelp": "Op geen branch, tag, remote branch of stash: alleen de reflog houdt hem nog.",
+  "more": "Oudere regels blijven weg; git bewaart ze, git reflog toont ze allemaal.",
+  "minutes": {
+    "one": "{count} min",
+    "other": "{count} min"
+  },
+  "hours": {
+    "one": "{count} u",
+    "other": "{count} u"
+  },
+  "days": {
+    "one": "{count} d",
+    "other": "{count} d"
+  },
+  "showCommit": "De commit tonen",
+  "newBranch": "Nieuwe branch hier…",
+  "reset": "{branch} hierheen resetten…",
+  "resetCurrent": "Hierheen resetten…",
+  "cherryPick": "Cherry-picken op {branch}",
+  "cherryPickCurrent": "Cherry-picken",
+  "copySha": "De sha kopiëren",
+  "copySelector": "Zijn naam kopiëren",
+  "actions": "Wat te doen met {selector}",
+  "action": {
+    "commit": "Commit",
+    "commit_initial": "Eerste commit",
+    "commit_amend": "Amend",
+    "commit_merge": "Merge-commit",
+    "checkout": "Checkout",
+    "reset": "Reset",
+    "merge": "Merge",
+    "pull": "Pull",
+    "rebase": "Rebase",
+    "cherry_pick": "Cherry-pick",
+    "revert": "Revert",
+    "branch": "Branch",
+    "clone": "Clone",
+    "fetch": "Fetch",
+    "stash": "Stash",
+    "am": "Patch"
+  }
+}

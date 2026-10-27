@@ -34,7 +34,7 @@ Everything Haunt does, by part of the window. The [README](../README.md) has the
 - **Git and Code**, the two halves of the window (Ctrl 1 and Ctrl 2). The toolbar has Fetch, Pull and Push (with the
   commits to pull and push, and git's progress with a way to stop it), Branch and Stash, the function search, and the
   scan, trust and settings icons.
-- **The sidebar**: in Git, Local changes, All commits, Pull requests and a More menu (Bisect, Release notes, Apply
+- **The sidebar**: in Git, Local changes, All commits, Pull requests and a More menu (Reflog, Bisect, Release notes, Apply
   patches, Health), then the branches as folders split on `/` with what each is ahead and behind, worktrees,
   submodules, remotes, tags and stashes. A filter narrows long lists, and the eraser beside Branches cleans up merged
   branches and those whose remote branch is gone. The + beside Remotes adds a remote; right-click one to copy or
@@ -48,7 +48,10 @@ Everything Haunt does, by part of the window. The [README](../README.md) has the
   for anything else set `HAUNT_EDITOR`, such as `nvim-qt +{line} {file}` (`{root}` is the project's folder).
 - **When something fails**, the message says what git said, with Copy, and offers to trust the folder when its trust
   was the reason. After a discard, a dropped stash, an undone commit or a reset, Undo shows for a few seconds; the
-  Recently discarded and Recently dropped lists keep them for 30 days either way.
+  Recently discarded and Recently dropped lists keep them for 30 days either way. Further back, the **Reflog** (More,
+  or the palette) lists where HEAD or a branch pointed, newest first, with what moved it, and marks the commits only
+  the reflog still keeps (left behind by a reset, a rebase or an amend, or by a deleted branch); right-click one to see
+  it, put a new branch on it, reset the current branch to it or cherry-pick it.
 - **Notifications**: a fetch, pull, push or test run that finishes while Haunt is in the background says so through
   the system.
 - **Keyboard**: Ctrl K the palette, Ctrl F the function search, F5 fetch, Ctrl Shift P pull, Ctrl Shift U push, Alt ←

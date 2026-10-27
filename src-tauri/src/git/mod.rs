@@ -12,6 +12,7 @@ mod log;
 pub(crate) mod objects;
 pub mod overview;
 mod pulls;
+pub mod reflog;
 mod refs;
 mod release;
 mod remote;

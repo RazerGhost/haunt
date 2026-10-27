@@ -1,0 +1,57 @@
+{
+  "title": "Reflog",
+  "intro": "Where HEAD or a branch pointed before, newest first. A commit a reset, rebase or amend left behind, or whose branch was deleted, is still here: put a branch on it to keep it. git keeps these for 90 days (30 for commits that were never on a branch).",
+  "readAgain": "Read again",
+  "readFailed": "The reflog could not be read",
+  "reading": "Reading the reflog…",
+  "whose": "Whose reflog",
+  "onlyLost": "Only lost commits",
+  "lostCount": {
+    "one": "{count} lost commit",
+    "other": "{count} lost commits"
+  },
+  "empty": "Nothing in this reflog yet.",
+  "noLost": "No lost commits: every commit here is still on a branch, tag or stash.",
+  "lost": "lost",
+  "lostHelp": "On no branch, tag, remote branch or stash: only the reflog keeps it.",
+  "more": "Older entries are left out; git keeps them, git reflog shows them all.",
+  "minutes": {
+    "one": "{count} min",
+    "other": "{count} min"
+  },
+  "hours": {
+    "one": "{count} h",
+    "other": "{count} h"
+  },
+  "days": {
+    "one": "{count} d",
+    "other": "{count} d"
+  },
+  "showCommit": "Show the commit",
+  "newBranch": "New branch here…",
+  "reset": "Reset {branch} to here…",
+  "resetCurrent": "Reset to here…",
+  "cherryPick": "Cherry-pick onto {branch}",
+  "cherryPickCurrent": "Cherry-pick",
+  "copySha": "Copy the sha",
+  "copySelector": "Copy its name",
+  "actions": "What to do with {selector}",
+  "action": {
+    "commit": "Commit",
+    "commit_initial": "First commit",
+    "commit_amend": "Amend",
+    "commit_merge": "Merge commit",
+    "checkout": "Checkout",
+    "reset": "Reset",
+    "merge": "Merge",
+    "pull": "Pull",
+    "rebase": "Rebase",
+    "cherry_pick": "Cherry-pick",
+    "revert": "Revert",
+    "branch": "Branch",
+    "clone": "Clone",
+    "fetch": "Fetch",
+    "stash": "Stash",
+    "am": "Patch"
+  }
+}

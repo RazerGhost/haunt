@@ -44,5 +44,7 @@
   "calledFrom": "{path} · aangeroepen vanuit {count}",
   "title": "Opdrachtenpalet",
   "description": "Zoek een actie, een scherm, een branch, een repository of een functie.",
-  "placeholder": "Typ een actie, een scherm, een branch of een functie…"
+  "placeholder": "Typ een actie, een scherm, een branch of een functie…",
+  "reflog": "Reflog",
+  "reflogHelp": "waar HEAD en de branches naar wezen"
 }

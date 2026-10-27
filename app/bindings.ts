@@ -139,6 +139,8 @@ export const commands = {
 	submodules: (repo: string) => __TAURI_INVOKE<Submodule[]>("submodules", { repo }),
 	/**  Checks submodules out at the recorded commits, cloning missing ones (all when `paths` is empty); trusted only. */
 	updateSubmodules: (repo: string, paths: string[]) => __TAURI_INVOKE<null>("update_submodules", { repo, paths }),
+	/**  Where HEAD, or a local branch, pointed before, newest first, with the commits only the reflog keeps marked. */
+	reflog: (repo: string, reference: string) => __TAURI_INVOKE<Reflog>("reflog", { repo, reference }),
 	/**  The room the history takes, its largest files, and the files that belong in Git LFS. */
 	health: (repo: string) => __TAURI_INVOKE<Health>("health", { repo }),
 	/**  What the folder would run once trusted (hooks, its architecture script, its TypeScript), with each file's text. */
@@ -1120,6 +1122,31 @@ export type RecentRepo = {
 	branch: string | null,
 	changes: number | null,
 	lastCommit: CommitInfo | null,
+};
+
+export type Reflog = {
+	/**  "HEAD", or the branch's name. */
+	reference: string,
+	entries: ReflogEntry[],
+	/**  There are older entries than these. */
+	more: boolean,
+};
+
+export type ReflogEntry = {
+	/**  "HEAD@{3}": how git names it. */
+	selector: string,
+	/**  Where it pointed from this entry on. */
+	sha: string,
+	/**  When it moved there, in seconds. */
+	time: number,
+	/**  What moved it, as git says it first: "commit", "checkout", "reset", "rebase (finish)", "merge main"… */
+	action: string,
+	/**  The rest of git's words: "moving from main to feature", the commit's subject… */
+	message: string,
+	/**  The subject of the commit it pointed at. */
+	subject: string,
+	/**  The commit is on no branch, tag, remote branch or stash: only the reflog keeps it. */
+	lost: boolean,
 };
 
 /**  The repository's refs, for the sidebar: what `git branch`, `git tag` and `git stash list` show. */

@@ -33,8 +33,7 @@ the sidebar. What is left:
 
 ## 4. Reflog
 
-- A view of where each branch and HEAD pointed, to get back any lost commit or branch tip. Undo goes back one step
-  only.
+Done (app/pages/reflog.vue, src-tauri/src/git/reflog.rs).
 
 ## 5. Git
 
