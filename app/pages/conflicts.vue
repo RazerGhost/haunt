@@ -137,14 +137,14 @@ function go(step: number): void {
       <header class="flex flex-wrap items-center gap-2 border-b border-default px-4 py-2">
         <span class="min-w-0 flex-1 truncate font-mono text-ui font-medium text-highlighted">{{ picked }}</span>
         <UButton icon="i-lucide-square-arrow-out-up-right" :label="t('pages.conflicts.openInEditor')" size="xs" color="neutral" variant="ghost" @click="openInEditor(picked!)" />
-        <UButton :label="t('pages.conflicts.takeOurs', { name: operation.ours })" size="xs" color="neutral" variant="outline" :disabled="saving || operating" @click="take('ours')" />
-        <UButton :label="t('pages.conflicts.takeTheirs', { name: operation.theirs })" size="xs" color="neutral" variant="outline" :disabled="saving || operating" @click="take('theirs')" />
+        <UButton :label="t('pages.conflicts.takeOurs', { name: said(operation.ours) })" size="xs" color="neutral" variant="outline" :disabled="saving || operating" @click="take('ours')" />
+        <UButton :label="t('pages.conflicts.takeTheirs', { name: said(operation.theirs) })" size="xs" color="neutral" variant="outline" :disabled="saving || operating" @click="take('theirs')" />
       </header>
 
       <UAlert v-if="problem" color="error" variant="subtle" icon="i-lucide-circle-alert" :description="problem" class="m-4" />
       <div v-else-if="!file" class="grid justify-items-center py-10"><UIcon name="i-lucide-loader-circle" class="size-5 animate-spin text-muted" /></div>
       <div v-else-if="file.binary || deletedBy || file.result === null" class="p-4 text-ui text-muted">
-        <p v-if="deletedBy">{{ deletedBy === 'yours' ? t('pages.conflicts.deletedOurs', { name: operation.ours }) : t('pages.conflicts.deletedTheirs', { name: operation.theirs }) }}</p>
+        <p v-if="deletedBy">{{ deletedBy === 'yours' ? t('pages.conflicts.deletedOurs', { name: said(operation.ours) }) : t('pages.conflicts.deletedTheirs', { name: said(operation.theirs) }) }}</p>
         <p v-else>{{ t('pages.conflicts.binary') }}</p>
       </div>
       <template v-else>
@@ -165,12 +165,12 @@ function go(step: number): void {
             <div v-else ref="blocks" class="grid gap-2 rounded-md border border-warning/40 p-2">
               <div class="grid grid-cols-2 gap-2">
                 <div class="min-w-0">
-                  <p class="mb-1 text-label font-semibold text-muted uppercase">{{ t('pages.conflicts.yours') }} · {{ operation.ours }}</p>
+                  <p class="mb-1 text-label font-semibold text-muted uppercase">{{ t('pages.conflicts.yours') }} · {{ said(operation.ours) }}</p>
                   <CodeLines v-if="item.segment.ours" :path="picked!" :text="item.segment.ours" class="rounded bg-success/10 p-2" />
                   <p v-else class="rounded bg-success/10 p-2 text-xs text-muted">{{ t('pages.conflicts.empty') }}</p>
                 </div>
                 <div class="min-w-0">
-                  <p class="mb-1 text-label font-semibold text-muted uppercase">{{ t('pages.conflicts.theirs') }} · {{ operation.theirs }}</p>
+                  <p class="mb-1 text-label font-semibold text-muted uppercase">{{ t('pages.conflicts.theirs') }} · {{ said(operation.theirs) }}</p>
                   <CodeLines v-if="item.segment.theirs" :path="picked!" :text="item.segment.theirs" class="rounded bg-info/10 p-2" />
                   <p v-else class="rounded bg-info/10 p-2 text-xs text-muted">{{ t('pages.conflicts.empty') }}</p>
                 </div>

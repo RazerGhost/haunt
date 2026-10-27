@@ -1,0 +1,14 @@
+{
+  "localOnly": "Only http:// addresses on this machine: a dev server, such as http://localhost:3000.",
+  "noCredentials": "Leave the user name and password out of the address.",
+  "incomplete": "That address is not complete.",
+  "notPort": "\"{port}\" is not a port.",
+  "notLocal": "{host} is not this machine: Try it only calls dev servers on localhost.",
+  "badHeader": "\"{name}\" is not a header Haunt can send.",
+  "notMethod": "\"{method}\" is not an HTTP method.",
+  "notThisMachine": "{host} does not lead to this machine.",
+  "nothingAnswers": "Nothing answers at {url}: is the dev server running? ({refused})",
+  "noAnswer": "The dev server did not answer: {error}",
+  "notHttp": "The answer is not HTTP.",
+  "badFile": "\"{file}\" is not a file name for requests (name.http)."
+}

@@ -1,0 +1,20 @@
+{
+  "rebasing": "Rebasing {name} onto {onto}",
+  "rebasingYours": "Rebasing your branch onto {onto}",
+  "rebasingOntoOther": "Rebasing {name} onto the other branch",
+  "rebasingYoursOntoOther": "Rebasing your branch onto the other branch",
+  "otherBranch": "the other branch",
+  "yourCommitOn": "your commit on {name}",
+  "yourCommit": "your commit",
+  "merging": "Merging {other} into {branch}",
+  "reverting": "Reverting \"{subject}\" on {branch}",
+  "revertOf": "the revert of \"{subject}\"",
+  "cherryPicking": "Cherry-picking \"{subject}\" onto {branch}",
+  "noConflicts": "{path} has no conflicts.",
+  "nothingToContinue": "Nothing is going on to continue.",
+  "stillConflicting": {
+    "one": "{count} file still conflicts.",
+    "other": "{count} files still conflict."
+  },
+  "nothingToAbort": "Nothing is going on to abort."
+}

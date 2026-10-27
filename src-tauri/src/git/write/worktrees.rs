@@ -65,13 +65,17 @@ impl Writer<'_> {
     pub fn add_worktree(&self, path: &str, branch: &str, new: bool, at: Option<&str>) -> Result<String, String> {
         let folder = std::path::Path::new(path);
         if !folder.is_absolute() {
-            return Err("A worktree's folder is a full path.".into());
+            return Err(said!("worktrees.notFull", "A worktree's folder is a full path."));
         }
         if folder.exists() && std::fs::read_dir(folder).map(|mut entries| entries.next().is_some()).unwrap_or(true) {
-            return Err(format!("{path} is there already and not empty: pick another folder."));
+            return Err(said!(
+                "worktrees.notEmpty",
+                "{path} is there already and not empty: pick another folder.",
+                path = path
+            ));
         }
         let branch = self.branch_name(branch)?;
-        self.refuse_checkout("Adding a worktree")?;
+        self.refuse_checkout(super::refs::Checkout::Worktree)?;
         let queue = queue(self.root);
         let _turn = queue.lock().unwrap();
         self.wait_for_lock()?;
@@ -80,7 +84,7 @@ impl Writer<'_> {
             self.git(&["worktree", "add", "-b", branch, "--end-of-options", path, at], None, &[], None)?;
         } else {
             if read(self.root, &["rev-parse", "--verify", "--quiet", &format!("refs/heads/{branch}")]).is_err() {
-                return Err(format!("There is no branch called \"{branch}\"."));
+                return Err(said!("worktrees.noBranch", "There is no branch called \"{branch}\".", branch = branch));
             }
             self.git(&["worktree", "add", "--end-of-options", path, branch], None, &[], None)?;
         }
@@ -94,9 +98,9 @@ impl Writer<'_> {
         let worktree = known
             .iter()
             .find(|worktree| worktree.path == wanted)
-            .ok_or("That is not a worktree of this repository.")?;
+            .ok_or_else(|| said!("worktrees.unknown", "That is not a worktree of this repository."))?;
         if worktree.main {
-            return Err("The repository's own folder is not a worktree to remove.".into());
+            return Err(said!("worktrees.main", "The repository's own folder is not a worktree to remove."));
         }
         let queue = queue(self.root);
         let _turn = queue.lock().unwrap();
@@ -108,7 +112,7 @@ impl Writer<'_> {
         args.extend(["--end-of-options", worktree.path.as_str()]);
         self.git(&args, None, &[], None).map(drop).map_err(|error| {
             if error.contains("modified or untracked files") {
-                format!("{} has changes not committed yet.", worktree.path)
+                said!("worktrees.changes", "{path} has changes not committed yet.", path = worktree.path)
             } else {
                 error
             }

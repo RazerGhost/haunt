@@ -1,0 +1,11 @@
+{
+  "unknownSet": "{set} is geen iconenset die Haunt kent.",
+  "notDownloaded": "De {set}-iconen zijn niet gedownload.",
+  "notKept": "De {set}-iconen konden niet bewaard worden: {error}",
+  "tooLarge": "De gedownloade iconen zijn te groot.",
+  "notASet": "De gedownloade iconen zijn geen iconenset.",
+  "otherSet": "De gedownloade iconen zijn niet die van {set}.",
+  "noIcons": "De gedownloade iconen bevatten geen iconen.",
+  "noDrawing": "Het icoon {name} heeft geen tekening.",
+  "moreThanDrawing": "Het icoon {name} bevat meer dan een tekening; het is niet bewaard."
+}

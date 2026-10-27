@@ -1,0 +1,13 @@
+{
+  "couldNotStart": "git kon niet starten: {error}",
+  "failed": "git is mislukt ({status})",
+  "locked": "Een andere git is bezig in deze repository (die houdt .git/index.lock vast). Probeer het opnieuw als die klaar is; Haunt laat de lock met rust.",
+  "filtered": "{path} gaat door een filter ({value}): neem het hele bestand.",
+  "filteredUntrusted": "{path} gaat door een filter ({value}), en dat draait alleen in een vertrouwde map. Vertrouw deze map om het te schrijven.",
+  "newFileLines": "Je kunt geen regels van een nieuw bestand kiezen: neem het hele bestand.",
+  "linesGone": "Geen van die regels is nog een wijziging.",
+  "discardUnknown": "Die weggegooide wijziging is onbekend.",
+  "noMessage": "Schrijf eerst een bericht.",
+  "nothingToAmend": "Er is nog geen commit om te amenden.",
+  "noFiles": "Geen bestanden opgegeven."
+}

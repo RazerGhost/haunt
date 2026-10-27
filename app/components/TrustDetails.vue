@@ -41,10 +41,10 @@ async function trust(): Promise<void> {
       <div v-else class="grid gap-4">
         <section v-for="item in texts" :key="item.path" class="grid gap-1.5">
           <div class="flex items-baseline gap-2">
-            <h3 class="text-sm font-medium text-highlighted">{{ t('TrustDetails.its', { label: item.label }) }}</h3>
+            <h3 class="text-sm font-medium text-highlighted">{{ t('TrustDetails.its', { label: said(item.label) }) }}</h3>
             <code class="min-w-0 truncate text-xs text-muted">{{ item.path }}</code>
           </div>
-          <p class="text-xs text-muted">{{ item.note }}</p>
+          <p class="text-xs text-muted">{{ said(item.note) }}</p>
           <div v-if="item.text" class="max-h-72 overflow-auto rounded border border-default bg-elevated/40 p-2">
             <CodeLines :path="pathFor(item)" :text="item.text" />
           </div>

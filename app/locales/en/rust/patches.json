@@ -1,0 +1,10 @@
+{
+  "notPatchFile": "\"{path}\" is not a patch file.",
+  "notPatch": "{name} changes no file: it is not a patch.",
+  "notFolder": "\"{folder}\" is not a folder.",
+  "noCommit": "This repository has no commit yet.",
+  "doesNotApply": "{name} does not apply: {problem}",
+  "choose": "Choose a patch file first.",
+  "busy": "A rebase or another patch is going on: finish or stop it first.",
+  "nothingApplied": "{problem}\nNothing was applied."
+}

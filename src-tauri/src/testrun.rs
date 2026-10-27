@@ -59,7 +59,7 @@ pub fn run(root: &str, node: &Path, tests: &[TestToRun]) -> Result<TestRun, Stri
     {
         let mut running = RUNNING.lock().unwrap();
         if running.is_some() {
-            return Err("Tests are running already: wait for them, or stop them.".into());
+            return Err(said!("testrun.running", "Tests are running already: wait for them, or stop them."));
         }
         *running = Some(stop.clone());
     }
@@ -81,9 +81,9 @@ fn run_groups(root: &str, node: &Path, tests: &[TestToRun], stop: &AtomicBool) -
     let mut groups: Vec<(PathBuf, Vec<&TestToRun>)> = Vec::new();
     for test in tests {
         let file = crate::paths::inside(root, &test.path)
-            .ok_or_else(|| format!("{} is not in this repository.", test.path))?;
+            .ok_or_else(|| said!("testrun.outside", "{path} is not in this repository.", path = test.path))?;
         if !file.is_file() {
-            return Err(format!("{} is not there any more: scan again.", test.path));
+            return Err(said!("testrun.gone", "{path} is not there any more: scan again.", path = test.path));
         }
         let package = package_of(base, &file);
         match groups.iter_mut().find(|(folder, _)| *folder == package) {
@@ -237,7 +237,9 @@ fn execute(node: &Path, folder: &Path, args: &[String], stop: &AtomicBool) -> Re
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
     crate::startup::hide_console(&mut command);
-    let mut child = command.spawn().map_err(|error| format!("The tests could not start: {error}"))?;
+    let mut child = command
+        .spawn()
+        .map_err(|error| said!("testrun.notStarted", "The tests could not start: {error}", error = error))?;
     let output = Arc::new(Mutex::new(Vec::<u8>::new()));
     let readers: Vec<_> = [
         child.stdout.take().map(|pipe| Box::new(pipe) as Box<dyn Read + Send>),

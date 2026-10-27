@@ -60,7 +60,7 @@ const STATUS: Record<string, string> = { added: 'success', changed: 'warning', r
     <div class="flex flex-wrap items-center gap-2 border-b border-default px-4 py-2">
       <div class="min-w-0 flex-1">
         <h1 class="truncate text-sm font-semibold text-highlighted">{{ changes?.head.branch ? t('pages.review.title', { branch: changes.head.branch }) : t('pages.review.titleThis') }}</h1>
-        <p class="truncate text-xs text-muted">{{ changes ? t('pages.review.summary', { base: changes.base.label, count: items.length, seen: seen.size }) : t('pages.review.reading') }}</p>
+        <p class="truncate text-xs text-muted">{{ changes ? t('pages.review.summary', { base: said(changes.base.label), count: items.length, seen: seen.size }) : t('pages.review.reading') }}</p>
       </div>
       <template v-if="items.length">
         <UButton icon="i-lucide-chevron-left" size="xs" color="neutral" variant="outline" :disabled="at === 0" :aria-label="t('pages.review.previous')" @click="go(-1)" />
@@ -70,7 +70,7 @@ const STATUS: Record<string, string> = { added: 'success', changed: 'warning', r
       </template>
     </div>
     <UAlert v-if="problem" color="error" variant="subtle" icon="i-lucide-circle-alert" :description="problem" class="m-4" />
-    <p v-else-if="changes && !items.length" class="p-6 text-center text-sm text-muted">{{ t('pages.review.noFunctions', { base: changes.base.label }) }}</p>
+    <p v-else-if="changes && !items.length" class="p-6 text-center text-sm text-muted">{{ t('pages.review.noFunctions', { base: said(changes.base.label) }) }}</p>
     <div v-else-if="item" class="grid min-h-0 flex-1 grid-cols-[16rem_minmax(0,1fr)]">
       <ul class="min-h-0 overflow-auto border-r border-default p-1">
         <li v-for="(entry, number) in items" :key="entry.fn.id">
@@ -109,7 +109,7 @@ const STATUS: Record<string, string> = { added: 'success', changed: 'warning', r
         </section>
         <TestsReached :changed="reachFrom" />
         <section v-if="changes?.head.sha" class="grid gap-1">
-          <h2 class="text-label font-semibold tracking-wider text-muted uppercase">{{ t('pages.review.fileSince', { base: changes.base.label }) }}</h2>
+          <h2 class="text-label font-semibold tracking-wider text-muted uppercase">{{ t('pages.review.fileSince', { base: said(changes.base.label) }) }}</h2>
           <DiffView :key="`${changes.base.sha}:${item.file.path}`" :from="changes.base.sha" :to="changes.head.sha" :path="item.file.path" :old-path="item.file.oldPath" class="max-h-[32rem] rounded-md border border-default" />
         </section>
       </div>

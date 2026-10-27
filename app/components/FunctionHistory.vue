@@ -65,7 +65,7 @@ function ago(seconds: number): string {
     <p v-if="history && !history.commits.length && !history.authors.length" class="text-xs text-muted">{{ t('FunctionHistory.noHistory') }}</p>
     <template v-else-if="history">
       <p v-if="history.latest" class="text-xs text-muted">
-        {{ t('FunctionHistory.lastChanged', { ago: ago(history.latest.time) }) }} <b class="text-highlighted">{{ history.latest.author }}</b>
+        {{ t('FunctionHistory.lastChanged', { ago: ago(history.latest.time) }) }} <b class="text-highlighted">{{ said(history.latest.author) }}</b>
       </p>
       <dl v-if="born || behaviour" class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-xs">
         <template v-if="behaviour">
@@ -79,10 +79,10 @@ function ago(seconds: number): string {
       </dl>
       <div v-if="total" class="grid gap-1">
         <div class="flex h-1.5 overflow-hidden rounded-full bg-elevated">
-          <i v-for="(author, n) in history.authors" :key="author.name" class="block h-full" :style="{ width: `${author.lines / total * 100}%`, background: `color-mix(in srgb, var(--c) ${100 - n * 22}%, var(--ui-bg-elevated))` }" :title="t('FunctionHistory.authorLines', { name: author.name, count: author.lines })" />
+          <i v-for="(author, n) in history.authors" :key="author.name" class="block h-full" :style="{ width: `${author.lines / total * 100}%`, background: `color-mix(in srgb, var(--c) ${100 - n * 22}%, var(--ui-bg-elevated))` }" :title="t('FunctionHistory.authorLines', { name: said(author.name), count: author.lines })" />
         </div>
         <p class="text-label text-muted">
-          <template v-for="(author, n) in history.authors.slice(0, 4)" :key="author.name">{{ n ? ' · ' : '' }}{{ author.name }} {{ Math.round(author.lines / total * 100) }}%</template>
+          <template v-for="(author, n) in history.authors.slice(0, 4)" :key="author.name">{{ n ? ' · ' : '' }}{{ said(author.name) }} {{ Math.round(author.lines / total * 100) }}%</template>
         </p>
       </div>
       <ul v-if="shown.length" class="grid gap-1">

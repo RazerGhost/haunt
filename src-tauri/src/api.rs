@@ -134,7 +134,9 @@ fn record_fetch(root: &str, result: &Result<(), String>, background: bool) {
 }
 
 fn wait(receiver: Receiver<Reply>) -> Reply {
-    receiver.recv_timeout(WAIT).unwrap_or_else(|_| Err("The scanner took too long to answer.".into()))
+    receiver
+        .recv_timeout(WAIT)
+        .unwrap_or_else(|_| Err(said!("api.scannerTooSlow", "The scanner took too long to answer.")))
 }
 
 impl Api {
@@ -147,7 +149,10 @@ impl Api {
         }
         type Kept = Option<(String, String, Arc<HashMap<String, ScannedFile>>)>;
         static KEPT: std::sync::OnceLock<std::sync::Mutex<Kept>> = std::sync::OnceLock::new();
-        let text = self.repos.structure(repo)?.ok_or("Haunt is still scanning this repository.")?;
+        let text = self
+            .repos
+            .structure(repo)?
+            .ok_or_else(|| said!("api.stillScanning", "Haunt is still scanning this repository."))?;
         // "scannedAt":"2026-10-25T…" sits near the start of the scan's JSON.
         let scanned_at = text
             .find("\"scannedAt\":\"")
@@ -230,6 +235,14 @@ impl Api {
         result
     }
 
+    /// A remote's write in a repository by its path; a tab that shows it reads its refs again.
+    fn remote_by_path(&self, path: &str, write: impl FnOnce(&Writer) -> Result<(), String>) -> Result<(), String> {
+        let root = crate::git::overview::repository(path)?;
+        let result = write(&Writer::new(&root, false));
+        self.repos.announce_git(&root, &["refs"]);
+        result
+    }
+
     /// A write that changes the lists of local changes: the lists after it.
     fn write_listed(
         &self,
@@ -292,10 +305,11 @@ impl Api {
     fn source(&self, repo: &str, path: &str, start: u32, end: u32) -> Result<Source, String> {
         const MAX_LINES: u32 = 400;
         if start < 1 || end < start {
-            return Err("That function is not in the scan.".into());
+            return Err(said!("api.functionNotScanned", "That function is not in the scan."));
         }
         let file = self.repos.scanned(repo, path)?;
-        let text = std::fs::read_to_string(&file).map_err(|_| "The file could not be read.".to_string())?;
+        let text =
+            std::fs::read_to_string(&file).map_err(|_| said!("api.fileUnread", "The file could not be read."))?;
         let all: Vec<&str> = text.lines().collect();
         let last = end.min(all.len() as u32).min(start + MAX_LINES - 1);
         let lines = all
@@ -499,7 +513,7 @@ commands! {
     fn last_mention(api, repo: String, name: String, path: String) -> Option<CommitInfo> {
         api.repos.require(&repo)?;
         if crate::paths::inside(&repo, &path).is_none() {
-            return Err("That path is not in this repository.".into());
+            return Err(said!("api.pathOutside", "That path is not in this repository."));
         }
         crate::git::last_mention(&repo, &name, &path)
     }
@@ -509,7 +523,7 @@ commands! {
     fn blame_authors(api, repo: String, paths: Vec<String>) -> crate::git::knowledge::Blamed {
         api.repos.require(&repo)?;
         if paths.iter().any(|path| crate::paths::inside(&repo, path).is_none()) {
-            return Err("A path is not in this repository.".into());
+            return Err(said!("api.aPathOutside", "A path is not in this repository."));
         }
         Ok(crate::git::knowledge::blame_authors(&repo, &paths))
     }
@@ -517,7 +531,7 @@ commands! {
     fn reviewers(api, repo: String, base: String, spans: Vec<crate::git::knowledge::LineSpanAt>) -> crate::git::knowledge::Knowers {
         api.repos.require(&repo)?;
         if spans.iter().any(|span| crate::paths::inside(&repo, &span.path).is_none()) {
-            return Err("A path is not in this repository.".into());
+            return Err(said!("api.aPathOutside", "A path is not in this repository."));
         }
         crate::git::knowledge::reviewers(&repo, &base, &spans)
     }
@@ -563,7 +577,11 @@ commands! {
     /// Commits what is staged, or amends the last commit; the new commit.
     fn commit_staged(api, repo: String, message: String, amend: bool, signoff: bool) -> String {
         let subject = message.lines().next().unwrap_or_default().trim().to_owned();
-        let title = if amend { "Amended the last commit".to_owned() } else { format!("Committed \"{subject}\"") };
+        let title = if amend {
+            said!("api.amended", "Amended the last commit")
+        } else {
+            said!("api.committed", "Committed \"{subject}\"", subject = subject)
+        };
         api.undoable(&repo, &["head", "index", "refs"], Undo::Reset("--soft"), |_| title, |writer| writer.commit(&message, amend, signoff))
     }
     /// What Haunt ran to write, newest first.
@@ -574,11 +592,11 @@ commands! {
     /// Creates a branch at `at` (HEAD when null), and switches to it when asked.
     fn create_branch(api, repo: String, name: String, at: Option<String>, then_switch: bool) -> () {
         let undo = Undo::RemoveCreated { name: name.clone() };
-        api.undoable(&repo, &["head", "refs", "index"], undo, |_| format!("Created {name}"), |writer| writer.create_branch(&name, at.as_deref(), then_switch))
+        api.undoable(&repo, &["head", "refs", "index"], undo, |_| said!("api.created", "Created {name}", name = name), |writer| writer.create_branch(&name, at.as_deref(), then_switch))
     }
     /// Switches to a branch (a remote one through a local branch that tracks it), carrying or stashing local changes.
     fn switch_branch(api, repo: String, name: String, mode: SwitchMode) -> () {
-        api.undoable(&repo, &["head", "refs", "index", "stash"], Undo::SwitchBack, |_| format!("Switched to {name}"), |writer| writer.switch_branch(&name, mode))
+        api.undoable(&repo, &["head", "refs", "index", "stash"], Undo::SwitchBack, |_| said!("api.switched", "Switched to {name}", name = name), |writer| writer.switch_branch(&name, mode))
     }
     /// Where a bisect stands (none going on: `active` is false).
     fn bisect_state(api, repo: String) -> crate::git::write::BisectState { api.repos.require(&repo)?; Ok(crate::git::write::bisect_state(&repo)) }
@@ -668,14 +686,14 @@ commands! {
     fn create_pull_request(api, repo: String, pull: crate::hosts::NewPull) -> crate::hosts::CreatedPull {
         api.repos.require(&repo)?;
         let draft = crate::git::pull_draft(&repo, &pull.branch, Some(&pull.base))?;
-        let page = crate::git::remote_page(&repo, &draft.remote).ok_or("That remote has no host Haunt knows.")?;
+        let page = crate::git::remote_page(&repo, &draft.remote).ok_or_else(|| said!("api.noHost", "That remote has no host Haunt knows."))?;
         crate::hosts::create_pull(&page, &pull)
     }
     /// Opens a release page of Haunt itself in the browser (the update check's See it); nothing else.
     fn open_release(api, url: String) -> () {
         let _ = api;
         if !url.starts_with("https://github.com/razerghost/haunt/releases") {
-            return Err("Only Haunt's own release pages can be opened here.".into());
+            return Err(said!("api.notOurRelease", "Only Haunt's own release pages can be opened here."));
         }
         crate::editor::open_url(&url)
     }
@@ -692,7 +710,7 @@ commands! {
     fn prune_worktrees(api, repo: String) -> () { api.write(&repo, &["refs"], |writer| writer.prune_worktrees()) }
     fn rename_branch(api, repo: String, from: String, to: String) -> () {
         let undo = Undo::RenameBack { from: from.clone(), to: to.clone() };
-        api.undoable(&repo, &["head", "refs"], undo, |_| format!("Renamed {from} to {to}"), |writer| writer.rename_branch(&from, &to))
+        api.undoable(&repo, &["head", "refs"], undo, |_| said!("api.renamed", "Renamed {from} to {to}", from = from, to = to), |writer| writer.rename_branch(&from, &to))
     }
     /// How many commits only this branch has: what deleting it would lose.
     fn unmerged(api, repo: String, name: String) -> u32 { api.repos.require(&repo)?; Writer::new(&repo, false).unmerged(&name) }
@@ -701,9 +719,9 @@ commands! {
         api.repos.require(&repo)?;
         let sha = crate::git::cli::git(&repo, &["rev-parse", "--verify", "--quiet", &format!("refs/heads/{name}")])
             .map(|sha| sha.trim().to_owned())
-            .map_err(|_| format!("There is no branch called \"{name}\"."))?;
+            .map_err(|_| said!("api.noBranch", "There is no branch called \"{name}\".", name = name))?;
         let undo = Undo::Recreate { name: name.clone(), sha };
-        api.undoable(&repo, &["refs"], undo, |_| format!("Deleted {name}"), |writer| writer.delete_branch(&name, unmerged))
+        api.undoable(&repo, &["refs"], undo, |_| said!("api.deleted", "Deleted {name}", name = name), |writer| writer.delete_branch(&name, unmerged))
     }
     fn stash(api, repo: String, message: Option<String>, untracked: bool, paths: Vec<String>) -> () {
         api.write(&repo, &["stash", "index"], |writer| writer.stash(message.as_deref(), untracked, &paths))
@@ -738,7 +756,7 @@ commands! {
     /// Runs `tests` with the project's own test runner (testrun.rs); only in a trusted folder.
     fn run_tests(api, repo: String, tests: Vec<TestToRun>) -> TestRun {
         if !api.repos.trusted(&repo)? {
-            return Err("Running tests runs the project's own code: trust this folder first.".into());
+            return Err(said!("api.trustForTests", "Running tests runs the project's own code: trust this folder first."));
         }
         crate::testrun::run(&repo, &api.repos.node()?, &tests)
     }
@@ -769,9 +787,9 @@ commands! {
     /// Opens a page of the repository's remote in the browser; any other address is refused.
     fn open_on_web(api, repo: String, url: String) -> () {
         api.repos.require(&repo)?;
-        let page = crate::git::web_remote(&repo).ok_or("This repository has no remote on the web.")?;
+        let page = crate::git::web_remote(&repo).ok_or_else(|| said!("api.noWebRemote", "This repository has no remote on the web."))?;
         if url != page.base && !url.starts_with(&format!("{}/", page.base)) {
-            Err("Only pages of this repository's remote can be opened.".to_string())
+            Err(said!("api.notItsPage", "Only pages of this repository's remote can be opened."))
         } else {
             crate::editor::open_url(&url)
         }
@@ -780,7 +798,7 @@ commands! {
     fn pull(api, repo: String, mode: PullMode) -> PullResult {
         let before = Writer::new(&repo, false).snapshot();
         let result = api.network(&repo, "pull", &["head", "refs", "index"], |writer, progress| writer.pull(mode, progress))?;
-        api.noted(&repo, &Writer::new(&repo, false), "Pulled".into(), before, Undo::Reset("--keep"));
+        api.noted(&repo, &Writer::new(&repo, false), said!("api.pulled", "Pulled"), before, Undo::Reset("--keep"));
         Ok(result)
     }
     /// Pushes the current branch (to `remote` the first time, when there are several); `force` overwrites with a lease.
@@ -791,6 +809,18 @@ commands! {
         api.network(&repo, "push", &["refs"], |writer, progress| writer.push_tag(&name, remote.as_deref(), progress))
     }
     /// Stops the fetch, pull or push running in `repo`.
+    /// Remotes of a repository by its path, open in a tab or not (the repository manager's): config only, so nothing
+    /// of the repository runs and its trust does not matter.
+    fn repository_add_remote(api, path: String, name: String, url: String) -> () {
+        api.remote_by_path(&path, |writer| writer.add_remote(&name, &url))
+    }
+    fn repository_rename_remote(api, path: String, from: String, to: String) -> () {
+        api.remote_by_path(&path, |writer| writer.rename_remote(&from, &to))
+    }
+    fn repository_remove_remote(api, path: String, name: String) -> () { api.remote_by_path(&path, |writer| writer.remove_remote(&name)) }
+    fn repository_set_remote_url(api, path: String, name: String, url: String) -> () {
+        api.remote_by_path(&path, |writer| writer.set_remote_url(&name, &url))
+    }
     fn add_remote(api, repo: String, name: String, url: String) -> () { api.write(&repo, &["refs"], |writer| writer.add_remote(&name, &url)) }
     /// Renames a remote, with its remote branches.
     fn rename_remote(api, repo: String, from: String, to: String) -> () { api.write(&repo, &["refs"], |writer| writer.rename_remote(&from, &to)) }
@@ -802,12 +832,12 @@ commands! {
 
     /// A new commit that takes `at`'s changes back.
     fn revert(api, repo: String, at: String) -> Outcome {
-        let title = format!("Reverted {}", short(&at));
+        let title = said!("api.reverted", "Reverted {at}", at = short(&at));
         api.undoable(&repo, &["head", "refs", "index"], Undo::Reset("--keep"), |_| title, |writer| writer.revert(&at))
     }
     /// `at`'s changes again, as a new commit on the current branch.
     fn cherry_pick(api, repo: String, at: String) -> Outcome {
-        let title = format!("Cherry-picked {}", short(&at));
+        let title = said!("api.cherryPicked", "Cherry-picked {at}", at = short(&at));
         api.undoable(&repo, &["head", "refs", "index"], Undo::Reset("--keep"), |_| title, |writer| writer.cherry_pick(&at))
     }
     /// Moves the current branch to `at`: soft, mixed or hard (which saves your local changes first).
@@ -817,18 +847,18 @@ commands! {
             ResetMode::Mixed => "--mixed",
             ResetMode::Hard => "--keep",
         });
-        let title = format!("Reset to {}", short(&at));
+        let title = said!("api.resetTo", "Reset to {at}", at = short(&at));
         api.undoable(&repo, &["head", "refs", "index"], undo, |_| title, |writer| writer.reset(&at, mode))
     }
     /// Takes the last commit back; its changes are staged again.
     fn undo_commit(api, repo: String) -> () {
-        api.undoable(&repo, &["head", "refs", "index"], Undo::Reset("--soft"), |_| "Took back the last commit".into(), |writer| writer.undo_commit())
+        api.undoable(&repo, &["head", "refs", "index"], Undo::Reset("--soft"), |_| said!("api.tookBack", "Took back the last commit"), |writer| writer.undo_commit())
     }
     /// The remote branches that have `at`.
     fn on_remotes(api, repo: String, at: String) -> Vec<String> { api.repos.require(&repo)?; Writer::new(&repo, false).on_remotes(&at) }
     /// Merges a branch, remote branch or tag into the current branch.
     fn merge(api, repo: String, name: String) -> Outcome {
-        api.undoable(&repo, &["head", "refs", "index"], Undo::Reset("--keep"), |_| format!("Merged {name}"), |writer| writer.merge(&name))
+        api.undoable(&repo, &["head", "refs", "index"], Undo::Reset("--keep"), |_| said!("api.merged", "Merged {name}", name = name), |writer| writer.merge(&name))
     }
     /// The last write that can be undone (a commit, merge, reset, branch switch…), and what Undo does; null when none.
     fn last_action(api, repo: String) -> Option<LastAction> { api.repos.require(&repo)?; Ok(Writer::new(&repo, false).last_action()) }
@@ -871,7 +901,7 @@ commands! {
     fn rebase_plan(api, repo: String, onto: String) -> Vec<CommitInfo> { api.repos.require(&repo)?; Writer::new(&repo, false).rebase_plan(&onto) }
     /// Rebases the current branch onto `onto` with the commits in the new order, each kept, reworded, squashed or dropped.
     fn rebase(api, repo: String, onto: String, steps: Vec<RebaseStep>) -> Outcome {
-        api.undoable(&repo, &["head", "refs", "index"], Undo::Reset("--keep"), |_| format!("Rebased onto {onto}"), |writer| writer.rebase(&onto, &steps))
+        api.undoable(&repo, &["head", "refs", "index"], Undo::Reset("--keep"), |_| said!("api.rebased", "Rebased onto {onto}", onto = onto), |writer| writer.rebase(&onto, &steps))
     }
 
     /* Settings */
@@ -888,7 +918,7 @@ commands! {
     fn clear_call_graphs(api) -> u32 { api.repos.clear_call_graphs() }
     /// Opens one of Haunt's own folders in the file manager.
     fn open_folder(api, which: AppFolder) -> () {
-        let folder = api.repos.folder(which).ok_or("Haunt keeps no such folder here.")?;
+        let folder = api.repos.folder(which).ok_or_else(|| said!("api.noSuchFolder", "Haunt keeps no such folder here."))?;
         crate::editor::reveal(&folder)
     }
 

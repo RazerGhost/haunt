@@ -110,7 +110,7 @@ impl Writer<'_> {
     pub fn bisect_start(&self, bad: &str, good: &str) -> Result<(), String> {
         let bad = revision(bad)?;
         let good = revision(good)?;
-        self.refuse_checkout("Bisecting")?;
+        self.refuse_checkout(super::refs::Checkout::Bisect)?;
         let queue = queue(self.root);
         let _turn = queue.lock().unwrap();
         self.wait_for_lock()?;
@@ -125,7 +125,7 @@ impl Writer<'_> {
             BisectMark::Bad => "bad",
             BisectMark::Skip => "skip",
         };
-        self.refuse_checkout("Bisecting")?;
+        self.refuse_checkout(super::refs::Checkout::Bisect)?;
         let queue = queue(self.root);
         let _turn = queue.lock().unwrap();
         self.wait_for_lock()?;
@@ -136,9 +136,9 @@ impl Writer<'_> {
     pub fn bisect_jump(&self, sha: &str) -> Result<(), String> {
         let state = bisect_state(self.root);
         if !state.candidates.iter().any(|candidate| candidate == sha) {
-            return Err("That commit is not one still in play.".into());
+            return Err(said!("bisect.notInPlay", "That commit is not one still in play."));
         }
-        self.refuse_checkout("Bisecting")?;
+        self.refuse_checkout(super::refs::Checkout::Bisect)?;
         let queue = queue(self.root);
         let _turn = queue.lock().unwrap();
         self.wait_for_lock()?;

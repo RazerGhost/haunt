@@ -1,6 +1,8 @@
 import type { CallEdge, FunctionNode, Part, Scan, ScannedFile } from '~~/shared/types'
 import type { Calls } from '~/utils/bridge'
 import { addTo } from '~~/shared/collect'
+// `said` here is the scan's status: Haunt's own words from Rust are worded with `rustSaid`.
+import { said as rustSaid } from '~/utils/text'
 
 /*
  * The code of the shown repository, as the scanner read it: the structure (parts, files, functions) and, a little
@@ -165,7 +167,7 @@ export function startCode(): void {
     } else if (news.type === 'error') {
       status.value = 'error'
       const text = news.message
-      said.value = () => text
+      said.value = () => rustSaid(text)
     }
   })
 }

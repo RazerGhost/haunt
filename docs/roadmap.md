@@ -1,7 +1,8 @@
 # Roadmap
 
-What comes after the first release, in the order we mean to build it. Nothing here is built yet; check the code before
-starting on an item, since parts may exist by then. [features.md](features.md) describes what Haunt does today.
+What comes after the first release, in the order we mean to build it. Steps marked done are built and say what is left
+of them; check the code before starting on an item, since parts may exist by then. [features.md](features.md)
+describes what Haunt does today.
 
 ## 1. Start what takes outside waiting time
 
@@ -17,19 +18,14 @@ These cost little work but wait on someone else, so they start first.
 
 ## 2. Translations
 
-The window's texts are in app/locales (English and Dutch), looked up by `t()` in app/utils/text.ts. What is left:
-
-- **Texts that come from Rust** are still English: errors, the operation banner's title, the undo notices, and the
-  trust labels and notes (repos.rs), which show up inside Dutch sentences. Send them as codes with values, as
-  shared/risk.ts now does, and word them in the window.
+Done: the window's texts are in app/locales (English and Dutch), looked up by `t()` in app/utils/text.ts; Haunt's own
+texts from Rust come as keys with values (`said!`, src-tauri/src/said.rs) and are worded in the window. What git itself
+says stays as git says it.
 
 ## 3. Repository manager
 
-Done: the repository manager (app/components/RepositoryManager.vue), clone and `git init`, and managing remotes from
-the sidebar. What is left:
-
-- **Remotes in the manager itself**: the manager shows them, but adding, renaming and removing happen in the sidebar
-  of an open tab, where writes have the tab's trust.
+Done: the repository manager (app/components/RepositoryManager.vue), clone and `git init`, and managing remotes, from
+the sidebar and from the manager.
 
 ## 4. Reflog
 
@@ -43,10 +39,10 @@ Done: ignoring files and stashing some from Local changes, side-by-side diffs th
 ## 6. Code map
 
 Done: bookmarked files, who changed each function last, exporting the canvas and the layer map, and Java, C#, Ruby,
-C and C++. What is left:
+C and C++. What is left, small:
 
-- **Ruby calls without brackets** (`total` alone) read as variables and are left out, as are Ruby blocks' own calls,
-  C++ methods only declared in their class, and C# properties and operators.
+- Reading a C# property (`order.Amount`) or using an operator (`a + b`) is not a call to it; C# event accessors and
+  C++ conversion-operator declarations are not read; a Ruby local assigned after a call of the same name hides it.
 
 ## 7. Signed installers and updates
 

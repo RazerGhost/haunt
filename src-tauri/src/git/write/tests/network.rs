@@ -133,7 +133,7 @@ fn pulls_fast_forward_then_rebases_or_merges_and_undoes_a_conflict() {
     assert_eq!(head(&b), before);
     assert!(b.sh(&["status", "--porcelain"]).trim().is_empty());
     assert_eq!(puller.pull(PullMode::Rebase, &quiet).unwrap(), PullResult::Conflicts);
-    assert!(puller.operation().unwrap().unwrap().title.starts_with("Rebasing main"));
+    assert!(crate::said::english(&puller.operation().unwrap().unwrap().title).starts_with("Rebasing main"));
     puller.abort().unwrap();
     assert_eq!(head(&b), before);
     assert!(!b.path(".git/rebase-merge").exists() && !b.path(".git/rebase-apply").exists());

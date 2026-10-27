@@ -1,0 +1,5 @@
+{
+  "notRepository": "{root} zit niet in een git-repository: {error}",
+  "notFound": "\"{name}\" is hier geen commit, branch of tag.",
+  "notCommit": "\"{name}\" is geen commit."
+}

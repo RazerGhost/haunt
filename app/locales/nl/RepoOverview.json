@@ -65,5 +65,11 @@
   "noExtension": "(geen extensie)",
   "readmeCut": "De README is langer dan dit; de rest staat in het bestand.",
   "linkCopied": "Link gekopieerd",
-  "linkNotCopied": "De link kon niet gekopieerd worden"
+  "linkNotCopied": "De link kon niet gekopieerd worden",
+  "addRemote": "Een remote toevoegen",
+  "copyUrl": "URL kopiëren",
+  "changeUrl": "URL wijzigen…",
+  "renameRemote": "Hernoemen…",
+  "removeRemote": "Verwijderen…",
+  "remoteActions": "Wat te doen met {name}"
 }

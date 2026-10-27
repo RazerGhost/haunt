@@ -182,7 +182,7 @@ fn title_from(branch: &str) -> String {
 pub fn pull_draft(root: &str, branch: &str, base: Option<&str>) -> Result<PullDraft, String> {
     let branch = super::cli::revision(branch)?;
     git(root, &["show-ref", "--verify", "--quiet", &format!("refs/heads/{branch}")])
-        .map_err(|_| format!("There is no branch \"{branch}\"."))?;
+        .map_err(|_| said!("remote.noBranch", "There is no branch \"{branch}\".", branch = branch))?;
     let own =
         git(root, &["config", "--get", &format!("branch.{branch}.remote")]).ok().map(|name| name.trim().to_owned());
     let remote = own
@@ -197,7 +197,7 @@ pub fn pull_draft(root: &str, branch: &str, base: Option<&str>) -> Result<PullDr
                 .cloned()
                 .or_else(|| (remotes.len() == 1).then(|| remotes[0].clone()))
         })
-        .ok_or("This repository has no remote to make a pull request on.")?;
+        .ok_or_else(|| said!("remote.noRemote", "This repository has no remote to make a pull request on."))?;
     let listed = git(root, &["for-each-ref", "--format=%(refname:short)", &format!("refs/remotes/{remote}/")])?;
     let prefix = format!("{remote}/");
     let bases: Vec<String> = lines_of(&listed)
@@ -211,10 +211,17 @@ pub fn pull_draft(root: &str, branch: &str, base: Option<&str>) -> Result<PullDr
         .filter(|name| bases.contains(name))
         .or_else(|| ["main", "master", "develop"].iter().map(|name| name.to_string()).find(|name| bases.contains(name)))
         .or_else(|| bases.first().cloned())
-        .ok_or("The remote has no branch to go into: fetch first.")?;
+        .ok_or_else(|| said!("remote.noBase", "The remote has no branch to go into: fetch first."))?;
     let base = match base {
         Some(wanted) if bases.iter().any(|known| known == wanted) => wanted.to_owned(),
-        Some(wanted) => return Err(format!("{remote} has no branch \"{wanted}\".")),
+        Some(wanted) => {
+            return Err(said!(
+                "remote.noSuchBase",
+                "{remote} has no branch \"{wanted}\".",
+                remote = remote,
+                wanted = wanted
+            ))
+        }
         None => default,
     };
     let upstream = git(root, &["rev-parse", "--abbrev-ref", "--end-of-options", &format!("{branch}@{{upstream}}")])

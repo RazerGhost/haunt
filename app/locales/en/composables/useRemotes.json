@@ -21,5 +21,6 @@
   },
   "removeHelpNone": "Only here: nothing changes on the remote itself.",
   "removeRemote": "Remove remote",
-  "notRemoved": "The remote was not removed"
+  "notRemoved": "The remote was not removed",
+  "removeHelpAny": "Its remote branches go too, and the branches that tracked them track nothing after. Nothing changes on the remote itself."
 }

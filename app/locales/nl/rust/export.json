@@ -1,0 +1,7 @@
+{
+  "notImage": "Alleen een .png- of .svg-bestand kan opgeslagen worden.",
+  "notFull": "De plek van het bestand is geen volledig pad.",
+  "noFolder": "De map om in op te slaan bestaat niet.",
+  "unreadable": "De afbeelding kon niet gelezen worden.",
+  "notSaved": "Het bestand kon niet opgeslagen worden: {error}"
+}

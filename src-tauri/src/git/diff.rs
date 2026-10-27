@@ -232,20 +232,21 @@ pub enum Wanted<'a> {
 }
 
 pub fn resolve_base(root: &str, wanted: Wanted, head: &Head) -> Result<Base, String> {
-    let sha = head.sha.clone().ok_or("This repository has no commit yet.")?;
-    let last = |label: &str| Base {
+    let sha = head.sha.clone().ok_or_else(|| said!("diff.noCommit", "This repository has no commit yet."))?;
+    let last = |label: String| Base {
         kind: BaseKind::Uncommitted,
-        label: label.into(),
+        label,
         reference: Some("HEAD".into()),
         sha: sha.clone(),
         ahead: 0,
         behind: 0,
     };
     let target = match wanted {
-        Wanted::Uncommitted => return Ok(last("the last commit")),
+        Wanted::Uncommitted => return Ok(last(said!("diff.lastCommit", "the last commit"))),
         Wanted::Ref(name) => {
-            let found =
-                commit_of(root, name).ok_or_else(|| format!("\"{name}\" is not a commit, branch or tag here."))?;
+            let found = commit_of(root, name).ok_or_else(|| {
+                said!("diff.notCommit", "\"{name}\" is not a commit, branch or tag here.", name = name)
+            })?;
             return Ok(Base {
                 kind: BaseKind::Ref,
                 label: name.into(),
@@ -257,10 +258,11 @@ pub fn resolve_base(root: &str, wanted: Wanted, head: &Head) -> Result<Base, Str
         }
         Wanted::MergeBase(branch) => match branch.map(str::to_owned).or_else(|| main_branch(root)) {
             Some(target) => target,
-            None => return Ok(last("the last commit (no main branch found)")),
+            None => return Ok(last(said!("diff.lastCommitNoMain", "the last commit (no main branch found)"))),
         },
     };
-    let target_sha = commit_of(root, &target).ok_or_else(|| format!("\"{target}\" is not a branch here."))?;
+    let target_sha = commit_of(root, &target)
+        .ok_or_else(|| said!("diff.notBranch", "\"{target}\" is not a branch here.", target = target))?;
     let base = git(root, &["merge-base", &sha, &target_sha])?.trim().to_owned();
     let counts = git(root, &["rev-list", "--left-right", "--count", &format!("{target_sha}...{sha}")])?;
     let mut counts = counts.split_whitespace().map(|count| count.parse().unwrap_or(0));
@@ -268,9 +270,9 @@ pub fn resolve_base(root: &str, wanted: Wanted, head: &Head) -> Result<Base, Str
     let branch = head.branch.as_deref();
     let on_target = branch.is_some_and(|branch| target == branch || target.ends_with(&format!("/{branch}")));
     let label = if on_target {
-        format!("{target} (uncommitted work)")
+        said!("diff.uncommittedWork", "{target} (uncommitted work)", target = target)
     } else {
-        format!("where {} left {target}", branch.unwrap_or("HEAD"))
+        said!("diff.whereLeft", "where {branch} left {target}", branch = branch.unwrap_or("HEAD"), target = target)
     };
     Ok(Base { kind: BaseKind::MergeBase, label, reference: Some(target), sha: base, ahead, behind })
 }

@@ -1,0 +1,6 @@
+{
+  "badLine": "\"{line}\" kan niet in .gitignore.",
+  "nothing": "Niets om te negeren.",
+  "link": "De .gitignore van deze repository is een link: Haunt laat hem met rust.",
+  "notWritten": ".gitignore kon niet geschreven worden: {error}"
+}

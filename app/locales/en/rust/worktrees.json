@@ -1,0 +1,8 @@
+{
+  "notFull": "A worktree's folder is a full path.",
+  "notEmpty": "{path} is there already and not empty: pick another folder.",
+  "noBranch": "There is no branch called \"{branch}\".",
+  "unknown": "That is not a worktree of this repository.",
+  "main": "The repository's own folder is not a worktree to remove.",
+  "changes": "{path} has changes not committed yet."
+}

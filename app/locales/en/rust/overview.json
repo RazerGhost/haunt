@@ -1,0 +1,7 @@
+{
+  "noFolder": "That folder is not there.",
+  "notRepository": "That folder is not a git repository.",
+  "noRemote": "That remote is not there.",
+  "noPage": "That remote has no page on the web.",
+  "otherPage": "Only pages of the repository's remotes can be opened."
+}

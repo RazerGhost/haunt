@@ -1,0 +1,10 @@
+{
+  "notPatchFile": "\"{path}\" is geen patchbestand.",
+  "notPatch": "{name} verandert geen bestand: het is geen patch.",
+  "notFolder": "\"{folder}\" is geen map.",
+  "noCommit": "Deze repository heeft nog geen commit.",
+  "doesNotApply": "{name} past niet: {problem}",
+  "choose": "Kies eerst een patchbestand.",
+  "busy": "Er loopt een rebase of een andere patch: maak die eerst af of stop hem.",
+  "nothingApplied": "{problem}\nEr is niets toegepast."
+}

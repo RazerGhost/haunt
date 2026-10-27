@@ -70,3 +70,22 @@ export function locale(): string {
   const system = import.meta.client ? navigator.language : ''
   return system.toLowerCase().startsWith(language) ? system : language
 }
+
+const MARK = '\u0001'
+
+/**
+ * A text from Haunt's Rust side in the window's language: Rust sends a key, its values and the English
+ * (src-tauri/src/said.rs), worded here from app/locales/<language>/rust/; a key the window does not know, or any other
+ * text (what git said), shows as it came.
+ */
+export function said(text: string): string {
+  if (!text.startsWith(MARK)) return text
+  const [, key = '', values = '{}', english = text] = text.split(MARK)
+  const full = `rust.${key}`
+  let params: Record<string, string> = {}
+  try {
+    params = JSON.parse(values) as Record<string, string>
+  } catch { /* the English, then */ }
+  const worded = t(full, params)
+  return worded === full ? english : worded
+}

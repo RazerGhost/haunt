@@ -1,0 +1,7 @@
+{
+  "badName": "\"{name}\" kan geen naam van een remote zijn.",
+  "none": "Deze repository heeft geen remote \"{name}\".",
+  "there": "Deze repository heeft al een remote \"{name}\".",
+  "badUrl": "Dat is geen URL die git kan gebruiken.",
+  "ext": "Haunt gebruikt geen ext::-URL's: die draaien een commando."
+}

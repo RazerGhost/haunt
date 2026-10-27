@@ -25,7 +25,7 @@ fn prefix_of(set: &str) -> Result<&'static str, String> {
     SETS.iter()
         .find(|(name, _)| *name == set)
         .map(|(_, prefix)| *prefix)
-        .ok_or_else(|| format!("{set} is not an icon set Haunt knows."))
+        .ok_or_else(|| said!("icons.unknownSet", "{set} is not an icon set Haunt knows.", set = set))
 }
 
 fn file(dir: &Path, set: &str) -> PathBuf {
@@ -40,7 +40,8 @@ pub fn downloaded(dir: &Path) -> Vec<String> {
 /// A downloaded set's icons, as kept.
 pub fn read(dir: &Path, set: &str) -> Result<String, String> {
     prefix_of(set)?;
-    std::fs::read_to_string(file(dir, set)).map_err(|_| format!("The {set} icons are not downloaded."))
+    std::fs::read_to_string(file(dir, set))
+        .map_err(|_| said!("icons.notDownloaded", "The {set} icons are not downloaded.", set = set))
 }
 
 /// Checks and keeps a set the window downloaded (`text`, the Iconify API's answer).
@@ -48,7 +49,8 @@ pub fn save(dir: &Path, set: &str, text: &str) -> Result<(), String> {
     let kept = checked(set, text)?;
     let path = file(dir, set);
     std::fs::create_dir_all(path.parent().unwrap()).map_err(|error| error.to_string())?;
-    std::fs::write(&path, kept).map_err(|error| format!("The {set} icons could not be kept: {error}"))
+    std::fs::write(&path, kept)
+        .map_err(|error| said!("icons.notKept", "The {set} icons could not be kept: {error}", set = set, error = error))
 }
 
 pub fn delete(dir: &Path, set: &str) -> Result<(), String> {
@@ -96,19 +98,27 @@ fn safe(body: &str) -> bool {
 fn checked(set: &str, text: &str) -> Result<String, String> {
     let prefix = prefix_of(set)?;
     if text.len() > MOST {
-        return Err("The downloaded icons are too large.".into());
+        return Err(said!("icons.tooLarge", "The downloaded icons are too large."));
     }
     let value: Value =
-        serde_json::from_str(text).map_err(|_| "The downloaded icons are not an icon set.".to_string())?;
+        serde_json::from_str(text).map_err(|_| said!("icons.notASet", "The downloaded icons are not an icon set."))?;
     if value["prefix"].as_str() != Some(prefix) {
-        return Err(format!("The downloaded icons are not {set}'s."));
+        return Err(said!("icons.otherSet", "The downloaded icons are not {set}'s.", set = set));
     }
     let number = |value: &Value| value.as_f64().filter(|number| (0.0..=10_000.0).contains(number));
     let mut icons = Map::new();
-    for (name, icon) in value["icons"].as_object().ok_or("The downloaded icons have no icons.")? {
-        let body = icon["body"].as_str().ok_or_else(|| format!("The icon {name} has no drawing."))?;
+    for (name, icon) in
+        value["icons"].as_object().ok_or_else(|| said!("icons.noIcons", "The downloaded icons have no icons."))?
+    {
+        let body = icon["body"]
+            .as_str()
+            .ok_or_else(|| said!("icons.noDrawing", "The icon {name} has no drawing.", name = name))?;
         if !safe(body) {
-            return Err(format!("The icon {name} holds more than a drawing; it was not kept."));
+            return Err(said!(
+                "icons.moreThanDrawing",
+                "The icon {name} holds more than a drawing; it was not kept.",
+                name = name
+            ));
         }
         let mut kept = Map::new();
         kept.insert("body".into(), body.into());

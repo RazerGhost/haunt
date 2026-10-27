@@ -23,7 +23,9 @@ fn open(root: &str) -> Result<(gix::Repository, String), String> {
     if let Some((repo, prefix)) = known.get(root) {
         return Ok((repo.to_thread_local(), prefix.clone()));
     }
-    let repo = gix::discover(root).map_err(|error| format!("{root} is not in a git repository: {error}"))?;
+    let repo = gix::discover(root).map_err(|error| {
+        said!("objects.notRepository", "{root} is not in a git repository: {error}", root = root, error = error)
+    })?;
     // The opened folder's place in the repository ("" at its root, "packages/app/" deeper in).
     let prefix = repo
         .workdir()
@@ -63,11 +65,11 @@ pub fn signed<'a>(root: &str, shas: impl Iterator<Item = &'a str>) -> Vec<bool> 
 fn commit_of<'repo>(repo: &'repo gix::Repository, name: &str) -> Result<gix::Commit<'repo>, String> {
     let name = revision(name)?;
     repo.rev_parse_single(name)
-        .map_err(|_| format!("\"{name}\" is not a commit, branch or tag here."))?
+        .map_err(|_| said!("objects.notFound", "\"{name}\" is not a commit, branch or tag here.", name = name))?
         .object()
         .map_err(|error| error.to_string())?
         .peel_to_commit()
-        .map_err(|_| format!("\"{name}\" is not a commit."))
+        .map_err(|_| said!("objects.notCommit", "\"{name}\" is not a commit.", name = name))
 }
 
 /// A blob's bytes, or None when it is not there.

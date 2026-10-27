@@ -1,0 +1,6 @@
+{
+  "noBranch": "Er is geen branch \"{branch}\".",
+  "noRemote": "Deze repository heeft geen remote om een pull request op te maken.",
+  "noBase": "De remote heeft geen branch om in te gaan: fetch eerst.",
+  "noSuchBase": "{remote} heeft geen branch \"{wanted}\"."
+}

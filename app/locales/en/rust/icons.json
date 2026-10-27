@@ -1,0 +1,11 @@
+{
+  "unknownSet": "{set} is not an icon set Haunt knows.",
+  "notDownloaded": "The {set} icons are not downloaded.",
+  "notKept": "The {set} icons could not be kept: {error}",
+  "tooLarge": "The downloaded icons are too large.",
+  "notASet": "The downloaded icons are not an icon set.",
+  "otherSet": "The downloaded icons are not {set}'s.",
+  "noIcons": "The downloaded icons have no icons.",
+  "noDrawing": "The icon {name} has no drawing.",
+  "moreThanDrawing": "The icon {name} holds more than a drawing; it was not kept."
+}

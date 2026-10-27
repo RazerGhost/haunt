@@ -1,0 +1,22 @@
+{
+  "silent": "git is mislukt zonder te zeggen waarom.",
+  "couldNotStart": "git kon niet starten: {error}",
+  "detached": "Je zit niet op een branch (HEAD is detached). Switch eerst naar een branch.",
+  "noRemoteToFetch": "Deze repository heeft geen remote om van te fetchen.",
+  "noSuchRemote": "Deze repository heeft geen remote \"{name}\".",
+  "fetchStopped": "Het fetchen is gestopt.",
+  "noPullRefs": "{remote} biedt geen pull requests als refs aan. GitHub, GitLab en Gitea doen dat wel; andere hosts misschien niet.",
+  "noPull": "{remote} heeft geen pull request #{number}.",
+  "pullUntrusted": "Pullen checkt bestanden uit en kan de hooks en filters van deze repository draaien, dus het werkt alleen in een vertrouwde map. Fetchen werkt hier wel; vertrouw deze map om te pullen.",
+  "noUpstream": "{branch} volgt geen remote branch, dus er is niets te pullen. Push hem eerst om er een in te stellen.",
+  "pullStopped": "Het pullen is gestopt.",
+  "submodulesUntrusted": "Submodules bijwerken clonet van de adressen in de .gitmodules van deze repository en checkt bestanden uit, dus het werkt alleen in een vertrouwde map. Vertrouw deze map om ze bij te werken.",
+  "submodulesStopped": "Het bijwerken van de submodules is gestopt.",
+  "noRemoteToPush": "Deze repository heeft geen remote om naar te pushen.",
+  "noRemoteNamed": "Er is geen remote die {name} heet.",
+  "pushUntrusted": "Pushen draait de pre-push-hook van deze repository, dus het werkt alleen in een vertrouwde map. Vertrouw deze map om te pushen.",
+  "pushStopped": "Het pushen is gestopt.",
+  "stale": "{remote}/{target} is veranderd sinds deze repository hem voor het laatst fetchte, dus hij is niet overschreven. Fetch en kijk eerst wat er staat.",
+  "noTag": "Er is geen tag {name}.",
+  "tagThere": "{remote} heeft al een tag {name} op een andere commit; die is gelaten zoals hij is."
+}

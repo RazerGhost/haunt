@@ -12,6 +12,7 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
+use super::conflicts::OperationKind;
 use super::{queue, Writer};
 use crate::git::cli::{git as read, revision};
 
@@ -43,7 +44,7 @@ impl Writer<'_> {
         let at = revision(at)?;
         let sha =
             read(self.root, &["rev-parse", "--verify", "--quiet", "--end-of-options", &format!("{at}^{{commit}}")])
-                .map_err(|_| format!("\"{at}\" is not a commit here."))?;
+                .map_err(|_| said!("undo.notCommit", "\"{at}\" is not a commit here.", at = at))?;
         Ok(sha.trim().to_owned())
     }
 
@@ -55,14 +56,25 @@ impl Writer<'_> {
     /// Refuses while a merge, revert, cherry-pick or rebase is going on: that one is finished or aborted first.
     pub(super) fn refuse_busy(&self) -> Result<(), String> {
         match self.operation()? {
-            Some(going) => Err(format!("{} is not finished. Continue or abort it first.", going.title)),
+            Some(going) => Err(match going.kind {
+                OperationKind::Merge => said!("undo.busyMerge", "A merge is not finished. Continue or abort it first."),
+                OperationKind::Revert => {
+                    said!("undo.busyRevert", "A revert is not finished. Continue or abort it first.")
+                }
+                OperationKind::CherryPick => {
+                    said!("undo.busyCherryPick", "A cherry-pick is not finished. Continue or abort it first.")
+                }
+                OperationKind::Rebase => {
+                    said!("undo.busyRebase", "A rebase is not finished. Continue or abort it first.")
+                }
+            }),
             None => Ok(()),
         }
     }
 
     /// A new commit on the current branch that takes `at`'s changes back.
     pub fn revert(&self, at: &str) -> Result<Outcome, String> {
-        self.refuse_checkout("Reverting")?;
+        self.refuse_checkout(super::refs::Checkout::Revert)?;
         self.refuse_busy()?;
         let sha = self.commit_of(at)?;
         let queue = queue(self.root);
@@ -78,7 +90,7 @@ impl Writer<'_> {
 
     /// `at`'s changes again, as a new commit on the current branch.
     pub fn cherry_pick(&self, at: &str) -> Result<Outcome, String> {
-        self.refuse_checkout("Cherry-picking")?;
+        self.refuse_checkout(super::refs::Checkout::CherryPick)?;
         self.refuse_busy()?;
         let sha = self.commit_of(at)?;
         let queue = queue(self.root);
@@ -118,7 +130,7 @@ impl Writer<'_> {
     /// Moves the current branch to `at`. A hard reset saves your local changes first (Recently discarded).
     pub fn reset(&self, at: &str, mode: ResetMode) -> Result<(), String> {
         if mode == ResetMode::Hard {
-            self.refuse_checkout("A hard reset")?;
+            self.refuse_checkout(super::refs::Checkout::HardReset)?;
         }
         self.refuse_busy()?;
         let sha = self.commit_of(at)?;
@@ -160,10 +172,13 @@ impl Writer<'_> {
     pub fn undo_commit(&self) -> Result<(), String> {
         self.refuse_busy()?;
         if read(self.root, &["rev-parse", "--verify", "--quiet", "HEAD~1^{commit}"]).is_err() {
-            return Err("The first commit of a repository cannot be undone this way.".into());
+            return Err(said!("undo.firstCommit", "The first commit of a repository cannot be undone this way."));
         }
         if self.is_merge("HEAD") {
-            return Err("The last commit is a merge. Reset the branch to the commit you want instead.".into());
+            return Err(said!(
+                "undo.merge",
+                "The last commit is a merge. Reset the branch to the commit you want instead."
+            ));
         }
         let queue = queue(self.root);
         let _turn = queue.lock().unwrap();

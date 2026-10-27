@@ -132,7 +132,7 @@ impl Sidecar {
                     let reply = if parsed.ok == Some(true) {
                         Ok(parsed.value.map(|raw| raw.get().to_owned()).unwrap_or_else(|| "null".into()))
                     } else {
-                        Err(parsed.error.unwrap_or_else(|| "The scanner could not answer.".into()))
+                        Err(parsed.error.unwrap_or_else(|| said!("sidecar.noAnswer", "The scanner could not answer.")))
                     };
                     if let Some(sender) = waiting.lock().unwrap().remove(&id) {
                         let _ = sender.send(reply);
@@ -153,7 +153,7 @@ impl Sidecar {
             }
             // stdout closed: the process is gone. Whoever still waits for an answer hears so now, not after a timeout.
             for (_, sender) in waiting.lock().unwrap().drain() {
-                let _ = sender.send(Err("The scanner stopped before it answered.".into()));
+                let _ = sender.send(Err(said!("sidecar.stoppedEarly", "The scanner stopped before it answered.")));
             }
             said(Said::Exited);
         });
@@ -173,7 +173,7 @@ impl Sidecar {
         self.pending.lock().unwrap().insert(id, sender);
         if writeln!(self.stdin.lock().unwrap(), "{request}").is_err() {
             if let Some(sender) = self.pending.lock().unwrap().remove(&id) {
-                let _ = sender.send(Err("The scanner is not running.".into()));
+                let _ = sender.send(Err(said!("sidecar.notRunning", "The scanner is not running.")));
             }
         }
         receiver

@@ -1,0 +1,15 @@
+{
+  "soft": "{branch} goes back to {sha}; the changes stay staged.",
+  "mixed": "{branch} goes back to {sha}; your files stay as they are.",
+  "keep": "{branch} and its files go back to {sha}.",
+  "switchBack": "Back to {branch}.",
+  "recreate": "{name} is made again at {sha}.",
+  "backAndDelete": "Back to {branch}, and {name} is deleted.",
+  "delete": "{name} is deleted.",
+  "renameBack": "{to} is named {from} again.",
+  "nothing": "There is nothing to undo.",
+  "changed": "Something has changed since, so it cannot be undone from here.",
+  "detached": "HEAD was not on a branch before.",
+  "noCommit": "There was no commit before.",
+  "localChanges": "Your local changes are in the files it would change. Commit, stash or discard them, then undo."
+}

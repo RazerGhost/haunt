@@ -1,0 +1,6 @@
+{
+  "running": "Er draaien al tests: wacht erop, of stop ze.",
+  "outside": "{path} zit niet in deze repository.",
+  "gone": "{path} is er niet meer: scan opnieuw.",
+  "notStarted": "De tests konden niet starten: {error}"
+}

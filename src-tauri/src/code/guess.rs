@@ -1,7 +1,7 @@
 //! The calls between the functions read with tree-sitter, by name: there is no type checker, so a call goes to a function of
 //! that name in the caller's class or impl first, then its file, then the files it imports, then the one function
 //! anywhere with that name. Calls found this way are marked `guessed`; an ambiguous name is left out rather than guessed
-//! wrong.
+//! wrong. A C++ method declared in its class and defined elsewhere is called as its definition.
 
 use std::collections::{HashMap, HashSet};
 
@@ -45,8 +45,19 @@ pub fn guessed_calls(readings: &[(String, &FileReading)], imports: &[(String, St
     for (path, reading) in readings {
         entries(path, &reading.tree, None, &mut all);
     }
+    // A C++ method declared in a header and defined in a .cpp is called as its definition, where its calls are.
+    let declarations: HashSet<&str> =
+        readings.iter().flat_map(|(_, reading)| reading.declarations.iter().map(String::as_str)).collect();
+    let defined: HashSet<(Option<&str>, &str)> = all
+        .iter()
+        .filter(|entry| entry.kind == FunctionKind::Method && !declarations.contains(entry.id))
+        .map(|entry| (entry.container, call_name(entry.name)))
+        .collect();
     let mut by_name: HashMap<&str, Vec<&Entry>> = HashMap::new();
     for entry in &all {
+        if declarations.contains(entry.id) && defined.contains(&(entry.container, call_name(entry.name))) {
+            continue;
+        }
         by_name.entry(call_name(entry.name)).or_default().push(entry);
     }
     let mut imported: HashMap<&str, HashSet<&str>> = HashMap::new();

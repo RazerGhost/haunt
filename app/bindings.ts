@@ -236,7 +236,15 @@ export const commands = {
 	/**  Pushes the current branch (to `remote` the first time, when there are several); `force` overwrites with a lease. */
 	push: (repo: string, remote: string | null, force: boolean) => __TAURI_INVOKE<PushResult>("push", { repo, remote, force }),
 	pushTag: (repo: string, name: string, remote: string | null) => __TAURI_INVOKE<PushResult>("push_tag", { repo, name, remote }),
-	/**  Stops the fetch, pull or push running in `repo`. */
+	/**
+	 *  Stops the fetch, pull or push running in `repo`.
+	 *  Remotes of a repository by its path, open in a tab or not (the repository manager's): config only, so nothing
+	 *  of the repository runs and its trust does not matter.
+	 */
+	repositoryAddRemote: (path: string, name: string, url: string) => __TAURI_INVOKE<null>("repository_add_remote", { path, name, url }),
+	repositoryRenameRemote: (path: string, from: string, to: string) => __TAURI_INVOKE<null>("repository_rename_remote", { path, from, to }),
+	repositoryRemoveRemote: (path: string, name: string) => __TAURI_INVOKE<null>("repository_remove_remote", { path, name }),
+	repositorySetRemoteUrl: (path: string, name: string, url: string) => __TAURI_INVOKE<null>("repository_set_remote_url", { path, name, url }),
 	addRemote: (repo: string, name: string, url: string) => __TAURI_INVOKE<null>("add_remote", { repo, name, url }),
 	/**  Renames a remote, with its remote branches. */
 	renameRemote: (repo: string, from: string, to: string) => __TAURI_INVOKE<null>("rename_remote", { repo, from, to }),

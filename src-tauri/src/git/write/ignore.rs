@@ -17,7 +17,7 @@ fn pattern(line: &str) -> Result<&str, String> {
         || line.contains(['\n', '\r', '\0'])
         || line.split('/').any(|part| part == "..");
     if bad {
-        return Err(format!("\"{line}\" cannot go in .gitignore."));
+        return Err(said!("ignore.badLine", "\"{line}\" cannot go in .gitignore.", line = line));
     }
     Ok(line)
 }
@@ -51,7 +51,7 @@ impl Writer<'_> {
     pub fn ignore(&self, patterns: &[String]) -> Result<(), String> {
         let patterns: Vec<&str> = patterns.iter().map(|line| pattern(line)).collect::<Result<_, _>>()?;
         if patterns.is_empty() {
-            return Err("Nothing to ignore.".into());
+            return Err(said!("ignore.nothing", "Nothing to ignore."));
         }
         let (toplevel, prefix) = top(self.root)?;
         // An anchored pattern ("/src/a.ts") is relative to the folder the .gitignore is in: the top, so the opened
@@ -68,19 +68,19 @@ impl Writer<'_> {
         let _turn = queue.lock().unwrap();
         let file = Path::new(&toplevel).join(".gitignore");
         if file.is_symlink() {
-            return Err("This repository's .gitignore is a link: Haunt leaves it alone.".into());
+            return Err(said!("ignore.link", "This repository's .gitignore is a link: Haunt leaves it alone."));
         }
         let before = std::fs::read_to_string(&file).unwrap_or_default();
         let (new, text) = addition(&before, &placed);
         if new.is_empty() {
             return Ok(());
         }
-        let mut out = std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(&file)
-            .map_err(|error| format!(".gitignore could not be written: {error}"))?;
-        out.write_all(text.as_bytes()).map_err(|error| format!(".gitignore could not be written: {error}"))?;
+        let mut out =
+            std::fs::OpenOptions::new().create(true).append(true).open(&file).map_err(|error| {
+                said!("ignore.notWritten", ".gitignore could not be written: {error}", error = error)
+            })?;
+        out.write_all(text.as_bytes())
+            .map_err(|error| said!("ignore.notWritten", ".gitignore could not be written: {error}", error = error))?;
         record(
             self.root,
             Activity {

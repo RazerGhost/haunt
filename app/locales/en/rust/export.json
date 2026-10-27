@@ -1,0 +1,7 @@
+{
+  "notImage": "Only a .png or .svg file can be saved.",
+  "notFull": "The file's place is not a full path.",
+  "noFolder": "The folder to save in does not exist.",
+  "unreadable": "The image could not be read.",
+  "notSaved": "The file could not be saved: {error}"
+}

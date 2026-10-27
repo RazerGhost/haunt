@@ -1,0 +1,9 @@
+{
+  "noCommit": "Deze repository heeft nog geen commit.",
+  "lastCommit": "de laatste commit",
+  "notCommit": "\"{name}\" is hier geen commit, branch of tag.",
+  "lastCommitNoMain": "de laatste commit (geen main-branch gevonden)",
+  "notBranch": "\"{target}\" is hier geen branch.",
+  "uncommittedWork": "{target} (werk dat nog niet gecommit is)",
+  "whereLeft": "waar {branch} van {target} afging"
+}

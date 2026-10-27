@@ -9,16 +9,21 @@ pub fn save(path: &str, data: &str, base64: bool) -> Result<(), String> {
     let target = Path::new(path);
     let extension = target.extension().and_then(|ext| ext.to_str()).map(str::to_ascii_lowercase);
     if !matches!(extension.as_deref(), Some("png" | "svg")) {
-        return Err("Only a .png or .svg file can be saved.".into());
+        return Err(said!("export.notImage", "Only a .png or .svg file can be saved."));
     }
     if !target.is_absolute() {
-        return Err("The file's place is not a full path.".into());
+        return Err(said!("export.notFull", "The file's place is not a full path."));
     }
     if !target.parent().is_some_and(Path::is_dir) {
-        return Err("The folder to save in does not exist.".into());
+        return Err(said!("export.noFolder", "The folder to save in does not exist."));
     }
-    let bytes = if base64 { decode(data).ok_or("The image could not be read.")? } else { data.as_bytes().to_vec() };
-    fs::write(target, bytes).map_err(|error| format!("The file could not be saved: {error}"))
+    let bytes = if base64 {
+        decode(data).ok_or_else(|| said!("export.unreadable", "The image could not be read."))?
+    } else {
+        data.as_bytes().to_vec()
+    };
+    fs::write(target, bytes)
+        .map_err(|error| said!("export.notSaved", "The file could not be saved: {error}", error = error))
 }
 
 /// Standard base64 (with or without its `=` padding) to bytes; None for anything else. Small enough to keep here

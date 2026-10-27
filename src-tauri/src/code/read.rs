@@ -6,9 +6,12 @@
 //!   and `use`; Lua `require`; Python `import` and `from … import`; Go `import` of the module's own packages, through
 //!   go.mod, to a file of that package; Java `import` from the file's source folder; C# `using` of a namespace, to its
 //!   folder's first file; Ruby `require` and `require_relative`; C and C++ `#include "…"`, not `<…>`).
-//! - Calls: by the callee's name and how it is called; `guess.rs` matches them to functions across files.
+//! - Calls: by the callee's name and how it is called; `guess.rs` matches them to functions across files. A Ruby name
+//!   alone (`total`) is a call unless it is a local variable of its method; a block's calls count for its method.
+//! - C++ methods only declared in their class are listed as methods without calls, unless the file defines them.
+//! - C# properties and indexers with code, and operators (`operator +`, `implicit operator Money`), are methods.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use tree_sitter::{Node, Parser};
 
@@ -40,6 +43,8 @@ pub struct FileReading {
     pub imports: Vec<FileImport>,
     /// For PHP: the classes the file declares, by fully qualified name.
     pub classes: Vec<String>,
+    /// For C++: the ids of the methods only declared in their class (`int total();`), with no body here.
+    pub declarations: Vec<String>,
 }
 
 /// What resolving a file's imports needs.
@@ -149,6 +154,10 @@ fn kind_of(language: Language, kind: &str) -> Option<FunctionKind> {
         (Language::Csharp, "local_function_statement" | "anonymous_method_expression") => Function,
         (
             Language::Csharp,
+            "property_declaration" | "indexer_declaration" | "operator_declaration" | "conversion_operator_declaration",
+        ) => Method,
+        (
+            Language::Csharp,
             "class_declaration"
             | "struct_declaration"
             | "interface_declaration"
@@ -167,11 +176,22 @@ fn kind_of(language: Language, kind: &str) -> Option<FunctionKind> {
 }
 
 /// Items that are containers only when they have a body: Rust's `mod util;` declares a file and C++'s `class Order;`
-/// (or `struct order *o`) names a type; they hold nothing.
+/// (or `struct order *o`) names a type; they hold nothing. A C# property or indexer counts when it has code: `=> …` or
+/// an accessor with a body; an auto-property (`{ get; set; }`) is a field.
 fn is_container(language: Language, node: Node) -> bool {
-    kind_of(language, node.kind()).is_some()
-        && (!matches!(node.kind(), "mod_item" | "class_specifier" | "struct_specifier")
-            || field(node, "body").is_some())
+    if kind_of(language, node.kind()).is_none() {
+        return false;
+    }
+    match node.kind() {
+        "mod_item" | "class_specifier" | "struct_specifier" => field(node, "body").is_some(),
+        "property_declaration" | "indexer_declaration" => {
+            field(node, "value").is_some_and(|value| value.kind() == "arrow_expression_clause")
+                || field(node, "accessors").is_some_and(|accessors| {
+                    named_children(accessors).iter().any(|accessor| field(*accessor, "body").is_some())
+                })
+        }
+        _ => true,
+    }
 }
 
 /// The name a function gets from what it is assigned to: `$f = function`, `local f = function`, `let f = |x|`.
@@ -209,12 +229,33 @@ fn assigned_name(node: Node, source: &str) -> Option<String> {
 /// A C or C++ function's name, from inside its declarator: `int *next(void)` is next, `void Order::total()` is
 /// Order::total.
 fn c_function_name(node: Node, source: &str) -> Option<String> {
+    let name: String = text(field(c_function_declarator(node)?, "declarator"), source).split_whitespace().collect();
+    (!name.is_empty()).then_some(name)
+}
+
+/// The function_declarator inside a C or C++ definition or declaration: `int *next(void)` has one under its pointer.
+fn c_function_declarator(node: Node) -> Option<Node> {
     let mut declarator = field(node, "declarator")?;
     while declarator.kind() != "function_declarator" {
         declarator = field(declarator, "declarator")
             .or_else(|| named_children(declarator).into_iter().find(|child| child.kind().ends_with("declarator")))?;
     }
-    let name: String = text(field(declarator, "declarator"), source).split_whitespace().collect();
+    Some(declarator)
+}
+
+/// C++: a method only declared in its class (`int total() const;`, `virtual void f() = 0;`, `Order();`), by its name;
+/// not a field holding a function pointer (`int (*f)(int);`) nor a friend.
+fn cpp_declared_method(node: Node, source: &str) -> Option<String> {
+    if !matches!(node.kind(), "field_declaration" | "declaration") {
+        return None;
+    }
+    let at = node.parent().filter(|parent| parent.kind() == "template_declaration").unwrap_or(node);
+    at.parent().filter(|parent| parent.kind() == "field_declaration_list")?;
+    let name = field(c_function_declarator(node)?, "declarator")?;
+    if !matches!(name.kind(), "field_identifier" | "identifier" | "destructor_name" | "operator_name") {
+        return None;
+    }
+    let name: String = text(Some(name), source).split_whitespace().collect();
     (!name.is_empty()).then_some(name)
 }
 
@@ -264,6 +305,18 @@ fn name_of(language: Language, node: Node, source: &str) -> Option<String> {
         },
         Language::Java | Language::Csharp => match node.kind() {
             "lambda_expression" | "anonymous_method_expression" => assigned_name(node, source),
+            // C#: `operator +`, `implicit operator Money`, and an indexer as `this[]`.
+            "operator_declaration" => Some(format!("operator {}", text(field(node, "operator"), source))),
+            "conversion_operator_declaration" => {
+                let mut cursor = node.walk();
+                let way = node
+                    .children(&mut cursor)
+                    .find(|child| matches!(child.kind(), "implicit" | "explicit"))
+                    .map(|child| format!("{} ", child.kind()))
+                    .unwrap_or_default();
+                Some(format!("{way}operator {}", text(field(node, "type"), source)))
+            }
+            "indexer_declaration" => Some("this[]".into()),
             _ => own(),
         },
         // Ruby: `def self.make` is self.make.
@@ -378,6 +431,10 @@ struct Reader<'a> {
     path: &'a str,
     reading: FileReading,
     namespace: String,
+    /// Ruby: the local variables of each method (or class body, or file), by the scope node's id.
+    ruby_locals: HashMap<usize, HashSet<String>>,
+    /// C++: the methods only declared in their class, as (id, class, name).
+    declared: Vec<(String, String, String)>,
 }
 
 impl Reader<'_> {
@@ -457,8 +514,37 @@ impl Reader<'_> {
             into.push(item);
             return;
         }
+        // C++ `int total();` in its class: a method with no calls, so the class shows its whole interface.
+        if self.language == Language::Cpp {
+            if let (Some(name), Some(class)) = (cpp_declared_method(node, source), container) {
+                let start = node.start_position();
+                let id = format!("{}:{}:{}", self.path, start.row + 1, start.column + 1);
+                self.declared.push((id.clone(), class.to_owned(), name.clone()));
+                into.push(FunctionNode {
+                    id,
+                    name,
+                    kind: FunctionKind::Method,
+                    line: start.row as u32 + 1,
+                    end_line: node.end_position().row as u32 + 1,
+                    exported: c_public(node, source),
+                    is_async: false,
+                    anonymous: false,
+                    test: false,
+                    children: Vec::new(),
+                });
+                return;
+            }
+        }
         if let (Some((name, receiver)), Some(owner)) = (call_of(self.language, node, container, source), owner) {
             self.reading.calls.push(Call { from: owner.to_owned(), name, receiver });
+        }
+        // Ruby `total` alone: a call when it is not a local variable of its method.
+        if self.language == Language::Ruby && node.kind() == "identifier" {
+            if let Some(owner) = owner {
+                if let Some(name) = self.ruby_bare_call(node) {
+                    self.reading.calls.push(Call { from: owner.to_owned(), name, receiver: Receiver::Plain });
+                }
+            }
         }
         if self.language == Language::Php {
             if let Some(owner) = owner {
@@ -471,6 +557,119 @@ impl Reader<'_> {
             self.visit(child, into, owner, container);
         }
     }
+
+    /// A Ruby identifier that calls a method: written as a statement or an expression (not a parameter, an assignment's
+    /// target or a call's method name) and not a local variable of its method, a block's parameters included.
+    fn ruby_bare_call(&mut self, node: Node) -> Option<String> {
+        let source = self.source;
+        let name = text(Some(node), source);
+        if !ruby_expression(node)
+            || matches!(name, "private" | "protected" | "public" | "module_function" | "it")
+            || (name.len() == 2 && name.starts_with('_') && name.ends_with(|c: char| c.is_ascii_digit()))
+        {
+            return None;
+        }
+        let mut scope = node.parent()?;
+        while !RUBY_SCOPES.contains(&scope.kind()) {
+            scope = scope.parent()?;
+        }
+        let locals = self.ruby_locals.entry(scope.id()).or_insert_with(|| ruby_locals(scope, source));
+        (!locals.contains(name)).then(|| name.to_owned())
+    }
+}
+
+/// Where Ruby starts a new set of local variables: a method, a class or module body, the file. A block or a lambda sees
+/// its method's.
+const RUBY_SCOPES: [&str; 6] = ["method", "singleton_method", "class", "module", "singleton_class", "program"];
+
+/// Whether a Ruby identifier stands where a value is read: a statement, an argument, an operand, a condition, an
+/// assignment's value, a call's receiver.
+fn ruby_expression(node: Node) -> bool {
+    let Some(parent) = node.parent() else { return false };
+    let is = |name: &str| field(parent, name).is_some_and(|value| value.id() == node.id());
+    // `defined?(total)` asks about the name without calling it.
+    let asks_defined =
+        |unary: Node| unary.kind() == "unary" && unary.child(0).is_some_and(|op| op.kind() == "defined?");
+    if asks_defined(parent)
+        || (parent.kind() == "parenthesized_statements" && parent.parent().is_some_and(asks_defined))
+    {
+        return false;
+    }
+    match parent.kind() {
+        "body_statement"
+        | "block_body"
+        | "then"
+        | "else"
+        | "begin"
+        | "ensure"
+        | "parenthesized_statements"
+        | "do"
+        | "argument_list"
+        | "binary"
+        | "interpolation"
+        | "array"
+        | "conditional"
+        | "if"
+        | "unless"
+        | "while"
+        | "until"
+        | "if_modifier"
+        | "unless_modifier"
+        | "while_modifier"
+        | "until_modifier"
+        | "elsif"
+        | "case"
+        | "element_reference"
+        | "splat_argument"
+        | "hash_splat_argument"
+        | "block_argument"
+        | "range"
+        | "right_assignment_list"
+        | "unary" => true,
+        "pair" => is("value"),
+        "assignment" | "operator_assignment" => is("right"),
+        "call" => is("receiver"),
+        _ => false,
+    }
+}
+
+/// The names a Ruby scope makes local: parameters (a block's too), assignments' targets, `rescue => e`, a `for`'s
+/// variable and pattern variables; nested methods and classes have their own.
+fn ruby_locals(scope: Node, source: &str) -> HashSet<String> {
+    let mut out = HashSet::new();
+    let mut stack = named_children(scope);
+    while let Some(node) = stack.pop() {
+        if RUBY_SCOPES.contains(&node.kind()) {
+            continue;
+        }
+        if node.kind() == "identifier" && ruby_declares(node) {
+            out.insert(text(Some(node), source).to_owned());
+        }
+        stack.extend(named_children(node));
+    }
+    out
+}
+
+fn ruby_declares(node: Node) -> bool {
+    let Some(parent) = node.parent() else { return false };
+    let is = |name: &str| field(parent, name).is_some_and(|value| value.id() == node.id());
+    match parent.kind() {
+        "method_parameters"
+        | "block_parameters"
+        | "lambda_parameters"
+        | "destructured_parameter"
+        | "splat_parameter"
+        | "hash_splat_parameter"
+        | "block_parameter"
+        | "left_assignment_list"
+        | "destructured_left_assignment"
+        | "rest_assignment"
+        | "exception_variable" => true,
+        "optional_parameter" | "keyword_parameter" => is("name"),
+        "assignment" | "operator_assignment" => is("left"),
+        "for" => is("pattern"),
+        kind => kind.ends_with("_pattern"),
+    }
 }
 
 /// Reads one file: its functions, its call sites by name, and its imports resolved to files.
@@ -481,13 +680,53 @@ pub fn read_file(language: Language, ctx: &Context, source: &str) -> FileReading
         return FileReading::default();
     }
     let Some(tree) = parser.parse(source, None) else { return FileReading::default() };
-    let mut reader =
-        Reader { language, source, path: ctx.path, reading: FileReading::default(), namespace: String::new() };
+    let mut reader = Reader {
+        language,
+        source,
+        path: ctx.path,
+        reading: FileReading::default(),
+        namespace: String::new(),
+        ruby_locals: HashMap::new(),
+        declared: Vec::new(),
+    };
     let mut top = Vec::new();
     reader.visit(tree.root_node(), &mut top, None, None);
+    if !reader.declared.is_empty() {
+        // A method declared in its class and defined in the same file (`int Order::total() {…}`) is listed once, as
+        // its definition.
+        let mut defined = HashSet::new();
+        defined_outside(&top, &mut defined);
+        let gone: HashSet<String> = reader
+            .declared
+            .iter()
+            .filter(|(_, class, name)| defined.contains(&(class.clone(), name.clone())))
+            .map(|(id, _, _)| id.clone())
+            .collect();
+        drop_ids(&mut top, &gone);
+        reader.reading.declarations =
+            reader.declared.into_iter().map(|(id, _, _)| id).filter(|id| !gone.contains(id)).collect();
+    }
     reader.reading.tree = top;
     reader.reading.imports = imports_of(language, tree.root_node(), ctx, source);
     reader.reading
+}
+
+/// C++ methods written outside their class, as (class, method): `Order::total` is (Order, total).
+fn defined_outside(items: &[FunctionNode], out: &mut HashSet<(String, String)>) {
+    for item in items {
+        if let Some(class) = scope_of(&item.name) {
+            let method = item.name.rsplit("::").next().unwrap_or(&item.name);
+            out.insert((class.to_owned(), method.to_owned()));
+        }
+        defined_outside(&item.children, out);
+    }
+}
+
+fn drop_ids(items: &mut Vec<FunctionNode>, ids: &HashSet<String>) {
+    items.retain(|item| !ids.contains(&item.id));
+    for item in items {
+        drop_ids(&mut item.children, ids);
+    }
 }
 
 /// The callee of a call node by name, and how it is called; None when the node is not a call.
@@ -632,7 +871,7 @@ fn call_of(language: Language, node: Node, container: Option<&str>, source: &str
             "object_creation_expression" => created(field(node, "type"), source),
             _ => None,
         },
-        // Ruby: f(1), self.m, Order.make, order.total, Order.new; a bare `f` without arguments reads as a variable.
+        // Ruby: f(1), self.m, Order.make, order.total, Order.new; a bare `f` is read by `Reader::ruby_bare_call`.
         Language::Ruby => {
             if node.kind() != "call" {
                 return None;
@@ -1288,9 +1527,55 @@ mod tests {
                 ("rate".into(), Receiver::Type("Pricing".into())),
                 ("helper".into(), Receiver::Plain),
                 ("map".into(), Receiver::Plain),
+                ("items".into(), Receiver::Plain),
                 ("price".into(), Receiver::Plain)
             ]
         );
+    }
+
+    #[test]
+    fn reads_ruby_names_alone_as_calls_unless_they_are_local() {
+        let (_, reading) = read(
+            Language::Ruby,
+            "lib/order.rb",
+            r##"class Order
+  private
+  def total(rate, *rest, key: 1, &blk)
+    count = items
+    count += 1
+    tax
+    sum = count * rate + discount
+    lines.each do |line, (a, b)|
+      line.price
+      a + b
+      shipping
+    end
+    lines.map { |l| l + fee }
+    first, second = pair
+    puts first, second, rest, key, blk, sum
+    self.name
+    defined?(cache)
+    "#{label}"
+  rescue => e
+    e
+  end
+
+  def self.make
+    count
+  end
+end
+"##,
+        );
+        let names: Vec<&str> = reading.calls.iter().map(|call| call.name.as_str()).collect();
+        // Parameters, assignments, a block's parameters and `rescue => e` are locals; `count` is local to total only.
+        assert_eq!(
+            names,
+            [
+                "items", "tax", "discount", "each", "lines", "price", "shipping", "map", "lines", "fee", "pair",
+                "puts", "name", "label", "count"
+            ]
+        );
+        assert_eq!(reading.calls.iter().filter(|call| call.from.ends_with(":3:3")).count(), 14);
     }
 
     #[test]
@@ -1338,6 +1623,98 @@ mod tests {
                 ("total".into(), Receiver::Plain)
             ]
         );
+    }
+
+    #[test]
+    fn lists_cpp_methods_only_declared_in_their_class_once() {
+        let (tree, reading) = read(
+            Language::Cpp,
+            "src/order.hpp",
+            "namespace shop {
+class Order {
+public:
+  Order();
+  ~Order();
+  int total() const;
+  virtual void print() = 0;
+  static Order make(int count);
+  Order& operator+=(const Order& other);
+  template <typename T> T get();
+  int count() const { return count_; }
+  int (*hook)(int);
+  friend void audit(Order&);
+private:
+  int sum();
+  int count_;
+};
+
+int Order::total() const { return sum(); }
+}
+",
+        );
+        // total is defined in the same file, so it is listed once, as its definition; a function pointer field and a
+        // friend are no methods of the class.
+        assert_eq!(
+            tree,
+            [
+                "Class shop exp :1",
+                "  Class Order exp :2",
+                "    Method Order exp :4",
+                "    Method ~Order exp :5",
+                "    Method print exp :7",
+                "    Method make exp :8",
+                "    Method operator+= exp :9",
+                "    Method get exp :10",
+                "    Method count exp :11",
+                "    Method sum :15",
+                "  Method Order::total exp :19"
+            ]
+        );
+        let order = &reading.tree[0].children[0].children;
+        assert_eq!((order[2].line, order[2].end_line), (7, 7));
+        let declared: Vec<&str> = order
+            .iter()
+            .filter(|item| reading.declarations.contains(&item.id))
+            .map(|item| item.name.as_str())
+            .collect();
+        assert_eq!(declared, ["Order", "~Order", "print", "make", "operator+=", "get", "sum"]);
+        assert_eq!(calls(&reading), [("sum".into(), Receiver::Plain)]);
+    }
+
+    #[test]
+    fn reads_csharp_properties_indexers_and_operators_as_methods() {
+        let (tree, reading) = read(
+            Language::Csharp,
+            "Shop/Money.cs",
+            "public class Money {
+  public int Cents { get => Read(); set { Write(value); } }
+  public int Auto { get; set; }
+  public int Half => Divide(2);
+  public int Initial { get; } = Start();
+  public static Money operator +(Money a, Money b) { return Add(a, b); }
+  public static implicit operator Money(int cents) => new Money(cents);
+  static explicit operator int(Money m) { return m.Cents; }
+  public int this[int i] => Digit(i);
+}
+",
+        );
+        // An auto-property holds no code and is left out, as a field is; its initializer's call counts for the class.
+        assert_eq!(
+            tree,
+            [
+                "Class Money exp :1",
+                "  Method Cents exp :2",
+                "  Method Half exp :4",
+                "  Method operator + exp :6",
+                "  Method implicit operator Money exp :7",
+                "  Method explicit operator int :8",
+                "  Method this[] exp :9"
+            ]
+        );
+        let names: Vec<&str> = reading.calls.iter().map(|call| call.name.as_str()).collect();
+        assert_eq!(names, ["Read", "Write", "Divide", "Start", "Add", "Money", "Digit"]);
+        let cents = &reading.tree[0].children[0].id;
+        assert_eq!(reading.calls.iter().filter(|call| &call.from == cents).count(), 2);
     }
 
     #[test]

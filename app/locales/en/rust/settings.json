@@ -1,0 +1,10 @@
+{
+  "tabColor": "A tab's colour is one of {colors}.",
+  "profileName": "A profile's name is 1 to 40 characters.",
+  "profileExists": "There is a profile called {name} already.",
+  "unknownLook": "That is not a look Haunt knows.",
+  "folderMissing": "That folder is not there.",
+  "noProfile": "There is no such profile.",
+  "switchFirst": "Switch to another profile before deleting this one.",
+  "notOpenTab": "That is not an open tab."
+}

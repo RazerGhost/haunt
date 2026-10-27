@@ -1,0 +1,9 @@
+{
+  "badName": "\"{name}\" kan geen mapnaam zijn.",
+  "noParent": "De map om het in te zetten is er niet.",
+  "there": "{path} bestaat al.",
+  "stopped": "De clone is gestopt.",
+  "cloneGone": "De clone is er niet.",
+  "notMade": "De map kon niet gemaakt worden: {error}",
+  "notMadeAtAll": "De map kon niet gemaakt worden."
+}

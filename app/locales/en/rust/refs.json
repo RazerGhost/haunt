@@ -1,0 +1,25 @@
+{
+  "badBranch": "\"{name}\" cannot be a branch name.",
+  "badTag": "\"{name}\" cannot be a tag name.",
+  "filtered": {
+    "bisect": "Bisecting writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first.",
+    "merge": "Merging writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first.",
+    "continue": "Continuing writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first.",
+    "abort": "Aborting writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first.",
+    "undo": "Undoing writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first.",
+    "patches": "Applying patches writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first.",
+    "rebase": "Rebasing writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first.",
+    "switch": "Switching branches writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first.",
+    "stash": "Stashing writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first.",
+    "applyStash": "Applying a stash writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first.",
+    "revert": "Reverting writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first.",
+    "cherryPick": "Cherry-picking writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first.",
+    "hardReset": "A hard reset writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first.",
+    "worktree": "Adding a worktree writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first."
+  },
+  "noBranch": "There is no branch called \"{name}\".",
+  "unmerged": "{name} has commits no other branch has. Deleting it loses them; confirm to go ahead.",
+  "nothingToStash": "There are no changes to stash.",
+  "stashGone": "That stash is not there any more.",
+  "stashUnknown": "That stash is not known."
+}

@@ -145,7 +145,7 @@ export function useOperation() {
   async function abort(): Promise<void> {
     const going = operation.value
     if (!going) return
-    const ok = await dialog.confirm({ title: t('composables.useOperation.abortTitle', { title: going.title }), description: t('composables.useOperation.abortDescription'), confirm: t('composables.useOperation.abortConfirm'), danger: true })
+    const ok = await dialog.confirm({ title: t('composables.useOperation.abortTitle', { title: said(going.title) }), description: t('composables.useOperation.abortDescription'), confirm: t('composables.useOperation.abortConfirm'), danger: true })
     if (ok && await run(t('composables.useOperation.notAborted'), at => haunt.abortOperation(at)) !== undefined) void router.push('/commits')
   }
 

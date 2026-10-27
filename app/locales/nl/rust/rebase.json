@@ -1,0 +1,7 @@
+{
+  "merges": "Er zit een merge-commit na die. Rebasen over merges heen doet Haunt niet; kies een latere commit.",
+  "changed": "De lijst met commits is veranderd sinds hij gelezen is. Open de rebase opnieuw.",
+  "squashFirst": "De eerste commit die blijft kan niet gesquasht worden: er zit niets voor om in te squashen.",
+  "allDropped": "Elke commit zou wegvallen. Reset de branch in plaats daarvan.",
+  "noMessage": "Een commit met een nieuw bericht heeft dat nieuwe bericht nodig."
+}

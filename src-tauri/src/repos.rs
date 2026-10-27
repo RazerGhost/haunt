@@ -384,7 +384,11 @@ impl Repos {
     /// What a pull does when the branches went apart, and how often to fetch in the background (0, 5, 15 or 30).
     pub fn set_git(&self, pull: PullChoice, fetch_every: u32) -> Result<AppSettings, String> {
         if !FETCH_EVERY.contains(&fetch_every) {
-            return Err(format!("Fetching every {fetch_every} minutes is not one of the choices."));
+            return Err(said!(
+                "repos.fetchChoice",
+                "Fetching every {minutes} minutes is not one of the choices.",
+                minutes = fetch_every
+            ));
         }
         {
             let mut inner = self.inner.lock().unwrap();
@@ -481,7 +485,14 @@ impl Repos {
                 |_| {},
                 Arc::new(|_: &str| Err("The reader asks nothing.".to_string())),
             )
-            .map_err(|error| format!("{} could not start the reader: {error}", runtime.name()))?;
+            .map_err(|error| {
+                said!(
+                    "repos.readerNotStarted",
+                    "{runtime} could not start the reader: {error}",
+                    runtime = runtime.name(),
+                    error = error
+                )
+            })?;
             *reader = Some(started);
         }
         let reader = reader.as_ref().expect("started");
@@ -543,9 +554,10 @@ impl Repos {
 
     /// Shows another repository, in its tab (a new tab if it has none), and remembers it.
     pub fn open(&self, path: &str) -> Result<RootInfo, String> {
-        let root = paths::canonical(path).ok_or_else(|| format!("{path} is not a folder Haunt can find."))?;
+        let root = paths::canonical(path)
+            .ok_or_else(|| said!("repos.notFound", "{path} is not a folder Haunt can find.", path = path))?;
         if !paths::openable(Path::new(&root)) {
-            return Err(format!("{root} is not a project or a git repository."));
+            return Err(said!("repos.notProject", "{root} is not a project or a git repository.", root = root));
         }
         {
             let mut inner = self.inner.lock().unwrap();
@@ -567,7 +579,7 @@ impl Repos {
             wanted.sort();
             known.sort();
             if wanted != known {
-                return Err("The tabs changed meanwhile.".into());
+                return Err(said!("repos.tabsChanged", "The tabs changed meanwhile."));
             }
             inner.settings.tabs = tabs.to_vec();
             // A tab dragged among the pinned ones stays unpinned, after them.
@@ -589,7 +601,8 @@ impl Repos {
             inner.settings.repository_folders.iter().any(|folder| Path::new(root).starts_with(folder))
                 && Path::new(root).join(".git").exists()
         });
-        root.map(PathBuf::from).ok_or_else(|| "That is not an open tab or a repository Haunt lists.".into())
+        root.map(PathBuf::from)
+            .ok_or_else(|| said!("repos.notListed", "That is not an open tab or a repository Haunt lists."))
     }
 
     /// The recent repositories of the profile in use, with what the open screen shows of each (only these folders are
@@ -715,7 +728,7 @@ impl Repos {
             self.check(&inner, repo)?;
             let shown = inner.shown.as_ref().unwrap();
             if shown.code.structure.is_none() {
-                return Err("The code is still being scanned: try again in a moment.".into());
+                return Err(said!("repos.stillScanning", "The code is still being scanned: try again in a moment."));
             }
             match &shown.sidecar {
                 Some(sidecar) => sidecar.ask(request),
@@ -723,12 +736,12 @@ impl Repos {
                 None if self.context.runtime.is_err() => {
                     return crate::code::scan::answer(&request, shown.code.structure.as_deref().unwrap_or("null"));
                 }
-                None => return Err("The scanner is not running.".into()),
+                None => return Err(said!("repos.scannerNotRunning", "The scanner is not running.")),
             }
         };
         asked
             .recv_timeout(std::time::Duration::from_secs(120))
-            .map_err(|_| "The scanner did not answer in time.".to_string())?
+            .map_err(|_| said!("repos.scannerLate", "The scanner did not answer in time."))?
     }
 
     /// A file of the shown repository's last scan, as a path inside it; the editor and the source view take only these.
@@ -741,15 +754,15 @@ impl Repos {
             .and_then(|shown| shown.code.shape.as_ref())
             .is_some_and(|shape| shape.files.iter().any(|file| file.path == path));
         if !known {
-            return Err("That file is not in the scan.".into());
+            return Err(said!("repos.fileNotScanned", "That file is not in the scan."));
         }
-        paths::inside(repo, path).ok_or_else(|| "That file is not in the repository.".into())
+        paths::inside(repo, path).ok_or_else(|| said!("repos.fileOutside", "That file is not in the repository."))
     }
 
     fn check(&self, inner: &Inner, repo: &str) -> Result<(), String> {
         match &inner.shown {
             Some(shown) if shown.root == repo => Ok(()),
-            _ => Err("That repository is not the one shown.".into()),
+            _ => Err(said!("repos.notShown", "That repository is not the one shown.")),
         }
     }
 
@@ -895,7 +908,12 @@ impl Repos {
                 self.events.send(Some(&root), json!({ "type": "scanning", "reason": reason }));
             }
             Err(error) => {
-                let problem = format!("{} could not start the scanner: {error}", runtime.name());
+                let problem = said!(
+                    "repos.scannerNotStarted",
+                    "{runtime} could not start the scanner: {error}",
+                    runtime = runtime.name(),
+                    error = error
+                );
                 self.events.send(Some(&root), json!({ "type": "error", "message": problem }));
             }
         }
@@ -954,7 +972,7 @@ impl Repos {
             Said::Exited => {
                 let shown = inner.shown.as_mut().expect("current");
                 shown.sidecar = None;
-                self.events.send(Some(root), json!({ "type": "error", "message": "The scanner stopped. Save a file or rescan to start it again." }));
+                self.events.send(Some(root), json!({ "type": "error", "message": said!("repos.scannerStopped", "The scanner stopped. Save a file or rescan to start it again.") }));
             }
         }
     }
@@ -976,7 +994,7 @@ impl Repos {
             let root = shown.root.clone();
             self.events.send(
                 Some(&root),
-                json!({ "type": "notice", "message": "The system's limit on watched folders was reached, so saving some files will not rescan. On Linux, raise it with: sudo sysctl fs.inotify.max_user_watches=524288" }),
+                json!({ "type": "notice", "message": said!("repos.watchLimit", "The system's limit on watched folders was reached, so saving some files will not rescan. On Linux, raise it with: sudo sysctl fs.inotify.max_user_watches=524288") }),
             );
         }
     }
@@ -1042,7 +1060,7 @@ fn wants(root: &str) -> Vec<Wanted> {
     if base.join("node_modules/typescript/package.json").exists() {
         out.push(Wanted {
             kind: WantedKind::Typescript,
-            label: "own TypeScript".into(),
+            label: said!("repos.ownTypescript", "own TypeScript"),
             path: "node_modules/typescript".into(),
         });
     }
@@ -1051,11 +1069,19 @@ fn wants(root: &str) -> Vec<Wanted> {
         .and_then(|text| serde_json::from_str::<Value>(&text).ok())
         .and_then(|config| config["architecture"]["script"].as_str().map(str::to_owned));
     if let Some(script) = script {
-        out.push(Wanted { kind: WantedKind::Script, label: "architecture script".into(), path: script });
+        out.push(Wanted {
+            kind: WantedKind::Script,
+            label: said!("repos.architectureScript", "architecture script"),
+            path: script,
+        });
     }
     for hook in hooks(root) {
         let name = hook.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_default();
-        out.push(Wanted { kind: WantedKind::Hook, label: format!("{name} hook"), path: shown_path(root, &hook) });
+        out.push(Wanted {
+            kind: WantedKind::Hook,
+            label: said!("repos.hook", "{name} hook", name = name),
+            path: shown_path(root, &hook),
+        });
     }
     out
 }
@@ -1081,13 +1107,15 @@ pub fn wanted_texts(root: &str) -> Vec<WantedText> {
                 let version = std::fs::read_to_string(file.join("package.json"))
                     .ok()
                     .and_then(|text| serde_json::from_str::<Value>(&text).ok())
-                    .and_then(|package| package["version"].as_str().map(str::to_owned))
-                    .unwrap_or_else(|| "of an unknown version".into());
+                    .and_then(|package| package["version"].as_str().map(str::to_owned));
                 out.push(WantedText {
                     label: want.label,
                     path: want.path,
                     text: String::new(),
-                    note: format!("The TypeScript compiler installed in the folder ({version}), used to read its code with its own settings instead of Haunt's copy."),
+                    note: match version {
+                        Some(version) => said!("repos.typescriptNote", "The TypeScript compiler installed in the folder ({version}), used to read its code with its own settings instead of Haunt's copy.", version = version),
+                        None => said!("repos.typescriptNoteUnknown", "The TypeScript compiler installed in the folder (of an unknown version), used to read its code with its own settings instead of Haunt's copy."),
+                    },
                     truncated: false,
                 });
             }
@@ -1097,9 +1125,9 @@ pub fn wanted_texts(root: &str) -> Vec<WantedText> {
                     label: want.label,
                     path: want.path,
                     note: if text.is_empty() {
-                        "The file is not there.".into()
+                        said!("repos.fileMissing", "The file is not there.")
                     } else {
-                        "Run by the scanner with Node, to sort the code into layers.".into()
+                        said!("repos.scriptNote", "Run by the scanner with Node, to sort the code into layers.")
                     },
                     text,
                     truncated,
@@ -1111,7 +1139,7 @@ pub fn wanted_texts(root: &str) -> Vec<WantedText> {
                 out.push(WantedText {
                     label: want.label.clone(),
                     path: want.path.clone(),
-                    note: "Run by git when Haunt does what triggers it.".into(),
+                    note: said!("repos.hookNote", "Run by git when Haunt does what triggers it."),
                     text: text.clone(),
                     truncated,
                 });
@@ -1119,9 +1147,9 @@ pub fn wanted_texts(root: &str) -> Vec<WantedText> {
                 if text.contains("husky") && husky.is_file() && husky != file {
                     let (text, truncated) = read(&husky);
                     out.push(WantedText {
-                        label: format!("{name} (Husky)"),
+                        label: said!("repos.husky", "{name} (Husky)", name = name),
                         path: shown_path(root, &husky),
-                        note: "What the hook above hands over to.".into(),
+                        note: said!("repos.huskyNote", "What the hook above hands over to."),
                         text,
                         truncated,
                     });
@@ -1159,7 +1187,8 @@ mod folder_tests {
         std::fs::create_dir_all(&hooks).unwrap();
         executable(&hooks.join("pre-commit"), "#!/bin/sh\nnpm test\n");
         executable(&hooks.join("pre-push.sample"), "#!/bin/sh\n");
-        let found: Vec<(String, String)> = wants(&r.root).into_iter().map(|want| (want.label, want.path)).collect();
+        let found: Vec<(String, String)> =
+            wants(&r.root).into_iter().map(|want| (crate::said::english(&want.label).to_owned(), want.path)).collect();
         assert_eq!(found, [("pre-commit hook".to_owned(), ".git/hooks/pre-commit".to_owned())], "samples do not run");
         let texts = wanted_texts(&r.root);
         assert!(texts[0].text.contains("npm test"));
@@ -1170,7 +1199,7 @@ mod folder_tests {
         std::fs::write(r.path(".husky/pre-push"), "pnpm lint\n").unwrap();
         r.sh(&["config", "core.hooksPath", ".husky/_"]);
         let texts = wanted_texts(&r.root);
-        let labels: Vec<&str> = texts.iter().map(|text| text.label.as_str()).collect();
+        let labels: Vec<&str> = texts.iter().map(|text| crate::said::english(&text.label)).collect();
         assert_eq!(labels, ["pre-push hook", "pre-push (Husky)"]);
         assert_eq!(texts[0].path, ".husky/_/pre-push");
         assert!(texts[1].text.contains("pnpm lint"));

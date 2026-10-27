@@ -77,7 +77,7 @@ const groups = computed(() => {
       id: 'actions',
       label: t('AppPalette.actions'),
       items: [
-        ...undo.last.value ? [{ label: t('AppPalette.undo', { title: undo.last.value.title }), suffix: undo.last.value.undo, icon: 'i-lucide-undo-2', onSelect: () => run(() => undo.undo()) }] : [],
+        ...undo.last.value ? [{ label: t('AppPalette.undo', { title: said(undo.last.value.title) }), suffix: said(undo.last.value.undo), icon: 'i-lucide-undo-2', onSelect: () => run(() => undo.undo()) }] : [],
         { label: t('AppPalette.fetch'), icon: 'i-lucide-refresh-cw', kbds: ['F5'], onSelect: () => run(() => network.fetch()) },
         ...info.value?.root ? [{ label: t('AppPalette.terminal'), icon: 'i-lucide-square-terminal', onSelect: () => run(() => openTerminal(info.value!.root!)) }] : [],
         ...network.trusted.value && branch?.upstream ? [{ label: t('AppPalette.pull', { upstream: branch.upstream }), icon: 'i-lucide-arrow-down-to-line', kbds: ['meta', 'shift', 'p'], onSelect: () => run(() => network.pull()) }] : [],
@@ -118,7 +118,7 @@ const groups = computed(() => {
         { label: t('AppPalette.health'), suffix: t('AppPalette.healthHelp'), icon: 'i-lucide-heart-pulse', to: '/health' },
         { label: t('AppPalette.grep'), suffix: t('AppPalette.grepHelp'), icon: 'i-lucide-text-search', to: '/grep' },
         ...branch ? [{ label: t('AppPalette.review', { name: branch.name }), suffix: t('AppPalette.reviewHelp'), icon: 'i-lucide-list-checks', to: '/review' }] : [],
-        ...operation.value ? [{ label: t('AppPalette.conflicts', { title: operation.value.title }), icon: 'i-lucide-git-merge', to: '/conflicts' }] : [],
+        ...operation.value ? [{ label: t('AppPalette.conflicts', { title: said(operation.value.title) }), icon: 'i-lucide-git-merge', to: '/conflicts' }] : [],
         { label: t('AppPalette.layers'), icon: 'i-lucide-layers', to: '/layers' },
         { label: t('AppPalette.canvas'), icon: 'i-lucide-boxes', to: '/canvas' },
         { label: t('AppPalette.calls'), icon: 'i-lucide-git-fork', to: '/calls' },

@@ -65,7 +65,7 @@ pub fn grep(
     path: Option<&str>,
 ) -> Result<GrepResult, String> {
     if pattern.is_empty() {
-        return Err("Type something to search for.".into());
+        return Err(said!("grep.empty", "Type something to search for."));
     }
     let at = revision(at)?;
     let spec = format!("{at}^{{commit}}");
@@ -73,7 +73,7 @@ pub fn grep(
         .map(|out| out.trim().to_owned())
         .ok()
         .filter(|sha| !sha.is_empty())
-        .ok_or("That is not a commit.")?;
+        .ok_or_else(|| said!("grep.notCommit", "That is not a commit."))?;
     let path = path.map(str::trim).filter(|path| !path.is_empty()).map(pathspec).transpose()?;
 
     // Every setting a repository's grep config could change is given here: how the pattern is read, the line numbers,
@@ -111,7 +111,7 @@ pub fn grep(
         let line = match line {
             Ok(line) => line,
             // git grep says nothing and stops with 1 when nothing matches.
-            Err(message) if message.starts_with("git failed (") && message.ends_with(": 1)") => break,
+            Err(message) if is_no_match(&message) => break,
             Err(message) => return Err(message),
         };
         if !pending.is_empty() {
@@ -140,6 +140,12 @@ pub fn grep(
 }
 
 /// One match as `git grep --null` gives it for a commit: "sha:path NUL line NUL text".
+/// git grep's "git failed (exit code: 1)": nothing matched.
+fn is_no_match(message: &str) -> bool {
+    let english = crate::said::english(message);
+    english.starts_with("git failed (") && english.ends_with(": 1)")
+}
+
 fn parse(line: &str, sha: &str) -> Option<(String, u32, String)> {
     let mut parts = line.splitn(3, '\0');
     let named = parts.next()?;
@@ -163,7 +169,7 @@ fn pathspec(path: &str) -> Result<&str, String> {
     if fine {
         Ok(path)
     } else {
-        Err(format!("\"{path}\" is not a path in this folder."))
+        Err(said!("grep.notPath", "\"{path}\" is not a path in this folder.", path = path))
     }
 }
 
@@ -253,7 +259,7 @@ mod tests {
         assert_eq!(lines(&deeper), [("a.ts".into(), 1), ("a.ts".into(), 2)]);
 
         assert_eq!(
-            grep(&root, "nothing-here", "foo", GrepMode::Text, false, None).unwrap_err(),
+            crate::said::english(&grep(&root, "nothing-here", "foo", GrepMode::Text, false, None).unwrap_err()),
             "That is not a commit."
         );
         assert!(grep(&root, "--all", "foo", GrepMode::Text, false, None).is_err());

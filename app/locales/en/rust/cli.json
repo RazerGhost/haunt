@@ -1,0 +1,10 @@
+{
+  "notInstalled": "git could not start: it is not installed.",
+  "tookTooLong": "git took longer than {minutes} minutes and was stopped.",
+  "couldNotStart": "git could not start: {error}",
+  "failed": "git failed ({status})",
+  "noCommand": "No git command.",
+  "noOutput": "git gave no output.",
+  "notRepository": "{root} is not in a git repository.",
+  "notRevision": "\"{name}\" is not a branch, tag or commit."
+}

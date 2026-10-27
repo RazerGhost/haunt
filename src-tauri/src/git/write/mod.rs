@@ -226,7 +226,9 @@ impl<'a> Writer<'a> {
             .stderr(Stdio::piped());
         crate::startup::hide_console(&mut command);
         let started = Instant::now();
-        let mut child = command.spawn().map_err(|error| format!("git could not start: {error}"))?;
+        let mut child = command
+            .spawn()
+            .map_err(|error| said!("write.couldNotStart", "git could not start: {error}", error = error))?;
         if let (Some(input), Some(mut stdin)) = (input, child.stdin.take()) {
             let _ = stdin.write_all(input);
         }
@@ -255,7 +257,7 @@ impl<'a> Writer<'a> {
         if output.status.success() {
             Ok(stdout)
         } else if stderr.is_empty() {
-            Err(format!("git failed ({})", output.status))
+            Err(said!("write.failed", "git failed ({status})", status = output.status))
         } else {
             Err(stderr)
         }
@@ -268,9 +270,10 @@ impl<'a> Writer<'a> {
         let started = Instant::now();
         while lock.exists() {
             if started.elapsed() > LOCK_WAIT {
-                return Err("Another git is busy in this repository (it holds .git/index.lock). Try again when it is \
-                            done; Haunt leaves the lock alone."
-                    .into());
+                return Err(said!(
+                    "write.locked",
+                    "Another git is busy in this repository (it holds .git/index.lock). Try again when it is done; Haunt leaves the lock alone."
+                ));
             }
             std::thread::sleep(Duration::from_millis(100));
         }
@@ -291,9 +294,19 @@ impl<'a> Writer<'a> {
             if value != "unspecified" && value != "unset" {
                 let path = parts.next().unwrap_or_default().trim_end_matches(": filter");
                 return Err(if self.trusted {
-                    format!("{path} goes through a filter ({value}): take the whole file.")
+                    said!(
+                        "write.filtered",
+                        "{path} goes through a filter ({value}): take the whole file.",
+                        path = path,
+                        value = value
+                    )
                 } else {
-                    format!("{path} goes through a filter ({value}), which runs only in a trusted folder. Trust this folder to write it.")
+                    said!(
+                        "write.filteredUntrusted",
+                        "{path} goes through a filter ({value}), which runs only in a trusted folder. Trust this folder to write it.",
+                        path = path,
+                        value = value
+                    )
                 });
             }
         }
@@ -334,7 +347,7 @@ impl<'a> Writer<'a> {
     pub fn lines(&self, path: &str, picked: &[LineRef], action: LinesAction) -> Result<(), String> {
         let path = checked(path)?;
         if action != LinesAction::Unstage && !tracked(self.root, path)? {
-            return Err("Lines of a new file cannot be picked: take the whole file.".into());
+            return Err(said!("write.newFileLines", "Lines of a new file cannot be picked: take the whole file."));
         }
         self.refuse_filtered(&[path], true)?;
         let (toplevel, prefix) = top(self.root)?;
@@ -350,7 +363,7 @@ impl<'a> Writer<'a> {
         args.extend(["--", full.as_str()]);
         let diff = git_bytes(&toplevel, &args)?;
         let patch = patch::select(&diff, picked, action != LinesAction::Stage)?
-            .ok_or("None of those lines is a change any more.")?;
+            .ok_or_else(|| said!("write.linesGone", "None of those lines is a change any more."))?;
         let apply: &[&str] = match action {
             LinesAction::Stage => &["apply", "--cached", "-"],
             LinesAction::Unstage => &["apply", "--cached", "--reverse", "-"],
@@ -462,10 +475,14 @@ impl<'a> Writer<'a> {
     /// Brings a discard back: its files as they were, after saving what is there now (so this can be undone too).
     pub fn restore(&self, id: &str) -> Result<(), String> {
         if id.is_empty() || !id.chars().all(|c| c.is_ascii_digit()) {
-            return Err("That discard is not known.".into());
+            return Err(said!("write.discardUnknown", "That discard is not known."));
         }
         let reference = format!("{DISCARDED}{id}");
-        let saved = self.discarded()?.into_iter().find(|entry| entry.id == id).ok_or("That discard is not known.")?;
+        let saved = self
+            .discarded()?
+            .into_iter()
+            .find(|entry| entry.id == id)
+            .ok_or_else(|| said!("write.discardUnknown", "That discard is not known."))?;
         let paths = checked_all(&saved.paths)?;
         self.refuse_filtered(&paths, false)?;
         let queue = queue(self.root);
@@ -519,10 +536,10 @@ impl<'a> Writer<'a> {
     /// Commits what is staged with `message`, or amends the last commit; returns the new commit.
     pub fn commit(&self, message: &str, amend: bool, signoff: bool) -> Result<String, String> {
         if message.trim().is_empty() {
-            return Err("Write a message first.".into());
+            return Err(said!("write.noMessage", "Write a message first."));
         }
         if amend && !self.has_head() {
-            return Err("There is no commit to amend yet.".into());
+            return Err(said!("write.nothingToAmend", "There is no commit to amend yet."));
         }
         let queue = queue(self.root);
         let _turn = queue.lock().unwrap();
@@ -542,7 +559,7 @@ impl<'a> Writer<'a> {
 
 fn checked_all(paths: &[String]) -> Result<Vec<&str>, String> {
     if paths.is_empty() {
-        return Err("No files given.".into());
+        return Err(said!("write.noFiles", "No files given."));
     }
     paths.iter().map(|path| checked(path)).collect()
 }

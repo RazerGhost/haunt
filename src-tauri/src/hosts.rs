@@ -49,12 +49,33 @@ pub struct HostPulls {
     pub problem: Option<String>,
 }
 
+/// Why a tool did not do it: it did not answer in time (seconds), or what it said.
+enum Failed {
+    TimedOut(u64),
+    Said(String),
+}
+
+impl Failed {
+    /// The sentence for the window: `sentence` with what the tool said, or that it took too long.
+    fn told(self, tool: &str, sentence: impl FnOnce(String) -> String) -> String {
+        match self {
+            Failed::TimedOut(seconds) => said!(
+                "hosts.timedOut",
+                "{tool} did not answer within {seconds} seconds.",
+                tool = tool,
+                seconds = seconds
+            ),
+            Failed::Said(problem) => sentence(problem),
+        }
+    }
+}
+
 /// Runs a tool in a folder of its own; None when it is not installed.
-fn run(program: &str, args: &[&str]) -> Option<Result<String, String>> {
+fn run(program: &str, args: &[&str]) -> Option<Result<String, Failed>> {
     run_for(program, args, TIMEOUT)
 }
 
-fn run_for(program: &str, args: &[&str], timeout: Duration) -> Option<Result<String, String>> {
+fn run_for(program: &str, args: &[&str], timeout: Duration) -> Option<Result<String, Failed>> {
     let mut command = Command::new(program);
     command
         .args(args)
@@ -66,14 +87,16 @@ fn run_for(program: &str, args: &[&str], timeout: Duration) -> Option<Result<Str
     let done = match crate::process::run(command, timeout) {
         Ok(done) => done,
         Err(crate::process::Failure::NotFound) => return None,
-        Err(crate::process::Failure::TimedOut) => {
-            return Some(Err(format!("{program} did not answer within {} seconds.", timeout.as_secs())))
-        }
-        Err(crate::process::Failure::Other(error)) => return Some(Err(error)),
+        Err(crate::process::Failure::TimedOut) => return Some(Err(Failed::TimedOut(timeout.as_secs()))),
+        Err(crate::process::Failure::Other(error)) => return Some(Err(Failed::Said(error))),
     };
     let out = String::from_utf8_lossy(&done.stdout).into_owned();
     let err = String::from_utf8_lossy(&done.stderr).into_owned();
-    Some(if done.status.success() { Ok(out) } else { Err(err.trim().lines().take(3).collect::<Vec<_>>().join(" ")) })
+    Some(if done.status.success() {
+        Ok(out)
+    } else {
+        Err(Failed::Said(err.trim().lines().take(3).collect::<Vec<_>>().join(" ")))
+    })
 }
 
 fn text(value: &Value, key: &str) -> String {
@@ -214,7 +237,7 @@ pub fn host_pulls(page: &WebRemote) -> HostPulls {
         pulls: Vec::new(),
         problem,
     };
-    let (tool, ran, parse): (&str, Option<Result<String, String>>, Parse) = match page.kind {
+    let (tool, ran, parse): (&str, Option<Result<String, Failed>>, Parse) = match page.kind {
         WebKind::Github => {
             let repo = format!("{host}/{path}");
             let ran = run(
@@ -272,11 +295,22 @@ pub fn host_pulls(page: &WebRemote) -> HostPulls {
     };
     match ran {
         None => nothing(None, None),
-        Some(Err(problem)) => nothing(Some(tool), Some(format!("{tool} could not list them: {problem}"))),
+        Some(Err(failed)) => {
+            let problem = failed.told(tool, |problem| {
+                said!("hosts.notListed", "{tool} could not list them: {problem}", tool = tool, problem = problem)
+            });
+            nothing(Some(tool), Some(problem))
+        }
         Some(Ok(json)) => match parse(&json) {
             Ok(pulls) => HostPulls { tool: Some(tool.to_owned()), host, pulls, problem: None },
             Err(problem) => {
-                nothing(Some(tool), Some(format!("{tool} answered in a way Haunt does not read: {problem}")))
+                let problem = said!(
+                    "hosts.unreadable",
+                    "{tool} answered in a way Haunt does not read: {problem}",
+                    tool = tool,
+                    problem = problem
+                );
+                nothing(Some(tool), Some(problem))
             }
         },
     }
@@ -335,12 +369,14 @@ fn create_args(page: &WebRemote, pull: &NewPull) -> Result<(&'static str, Vec<St
             format!("--title={}", pull.title),
             format!("--description={}", pull.body),
         ],
-        WebKind::Bitbucket => return Err("Haunt has no tool to make pull requests on Bitbucket.".into()),
+        WebKind::Bitbucket => {
+            return Err(said!("hosts.noBitbucket", "Haunt has no tool to make pull requests on Bitbucket."))
+        }
     };
     if pull.draft {
         match page.kind {
             WebKind::Github | WebKind::Gitlab => args.push("--draft".into()),
-            _ => return Err("Gitea's tea does not make drafts.".into()),
+            _ => return Err(said!("hosts.teaNoDrafts", "Gitea's tea does not make drafts.")),
         }
     }
     let tool = match page.kind {
@@ -362,18 +398,22 @@ fn created_url(said: &str) -> Option<String> {
 pub fn create_pull(page: &WebRemote, pull: &NewPull) -> Result<CreatedPull, String> {
     let names_ok = |name: &str| !name.is_empty() && !name.starts_with('-') && !name.contains(char::is_whitespace);
     if !names_ok(&pull.branch) || !names_ok(&pull.base) {
-        return Err("Pick the branch it is from and the one it goes into.".into());
+        return Err(said!("hosts.pickBranches", "Pick the branch it is from and the one it goes into."));
     }
     if pull.title.trim().is_empty() {
-        return Err("A pull request needs a title.".into());
+        return Err(said!("hosts.needsTitle", "A pull request needs a title."));
     }
     let (tool, args) = create_args(page, pull)?;
     let args: Vec<&str> = args.iter().map(String::as_str).collect();
     match run_for(tool, &args, Duration::from_secs(60)) {
-        None => Err(format!(
-            "{tool} is not installed. Install it and sign in ({tool} auth login) to make pull requests from Haunt."
+        None => Err(said!(
+            "hosts.notInstalled",
+            "{tool} is not installed. Install it and sign in ({tool} auth login) to make pull requests from Haunt.",
+            tool = tool
         )),
-        Some(Err(problem)) => Err(format!("{tool} could not make it: {problem}")),
+        Some(Err(failed)) => Err(failed.told(tool, |problem| {
+            said!("hosts.notMade", "{tool} could not make it: {problem}", tool = tool, problem = problem)
+        })),
         Some(Ok(said)) => Ok(CreatedPull { tool: tool.to_owned(), url: created_url(&said) }),
     }
 }

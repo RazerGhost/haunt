@@ -1,0 +1,10 @@
+{
+  "tabColor": "De kleur van een tab is een van {colors}.",
+  "profileName": "De naam van een profiel is 1 tot 40 tekens.",
+  "profileExists": "Er is al een profiel {name}.",
+  "unknownLook": "Dat is geen uiterlijk dat Haunt kent.",
+  "folderMissing": "Die map is er niet.",
+  "noProfile": "Zo'n profiel is er niet.",
+  "switchFirst": "Stap over naar een ander profiel voor je dit verwijdert.",
+  "notOpenTab": "Dat is geen open tab."
+}

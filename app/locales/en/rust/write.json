@@ -1,0 +1,13 @@
+{
+  "couldNotStart": "git could not start: {error}",
+  "failed": "git failed ({status})",
+  "locked": "Another git is busy in this repository (it holds .git/index.lock). Try again when it is done; Haunt leaves the lock alone.",
+  "filtered": "{path} goes through a filter ({value}): take the whole file.",
+  "filteredUntrusted": "{path} goes through a filter ({value}), which runs only in a trusted folder. Trust this folder to write it.",
+  "newFileLines": "Lines of a new file cannot be picked: take the whole file.",
+  "linesGone": "None of those lines is a change any more.",
+  "discardUnknown": "That discard is not known.",
+  "noMessage": "Write a message first.",
+  "nothingToAmend": "There is no commit to amend yet.",
+  "noFiles": "No files given."
+}

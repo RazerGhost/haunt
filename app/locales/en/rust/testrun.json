@@ -1,0 +1,6 @@
+{
+  "running": "Tests are running already: wait for them, or stop them.",
+  "outside": "{path} is not in this repository.",
+  "gone": "{path} is not there any more: scan again.",
+  "notStarted": "The tests could not start: {error}"
+}

@@ -17,7 +17,7 @@ async function undo(): Promise<void> {
   try {
     const title = await haunt.undoLast(at)
     last.value = null
-    toast?.add({ title: t('composables.useUndo.undone', { title }), icon: 'i-lucide-undo-2' })
+    toast?.add({ title: t('composables.useUndo.undone', { title: said(title) }), icon: 'i-lucide-undo-2' })
   } catch (error) {
     toast?.add({ title: t('composables.useUndo.notUndone'), description: errorMessage(error, t('common.tryAgain')), color: 'error', icon: 'i-lucide-circle-alert' })
   }
@@ -31,8 +31,8 @@ export function startUndo(): void {
     last.value = { title: news.title, undo: news.undo }
     toast?.add({
       id: 'undo',
-      title: news.title,
-      description: t('composables.useUndo.undoWhat', { undo: news.undo }),
+      title: said(news.title),
+      description: t('composables.useUndo.undoWhat', { undo: said(news.undo) }),
       duration: 12000,
       icon: 'i-lucide-check',
       actions: [{ label: t('common.undo'), color: 'neutral', variant: 'outline', onClick: () => { void undo() } }]

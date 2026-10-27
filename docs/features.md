@@ -25,7 +25,7 @@ Everything Haunt does, by part of the window. The [README](../README.md) has the
   you add (looked through four levels deep) as a tree of their folders; typing filters both (↑ ↓ to pick, Enter or a
   double click to open), and a typed path says whether it is a project or a git repository before it opens. On the
   right, the one picked, open in a tab or not: its uncommitted files, commit count, first and last commit, its remotes
-  with their project, issues and pull request pages, its branches, tags and latest commits; Statistics (commits per
+  with their project, issues and pull request pages (and + and ⋯ to add, rename or remove one, or change its URL), its branches, tags and latest commits; Statistics (commits per
   month over the last year, who committed most, the files by extension); and its README, drawn by Haunt itself
   (no HTML of the file's own, no images, and only the remotes' pages open from its links). **Clone** a URL into a
   new folder (git's progress as it comes, a way to stop it, its questions asked as for a fetch; no hooks or

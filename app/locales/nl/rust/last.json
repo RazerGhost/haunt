@@ -1,0 +1,15 @@
+{
+  "soft": "{branch} gaat terug naar {sha}; de wijzigingen blijven gestaged.",
+  "mixed": "{branch} gaat terug naar {sha}; je bestanden blijven zoals ze zijn.",
+  "keep": "{branch} en zijn bestanden gaan terug naar {sha}.",
+  "switchBack": "Terug naar {branch}.",
+  "recreate": "{name} wordt opnieuw gemaakt op {sha}.",
+  "backAndDelete": "Terug naar {branch}, en {name} wordt verwijderd.",
+  "delete": "{name} wordt verwijderd.",
+  "renameBack": "{to} heet weer {from}.",
+  "nothing": "Er is niets om ongedaan te maken.",
+  "changed": "Er is sindsdien iets veranderd, dus het kan hier niet ongedaan gemaakt worden.",
+  "detached": "HEAD stond eerst niet op een branch.",
+  "noCommit": "Er was eerst geen commit.",
+  "localChanges": "Je lokale wijzigingen zitten in de bestanden die het zou veranderen. Commit, stash of gooi ze weg, en maak het dan ongedaan."
+}

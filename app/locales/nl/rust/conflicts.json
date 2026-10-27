@@ -1,0 +1,20 @@
+{
+  "rebasing": "{name} rebasen op {onto}",
+  "rebasingYours": "Je branch rebasen op {onto}",
+  "rebasingOntoOther": "{name} rebasen op de andere branch",
+  "rebasingYoursOntoOther": "Je branch rebasen op de andere branch",
+  "otherBranch": "de andere branch",
+  "yourCommitOn": "je commit op {name}",
+  "yourCommit": "je commit",
+  "merging": "{other} mergen in {branch}",
+  "reverting": "\"{subject}\" terugdraaien op {branch}",
+  "revertOf": "het terugdraaien van \"{subject}\"",
+  "cherryPicking": "\"{subject}\" cherry-picken op {branch}",
+  "noConflicts": "{path} heeft geen conflicten.",
+  "nothingToContinue": "Er loopt niets om mee verder te gaan.",
+  "stillConflicting": {
+    "one": "{count} bestand heeft nog een conflict.",
+    "other": "{count} bestanden hebben nog een conflict."
+  },
+  "nothingToAbort": "Er loopt niets om af te breken."
+}

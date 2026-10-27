@@ -1,0 +1,22 @@
+{
+  "silent": "git failed without saying why.",
+  "couldNotStart": "git could not start: {error}",
+  "detached": "You are not on a branch (HEAD is detached). Switch to a branch first.",
+  "noRemoteToFetch": "This repository has no remote to fetch from.",
+  "noSuchRemote": "This repository has no remote \"{name}\".",
+  "fetchStopped": "Fetching was stopped.",
+  "noPullRefs": "{remote} offers no pull requests as refs. GitHub, GitLab and Gitea do; other hosts may not.",
+  "noPull": "{remote} has no pull request #{number}.",
+  "pullUntrusted": "Pulling checks files out and can run this repository's hooks and filters, so it runs only in a trusted folder. Fetch works here; trust this folder to pull.",
+  "noUpstream": "{branch} tracks no remote branch, so there is nothing to pull. Push it first to set one up.",
+  "pullStopped": "Pulling was stopped.",
+  "submodulesUntrusted": "Updating submodules clones from the addresses in this repository's .gitmodules and checks files out, so it runs only in a trusted folder. Trust this folder to update them.",
+  "submodulesStopped": "Updating the submodules was stopped.",
+  "noRemoteToPush": "This repository has no remote to push to.",
+  "noRemoteNamed": "There is no remote named {name}.",
+  "pushUntrusted": "Pushing runs this repository's pre-push hook, so it runs only in a trusted folder. Trust this folder to push.",
+  "pushStopped": "Pushing was stopped.",
+  "stale": "{remote}/{target} has changed since this repository last fetched it, so it was not overwritten. Fetch and look at what is there first.",
+  "noTag": "There is no tag {name}.",
+  "tagThere": "{remote} already has a tag {name} on another commit; it was left as it is."
+}

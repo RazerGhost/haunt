@@ -1,0 +1,25 @@
+{
+  "badBranch": "\"{name}\" kan geen branchnaam zijn.",
+  "badTag": "\"{name}\" kan geen tagnaam zijn.",
+  "filtered": {
+    "bisect": "Bisecten schrijft bestanden die door de filters van deze repository gaan (zoals Git LFS), en die draaien alleen in een vertrouwde map. Vertrouw deze map eerst.",
+    "merge": "Mergen schrijft bestanden die door de filters van deze repository gaan (zoals Git LFS), en die draaien alleen in een vertrouwde map. Vertrouw deze map eerst.",
+    "continue": "Verdergaan schrijft bestanden die door de filters van deze repository gaan (zoals Git LFS), en die draaien alleen in een vertrouwde map. Vertrouw deze map eerst.",
+    "abort": "Afbreken schrijft bestanden die door de filters van deze repository gaan (zoals Git LFS), en die draaien alleen in een vertrouwde map. Vertrouw deze map eerst.",
+    "undo": "Ongedaan maken schrijft bestanden die door de filters van deze repository gaan (zoals Git LFS), en die draaien alleen in een vertrouwde map. Vertrouw deze map eerst.",
+    "patches": "Patches toepassen schrijft bestanden die door de filters van deze repository gaan (zoals Git LFS), en die draaien alleen in een vertrouwde map. Vertrouw deze map eerst.",
+    "rebase": "Rebasen schrijft bestanden die door de filters van deze repository gaan (zoals Git LFS), en die draaien alleen in een vertrouwde map. Vertrouw deze map eerst.",
+    "switch": "Van branch wisselen schrijft bestanden die door de filters van deze repository gaan (zoals Git LFS), en die draaien alleen in een vertrouwde map. Vertrouw deze map eerst.",
+    "stash": "Stashen schrijft bestanden die door de filters van deze repository gaan (zoals Git LFS), en die draaien alleen in een vertrouwde map. Vertrouw deze map eerst.",
+    "applyStash": "Een stash toepassen schrijft bestanden die door de filters van deze repository gaan (zoals Git LFS), en die draaien alleen in een vertrouwde map. Vertrouw deze map eerst.",
+    "revert": "Terugdraaien schrijft bestanden die door de filters van deze repository gaan (zoals Git LFS), en die draaien alleen in een vertrouwde map. Vertrouw deze map eerst.",
+    "cherryPick": "Cherry-picken schrijft bestanden die door de filters van deze repository gaan (zoals Git LFS), en die draaien alleen in een vertrouwde map. Vertrouw deze map eerst.",
+    "hardReset": "Een harde reset schrijft bestanden die door de filters van deze repository gaan (zoals Git LFS), en die draaien alleen in een vertrouwde map. Vertrouw deze map eerst.",
+    "worktree": "Een worktree toevoegen schrijft bestanden die door de filters van deze repository gaan (zoals Git LFS), en die draaien alleen in een vertrouwde map. Vertrouw deze map eerst."
+  },
+  "noBranch": "Er is geen branch die \"{name}\" heet.",
+  "unmerged": "{name} heeft commits die geen andere branch heeft. Verwijderen gooit ze weg; bevestig om door te gaan.",
+  "nothingToStash": "Er zijn geen wijzigingen om te stashen.",
+  "stashGone": "Die stash is er niet meer.",
+  "stashUnknown": "Die stash is onbekend."
+}

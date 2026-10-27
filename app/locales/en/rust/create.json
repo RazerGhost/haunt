@@ -1,0 +1,9 @@
+{
+  "badName": "\"{name}\" cannot be a folder's name.",
+  "noParent": "The folder to put it in is not there.",
+  "there": "{path} is there already.",
+  "stopped": "The clone was stopped.",
+  "cloneGone": "The clone is not there.",
+  "notMade": "The folder could not be made: {error}",
+  "notMadeAtAll": "The folder could not be made."
+}

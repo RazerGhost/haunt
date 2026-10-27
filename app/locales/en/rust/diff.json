@@ -1,0 +1,9 @@
+{
+  "noCommit": "This repository has no commit yet.",
+  "lastCommit": "the last commit",
+  "notCommit": "\"{name}\" is not a commit, branch or tag here.",
+  "lastCommitNoMain": "the last commit (no main branch found)",
+  "notBranch": "\"{target}\" is not a branch here.",
+  "uncommittedWork": "{target} (uncommitted work)",
+  "whereLeft": "where {branch} left {target}"
+}

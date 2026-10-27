@@ -1,0 +1,5 @@
+{
+  "empty": "Type something to search for.",
+  "notCommit": "That is not a commit.",
+  "notPath": "\"{path}\" is not a path in this folder."
+}

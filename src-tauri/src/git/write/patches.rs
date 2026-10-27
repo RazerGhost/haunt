@@ -40,7 +40,7 @@ pub struct PatchPreview {
 fn patch_file(path: &str) -> Result<&str, String> {
     let file = Path::new(path);
     if path.starts_with('-') || !file.is_absolute() || !file.is_file() {
-        return Err(format!("\"{path}\" is not a patch file."));
+        return Err(said!("patches.notPatchFile", "\"{path}\" is not a patch file.", path = path));
     }
     Ok(path)
 }
@@ -81,7 +81,7 @@ pub fn read_patch(path: &str) -> Result<PatchInfo, String> {
         _ => subject.trim().to_owned(),
     };
     if paths.is_empty() {
-        return Err(format!("{name} changes no file: it is not a patch."));
+        return Err(said!("patches.notPatch", "{name} changes no file: it is not a patch.", name = name));
     }
     Ok(PatchInfo { file: path.to_owned(), subject: if subject.is_empty() { name } else { subject }, author, paths })
 }
@@ -92,7 +92,7 @@ impl Writer<'_> {
         let to = revision(to)?;
         let dir = Path::new(folder);
         if folder.starts_with('-') || !dir.is_absolute() || !dir.is_dir() {
-            return Err(format!("\"{folder}\" is not a folder."));
+            return Err(said!("patches.notFolder", "\"{folder}\" is not a folder.", folder = folder));
         }
         let range = match from {
             Some(from) => format!("{}..{to}", revision(from)?),
@@ -115,7 +115,7 @@ impl Writer<'_> {
             return Ok(PatchPreview {
                 patches,
                 commit: None,
-                problem: Some("This repository has no commit yet.".into()),
+                problem: Some(said!("patches.noCommit", "This repository has no commit yet.")),
             });
         };
         let index = super::TempIndex::new("patches");
@@ -125,7 +125,12 @@ impl Writer<'_> {
             for file in files {
                 if let Err(problem) = self.git(&["apply", "--cached", "--", file], None, &env, None) {
                     let name = Path::new(file).file_name().map(|name| name.to_string_lossy().into_owned());
-                    return Ok(Err(format!("{} does not apply: {problem}", name.unwrap_or_default())));
+                    return Ok(Err(said!(
+                        "patches.doesNotApply",
+                        "{name} does not apply: {problem}",
+                        name = name.unwrap_or_default(),
+                        problem = crate::said::english(&problem)
+                    )));
                 }
             }
             let tree = self.git(&["write-tree"], None, &env, None)?.trim().to_owned();
@@ -150,21 +155,25 @@ impl Writer<'_> {
             patch_file(file)?;
         }
         if files.is_empty() {
-            return Err("Choose a patch file first.".into());
+            return Err(said!("patches.choose", "Choose a patch file first."));
         }
-        self.refuse_checkout("Applying patches")?;
+        self.refuse_checkout(super::refs::Checkout::Patches)?;
         let queue = queue(self.root);
         let _turn = queue.lock().unwrap();
         self.wait_for_lock()?;
         let paths: Vec<&str> = files.iter().map(String::as_str).collect();
         if commit {
             if self.git_path_exists("rebase-apply") {
-                return Err("A rebase or another patch is going on: finish or stop it first.".into());
+                return Err(said!("patches.busy", "A rebase or another patch is going on: finish or stop it first."));
             }
             let args = [&["am", "--3way", "--"][..], &paths].concat();
             if let Err(problem) = self.git(&args, None, &[], None) {
                 let _ = self.git(&["am", "--abort"], None, &[], None);
-                return Err(format!("{problem}\nNothing was applied."));
+                return Err(said!(
+                    "patches.nothingApplied",
+                    "{problem}\nNothing was applied.",
+                    problem = crate::said::english(&problem)
+                ));
             }
             Ok(())
         } else {

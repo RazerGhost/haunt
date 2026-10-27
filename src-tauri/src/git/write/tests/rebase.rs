@@ -88,7 +88,7 @@ fn a_rebase_that_conflicts_is_continued_from_the_conflict_view() {
     let steps = [step(&second, RebaseAction::Pick), step(&first, RebaseAction::Pick)];
     assert_eq!(writer.rebase(&base, &steps).unwrap(), Outcome::Conflicts);
     let going = writer.operation().unwrap().unwrap();
-    assert!(going.title.starts_with("Rebasing main"), "{}", going.title);
+    assert!(crate::said::english(&going.title).starts_with("Rebasing main"), "{}", going.title);
     writer.resolve("b.txt", Some("second\n")).unwrap();
     let mut outcome = writer.proceed().unwrap();
     // The first change now conflicts with the second one in turn.

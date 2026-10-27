@@ -1,0 +1,7 @@
+{
+  "oldNode": "Haunt needs Node {need} or later to read TypeScript and JavaScript; this machine has {version}. PHP, Rust, Lua, Python, Go, Java, C#, Ruby, C and C++ are still read. Update Node (or install Bun or Deno), then open Haunt again.",
+  "noRuntime": "No JavaScript runtime was found, so Haunt reads only PHP, Rust, Lua, Python, Go, Java, C#, Ruby, C and C++. For TypeScript and JavaScript, install Node {need} or later from nodejs.org (or Bun or Deno), then open Haunt again.",
+  "testsNeedNode": "Running tests needs Node {need} or later: install it from nodejs.org, then open Haunt again.",
+  "noGit": "Git was not found. Haunt works with the git on your machine: install it from git-scm.com, then open Haunt again.",
+  "oldGit": "Haunt needs git {need} or later; this machine has \"{version}\". Update it from git-scm.com, then open Haunt again."
+}

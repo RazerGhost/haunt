@@ -65,5 +65,11 @@
   "noExtension": "(no extension)",
   "readmeCut": "The README is longer than this; the rest is in the file.",
   "linkCopied": "Link copied",
-  "linkNotCopied": "Could not copy the link"
+  "linkNotCopied": "Could not copy the link",
+  "addRemote": "Add a remote",
+  "copyUrl": "Copy URL",
+  "changeUrl": "Change URL…",
+  "renameRemote": "Rename…",
+  "removeRemote": "Remove…",
+  "remoteActions": "What to do with {name}"
 }

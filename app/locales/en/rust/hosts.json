@@ -1,0 +1,11 @@
+{
+  "timedOut": "{tool} did not answer within {seconds} seconds.",
+  "notListed": "{tool} could not list them: {problem}",
+  "unreadable": "{tool} answered in a way Haunt does not read: {problem}",
+  "noBitbucket": "Haunt has no tool to make pull requests on Bitbucket.",
+  "teaNoDrafts": "Gitea's tea does not make drafts.",
+  "pickBranches": "Pick the branch it is from and the one it goes into.",
+  "needsTitle": "A pull request needs a title.",
+  "notInstalled": "{tool} is not installed. Install it and sign in ({tool} auth login) to make pull requests from Haunt.",
+  "notMade": "{tool} could not make it: {problem}"
+}

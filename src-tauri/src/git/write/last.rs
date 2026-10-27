@@ -65,20 +65,35 @@ impl Done {
             |sha: &Option<String>| sha.as_deref().map_or("".to_owned(), |sha| sha[..sha.len().min(7)].to_owned());
         let branch = self.before.branch.as_deref().unwrap_or("HEAD");
         match &self.undo {
-            Undo::Reset("--soft") => {
-                format!("{branch} goes back to {}; the changes stay staged.", short(&self.before.sha))
+            Undo::Reset("--soft") => said!(
+                "last.soft",
+                "{branch} goes back to {sha}; the changes stay staged.",
+                branch = branch,
+                sha = short(&self.before.sha)
+            ),
+            Undo::Reset("--mixed") => said!(
+                "last.mixed",
+                "{branch} goes back to {sha}; your files stay as they are.",
+                branch = branch,
+                sha = short(&self.before.sha)
+            ),
+            Undo::Reset(_) => said!(
+                "last.keep",
+                "{branch} and its files go back to {sha}.",
+                branch = branch,
+                sha = short(&self.before.sha)
+            ),
+            Undo::SwitchBack => said!("last.switchBack", "Back to {branch}.", branch = branch),
+            Undo::Recreate { name, sha } => {
+                said!("last.recreate", "{name} is made again at {sha}.", name = name, sha = &sha[..sha.len().min(7)])
             }
-            Undo::Reset("--mixed") => {
-                format!("{branch} goes back to {}; your files stay as they are.", short(&self.before.sha))
-            }
-            Undo::Reset(_) => format!("{branch} and its files go back to {}.", short(&self.before.sha)),
-            Undo::SwitchBack => format!("Back to {branch}."),
-            Undo::Recreate { name, sha } => format!("{name} is made again at {}.", &sha[..sha.len().min(7)]),
             Undo::RemoveCreated { name } if self.before.branch != self.after.branch => {
-                format!("Back to {branch}, and {name} is deleted.")
+                said!("last.backAndDelete", "Back to {branch}, and {name} is deleted.", branch = branch, name = name)
             }
-            Undo::RemoveCreated { name } => format!("{name} is deleted."),
-            Undo::RenameBack { from, to } => format!("{to} is named {from} again."),
+            Undo::RemoveCreated { name } => said!("last.delete", "{name} is deleted.", name = name),
+            Undo::RenameBack { from, to } => {
+                said!("last.renameBack", "{to} is named {from} again.", to = to, from = from)
+            }
         }
     }
 }
@@ -124,29 +139,36 @@ impl Writer<'_> {
 
     /// Undoes the last write; returns its title.
     pub fn undo_last(&self) -> Result<String, String> {
-        let entry = done().lock().unwrap().remove(self.root).ok_or("There is nothing to undo.")?;
+        let entry = done()
+            .lock()
+            .unwrap()
+            .remove(self.root)
+            .ok_or_else(|| said!("last.nothing", "There is nothing to undo."))?;
         if self.snapshot() != entry.after {
-            return Err("Something has changed since, so it cannot be undone from here.".into());
+            return Err(said!("last.changed", "Something has changed since, so it cannot be undone from here."));
         }
         let back = |name: &Option<String>| -> Result<(), String> {
             match name {
                 Some(name) => self.switch_branch(name, SwitchMode::Carry),
-                None => Err("HEAD was not on a branch before.".into()),
+                None => Err(said!("last.detached", "HEAD was not on a branch before.")),
             }
         };
         match &entry.undo {
             Undo::Reset(flag) => {
-                let sha = entry.before.sha.as_deref().ok_or("There was no commit before.")?;
+                let sha =
+                    entry.before.sha.as_deref().ok_or_else(|| said!("last.noCommit", "There was no commit before."))?;
                 if *flag == "--keep" {
-                    self.refuse_checkout("Undoing")?;
+                    self.refuse_checkout(super::refs::Checkout::Undo)?;
                 }
                 let queue = queue(self.root);
                 let _turn = queue.lock().unwrap();
                 self.wait_for_lock()?;
                 self.git(&["reset", "-q", flag, sha, "--"], None, &[], None).map_err(|said| {
                     if said.contains("not uptodate") || said.contains("would be overwritten") {
-                        "Your local changes are in the files it would change. Commit, stash or discard them, then undo."
-                            .to_owned()
+                        said!(
+                            "last.localChanges",
+                            "Your local changes are in the files it would change. Commit, stash or discard them, then undo."
+                        )
                     } else {
                         said
                     }

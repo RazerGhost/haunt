@@ -86,38 +86,60 @@ impl Writer<'_> {
             let name = self
                 .read_git_file("rebase-merge/head-name")
                 .or_else(|| self.read_git_file("rebase-apply/head-name"))
-                .map(|name| name.trim().trim_start_matches("refs/heads/").to_owned())
-                .unwrap_or_else(|| "your branch".into());
-            let onto = self
-                .read_git_file("rebase-merge/onto")
-                .or_else(|| self.read_git_file("rebase-apply/onto"))
-                .map(|sha| {
+                .map(|name| name.trim().trim_start_matches("refs/heads/").to_owned());
+            let onto = self.read_git_file("rebase-merge/onto").or_else(|| self.read_git_file("rebase-apply/onto")).map(
+                |sha| {
                     let sha = sha.trim().to_owned();
                     read(self.root, &["name-rev", "--name-only", "--no-undefined", &sha])
                         .map(|name| name.trim().to_owned())
                         .unwrap_or_else(|_| sha.chars().take(7).collect())
-                })
-                .unwrap_or_else(|| "the other branch".into());
-            (OperationKind::Rebase, format!("Rebasing {name} onto {onto}"), onto, format!("your commit on {name}"))
+                },
+            );
+            let title = match (&name, &onto) {
+                (Some(name), Some(onto)) => {
+                    said!("conflicts.rebasing", "Rebasing {name} onto {onto}", name = name, onto = onto)
+                }
+                (None, Some(onto)) => said!("conflicts.rebasingYours", "Rebasing your branch onto {onto}", onto = onto),
+                (Some(name), None) => {
+                    said!("conflicts.rebasingOntoOther", "Rebasing {name} onto the other branch", name = name)
+                }
+                (None, None) => said!("conflicts.rebasingYoursOntoOther", "Rebasing your branch onto the other branch"),
+            };
+            let ours = onto.unwrap_or_else(|| said!("conflicts.otherBranch", "the other branch"));
+            let theirs = match name {
+                Some(name) => said!("conflicts.yourCommitOn", "your commit on {name}", name = name),
+                None => said!("conflicts.yourCommit", "your commit"),
+            };
+            (OperationKind::Rebase, title, ours, theirs)
         } else if self.git_path_exists("MERGE_HEAD") {
             let message = self.read_git_file("MERGE_MSG").unwrap_or_default();
             let first = message.lines().next().unwrap_or_default();
             // "Merge branch 'feature' of ../remote" or "Merge remote-tracking branch 'origin/main'".
             let other = first.split('\'').nth(1).map(str::to_owned).unwrap_or_else(|| self.subject_of("MERGE_HEAD"));
-            (OperationKind::Merge, format!("Merging {other} into {branch}"), branch.clone(), other)
+            (
+                OperationKind::Merge,
+                said!("conflicts.merging", "Merging {other} into {branch}", other = other, branch = branch),
+                branch.clone(),
+                other,
+            )
         } else if self.git_path_exists("REVERT_HEAD") {
             let subject = self.subject_of("REVERT_HEAD");
             (
                 OperationKind::Revert,
-                format!("Reverting \"{subject}\" on {branch}"),
+                said!("conflicts.reverting", "Reverting \"{subject}\" on {branch}", subject = subject, branch = branch),
                 branch.clone(),
-                format!("the revert of \"{subject}\""),
+                said!("conflicts.revertOf", "the revert of \"{subject}\"", subject = subject),
             )
         } else if self.git_path_exists("CHERRY_PICK_HEAD") {
             let subject = self.subject_of("CHERRY_PICK_HEAD");
             (
                 OperationKind::CherryPick,
-                format!("Cherry-picking \"{subject}\" onto {branch}"),
+                said!(
+                    "conflicts.cherryPicking",
+                    "Cherry-picking \"{subject}\" onto {branch}",
+                    subject = subject,
+                    branch = branch
+                ),
                 branch.clone(),
                 format!("\"{subject}\""),
             )
@@ -129,7 +151,7 @@ impl Writer<'_> {
 
     /// Merges `name` (a branch, a remote branch or a tag) into the current branch.
     pub fn merge(&self, name: &str) -> Result<Outcome, String> {
-        self.refuse_checkout("Merging")?;
+        self.refuse_checkout(super::refs::Checkout::Merge)?;
         self.refuse_busy()?;
         let name = crate::git::cli::revision(name)?;
         let queue = queue(self.root);
@@ -148,7 +170,7 @@ impl Writer<'_> {
     pub fn conflict(&self, path: &str) -> Result<ConflictFile, String> {
         let path = checked(path)?;
         if !self.conflicted()?.iter().any(|known| known == path) {
-            return Err(format!("{path} has no conflicts."));
+            return Err(said!("conflicts.noConflicts", "{path} has no conflicts.", path = path));
         }
         let mut binary = false;
         let mut stage = |number: u8| -> Option<String> {
@@ -199,16 +221,14 @@ impl Writer<'_> {
     /// Finishes the operation once no file conflicts: the merge commit, or the next step of a revert, cherry-pick or
     /// rebase (which may stop on new conflicts).
     pub fn proceed(&self) -> Result<Outcome, String> {
-        let Some(going) = self.operation()? else { return Err("Nothing is going on to continue.".into()) };
+        let Some(going) = self.operation()? else {
+            return Err(said!("conflicts.nothingToContinue", "Nothing is going on to continue."));
+        };
         if !going.conflicted.is_empty() {
-            return Err(format!(
-                "{} {} still {}.",
-                going.conflicted.len(),
-                if going.conflicted.len() == 1 { "file" } else { "files" },
-                if going.conflicted.len() == 1 { "conflicts" } else { "conflict" }
-            ));
+            let count = going.conflicted.len();
+            return Err(said!("conflicts.stillConflicting", "{count} files still conflict.", count = count));
         }
-        self.refuse_checkout("Continuing")?;
+        self.refuse_checkout(super::refs::Checkout::Continue)?;
         let queue = queue(self.root);
         let _turn = queue.lock().unwrap();
         self.wait_for_lock()?;
@@ -231,8 +251,10 @@ impl Writer<'_> {
 
     /// Stops the operation and puts the branch and the files back as they were before it.
     pub fn abort(&self) -> Result<(), String> {
-        let Some(going) = self.operation()? else { return Err("Nothing is going on to abort.".into()) };
-        self.refuse_checkout("Aborting")?;
+        let Some(going) = self.operation()? else {
+            return Err(said!("conflicts.nothingToAbort", "Nothing is going on to abort."));
+        };
+        self.refuse_checkout(super::refs::Checkout::Abort)?;
         let queue = queue(self.root);
         let _turn = queue.lock().unwrap();
         self.wait_for_lock()?;

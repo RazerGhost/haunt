@@ -28,7 +28,7 @@ function notNow() {
     <p class="min-w-0 flex-1 text-muted">
       <span class="font-medium text-highlighted">{{ t('TrustBanner.question') }}</span>
       {{ t('TrustBanner.runsBefore') }}
-      <template v-for="(want, i) in info!.wants" :key="want.path"><template v-if="i">{{ i === info!.wants.length - 1 ? t('TrustBanner.and') : ', ' }}</template><span :title="want.path" class="text-default">{{ want.label }}</span></template>{{ t('TrustBanner.runsAfter') }}
+      <template v-for="(want, i) in info!.wants" :key="want.path"><template v-if="i">{{ i === info!.wants.length - 1 ? t('TrustBanner.and') : ', ' }}</template><span :title="want.path" class="text-default">{{ said(want.label) }}</span></template>{{ t('TrustBanner.runsAfter') }}
       <span v-if="problem" class="text-error">{{ problem }}</span>
     </p>
     <UButton :label="t('TrustBanner.see')" size="xs" color="neutral" variant="outline" @click="reading = true" />

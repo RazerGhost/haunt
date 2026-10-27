@@ -40,6 +40,25 @@ pub struct DroppedStash {
     pub message: String,
 }
 
+/// A write that checks files out (see `refuse_checkout`).
+#[derive(Debug, Clone, Copy)]
+pub(super) enum Checkout {
+    Bisect,
+    Merge,
+    Continue,
+    Abort,
+    Undo,
+    Patches,
+    Rebase,
+    Switch,
+    Stash,
+    ApplyStash,
+    Revert,
+    CherryPick,
+    HardReset,
+    Worktree,
+}
+
 fn now_ms() -> u128 {
     SystemTime::now().duration_since(UNIX_EPOCH).map(|time| time.as_millis()).unwrap_or(0)
 }
@@ -49,7 +68,7 @@ impl Writer<'_> {
     pub(super) fn branch_name<'n>(&self, name: &'n str) -> Result<&'n str, String> {
         let bad = name.is_empty() || name.starts_with('-') || name.contains(char::is_whitespace);
         if bad || read(self.root, &["check-ref-format", "--branch", name]).is_err() {
-            return Err(format!("\"{name}\" cannot be a branch name."));
+            return Err(said!("refs.badBranch", "\"{name}\" cannot be a branch name.", name = name));
         }
         Ok(name)
     }
@@ -57,7 +76,7 @@ impl Writer<'_> {
     pub(super) fn tag_name<'n>(&self, name: &'n str) -> Result<&'n str, String> {
         let bad = name.is_empty() || name.starts_with('-') || name.contains(char::is_whitespace);
         if bad || read(self.root, &["check-ref-format", &format!("refs/tags/{name}")]).is_err() {
-            return Err(format!("\"{name}\" cannot be a tag name."));
+            return Err(said!("refs.badTag", "\"{name}\" cannot be a tag name.", name = name));
         }
         Ok(name)
     }
@@ -65,14 +84,26 @@ impl Writer<'_> {
     /// In an untrusted folder, a write that checks files out is refused when the repository's files go through a filter
     /// (`filter=` in a `.gitattributes`, `info/attributes` or `core.attributesFile`) and a filter driver is set up. A
     /// filter defined only in git's own config (Git for Windows sets up Git LFS for everyone) is not enough.
-    pub(super) fn refuse_checkout(&self, what: &str) -> Result<(), String> {
+    pub(super) fn refuse_checkout(&self, what: Checkout) -> Result<(), String> {
         if self.trusted || !self.uses_filters() {
             return Ok(());
         }
-        Err(format!(
-            "{what} writes files that go through this repository's filters (such as Git LFS), which run only in a \
-             trusted folder. Trust this folder first."
-        ))
+        Err(match what {
+            Checkout::Bisect => said!("refs.filtered.bisect", "Bisecting writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first."),
+            Checkout::Merge => said!("refs.filtered.merge", "Merging writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first."),
+            Checkout::Continue => said!("refs.filtered.continue", "Continuing writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first."),
+            Checkout::Abort => said!("refs.filtered.abort", "Aborting writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first."),
+            Checkout::Undo => said!("refs.filtered.undo", "Undoing writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first."),
+            Checkout::Patches => said!("refs.filtered.patches", "Applying patches writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first."),
+            Checkout::Rebase => said!("refs.filtered.rebase", "Rebasing writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first."),
+            Checkout::Switch => said!("refs.filtered.switch", "Switching branches writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first."),
+            Checkout::Stash => said!("refs.filtered.stash", "Stashing writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first."),
+            Checkout::ApplyStash => said!("refs.filtered.applyStash", "Applying a stash writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first."),
+            Checkout::Revert => said!("refs.filtered.revert", "Reverting writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first."),
+            Checkout::CherryPick => said!("refs.filtered.cherryPick", "Cherry-picking writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first."),
+            Checkout::HardReset => said!("refs.filtered.hardReset", "A hard reset writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first."),
+            Checkout::Worktree => said!("refs.filtered.worktree", "Adding a worktree writes files that go through this repository's filters (such as Git LFS), which run only in a trusted folder. Trust this folder first."),
+        })
     }
 
     fn uses_filters(&self) -> bool {
@@ -107,7 +138,7 @@ impl Writer<'_> {
         let name = self.branch_name(name)?;
         let at = at.map(revision).transpose()?.unwrap_or("HEAD");
         if switch {
-            self.refuse_checkout("Switching branches")?;
+            self.refuse_checkout(Checkout::Switch)?;
         }
         let queue = queue(self.root);
         let _turn = queue.lock().unwrap();
@@ -122,7 +153,7 @@ impl Writer<'_> {
     /// Switches to a local branch, or to a remote branch through a local one that tracks it (made when there is none).
     pub fn switch_branch(&self, name: &str, mode: SwitchMode) -> Result<(), String> {
         let name = revision(name)?;
-        self.refuse_checkout("Switching branches")?;
+        self.refuse_checkout(Checkout::Switch)?;
         let queue = queue(self.root);
         let _turn = queue.lock().unwrap();
         self.wait_for_lock()?;
@@ -130,7 +161,7 @@ impl Writer<'_> {
         let remote =
             !local && read(self.root, &["rev-parse", "--verify", "--quiet", &format!("refs/remotes/{name}")]).is_ok();
         if !local && !remote {
-            return Err(format!("There is no branch called \"{name}\"."));
+            return Err(said!("refs.noBranch", "There is no branch called \"{name}\".", name = name));
         }
         if mode == SwitchMode::Stash {
             let dirty = !read(self.root, &["status", "--porcelain", "--untracked-files=normal"])?.trim().is_empty();
@@ -176,8 +207,10 @@ impl Writer<'_> {
     pub fn delete_branch(&self, name: &str, unmerged: bool) -> Result<(), String> {
         let name = self.branch_name(name)?;
         if !unmerged && self.unmerged(name)? > 0 {
-            return Err(format!(
-                "{name} has commits no other branch has. Deleting it loses them; confirm to go ahead."
+            return Err(said!(
+                "refs.unmerged",
+                "{name} has commits no other branch has. Deleting it loses them; confirm to go ahead.",
+                name = name
             ));
         }
         let queue = queue(self.root);
@@ -191,7 +224,7 @@ impl Writer<'_> {
     /// Stashes the changes in the working tree (untracked files too when asked), with an optional message.
     /// Stashes the changes, or only those of `paths` (relative to the opened folder; untracked ones need `untracked`).
     pub fn stash(&self, message: Option<&str>, untracked: bool, paths: &[String]) -> Result<(), String> {
-        self.refuse_checkout("Stashing")?;
+        self.refuse_checkout(Checkout::Stash)?;
         let paths = if paths.is_empty() { Vec::new() } else { super::checked_all(paths)? };
         let queue = queue(self.root);
         let _turn = queue.lock().unwrap();
@@ -209,7 +242,7 @@ impl Writer<'_> {
         }
         let out = self.git(&args, None, &[], None)?;
         if out.contains("No local changes to save") {
-            return Err("There are no changes to stash.".into());
+            return Err(said!("refs.nothingToStash", "There are no changes to stash."));
         }
         Ok(())
     }
@@ -220,7 +253,7 @@ impl Writer<'_> {
 
     /// Applies a stash to the working tree; `pop` also drops it when it applied cleanly.
     pub fn apply_stash(&self, index: u32, pop: bool) -> Result<(), String> {
-        self.refuse_checkout("Applying a stash")?;
+        self.refuse_checkout(Checkout::ApplyStash)?;
         let queue = queue(self.root);
         let _turn = queue.lock().unwrap();
         self.wait_for_lock()?;
@@ -236,7 +269,7 @@ impl Writer<'_> {
         let reference = Self::stash_ref(index);
         let sha = read(self.root, &["rev-parse", "--verify", "--quiet", &reference])?.trim().to_owned();
         if sha.is_empty() {
-            return Err("That stash is not there any more.".into());
+            return Err(said!("refs.stashGone", "That stash is not there any more."));
         }
         let mut stamp = now_ms();
         while read(self.root, &["rev-parse", "--verify", "--quiet", &format!("{DROPPED}{stamp}")]).is_ok() {
@@ -272,10 +305,14 @@ impl Writer<'_> {
     /// Brings a dropped stash back into the stash list.
     pub fn restore_stash(&self, id: &str) -> Result<(), String> {
         if id.is_empty() || !id.chars().all(|c| c.is_ascii_digit()) {
-            return Err("That stash is not known.".into());
+            return Err(said!("refs.stashUnknown", "That stash is not known."));
         }
         let reference = format!("{DROPPED}{id}");
-        let saved = self.dropped()?.into_iter().find(|entry| entry.id == id).ok_or("That stash is not known.")?;
+        let saved = self
+            .dropped()?
+            .into_iter()
+            .find(|entry| entry.id == id)
+            .ok_or_else(|| said!("refs.stashUnknown", "That stash is not known."))?;
         let queue = queue(self.root);
         let _turn = queue.lock().unwrap();
         self.wait_for_lock()?;

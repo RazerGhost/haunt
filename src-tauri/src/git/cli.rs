@@ -78,17 +78,27 @@ fn spawn(root: &str, args: &[&str]) -> Result<Vec<u8>, String> {
     let args: Vec<String> = args.iter().map(|arg| arg.to_string()).collect();
     let command = base(root, &args);
     let output = crate::process::run(command, READ_LIMIT).map_err(|failure| match failure {
-        crate::process::Failure::NotFound => "git could not start: it is not installed.".to_owned(),
+        crate::process::Failure::NotFound => said!("cli.notInstalled", "git could not start: it is not installed."),
         crate::process::Failure::TimedOut => {
-            format!("git took longer than {} minutes and was stopped.", READ_LIMIT.as_secs() / 60)
+            said!(
+                "cli.tookTooLong",
+                "git took longer than {minutes} minutes and was stopped.",
+                minutes = READ_LIMIT.as_secs() / 60
+            )
         }
-        crate::process::Failure::Other(error) => format!("git could not start: {error}"),
+        crate::process::Failure::Other(error) => {
+            said!("cli.couldNotStart", "git could not start: {error}", error = error)
+        }
     })?;
     if output.status.success() {
         Ok(output.stdout)
     } else {
         let message = String::from_utf8_lossy(&output.stderr).trim().to_owned();
-        Err(if message.is_empty() { format!("git failed ({})", output.status) } else { message })
+        Err(if message.is_empty() {
+            said!("cli.failed", "git failed ({status})", status = output.status)
+        } else {
+            message
+        })
     }
 }
 
@@ -152,7 +162,7 @@ pub fn git_bytes(root: &str, args: &[&str]) -> Result<Vec<u8>, String> {
 
 /// A read's whole arguments: the repository's filters off, then the command with the flags it needs to run nothing.
 fn safe_args(root: &str, args: &[&str]) -> Result<Vec<String>, String> {
-    let (command, rest) = args.split_first().ok_or("No git command.")?;
+    let (command, rest) = args.split_first().ok_or_else(|| said!("cli.noCommand", "No git command."))?;
     let mut all: Vec<String> = safe_config(root);
     all.push(command.to_string());
     all.extend(safe_flags(command).iter().filter(|flag| !rest.contains(flag)).map(|flag| flag.to_string()));
@@ -190,7 +200,11 @@ impl Lines {
                 let stderr = self.stderr.take().and_then(|handle| handle.join().ok()).unwrap_or_default();
                 failed.map(|status| {
                     let message = String::from_utf8_lossy(&stderr).trim().to_owned();
-                    Err(if message.is_empty() { format!("git failed ({status})") } else { message })
+                    Err(if message.is_empty() {
+                        said!("cli.failed", "git failed ({status})", status = status)
+                    } else {
+                        message
+                    })
                 })
             }
             Ok(_) => {
@@ -215,8 +229,8 @@ impl Drop for Lines {
 fn started(command: &mut Command) -> Result<Child, String> {
     crate::startup::hide_console(command);
     command.spawn().map_err(|error| match error.kind() {
-        std::io::ErrorKind::NotFound => "git could not start: it is not installed.".to_owned(),
-        _ => format!("git could not start: {error}"),
+        std::io::ErrorKind::NotFound => said!("cli.notInstalled", "git could not start: it is not installed."),
+        _ => said!("cli.couldNotStart", "git could not start: {error}", error = error),
     })
 }
 
@@ -234,7 +248,7 @@ pub fn pipe(root: &str, first: &[&str], second: &[&str]) -> Result<Lines, String
     upstream.stdout(Stdio::piped()).stderr(Stdio::null());
     let mut feeding = started(&mut upstream)?;
     let mut command = base(root, &safe_args(root, second)?);
-    let input = feeding.stdout.take().ok_or("git gave no output.")?;
+    let input = feeding.stdout.take().ok_or_else(|| said!("cli.noOutput", "git gave no output."))?;
     command.stdin(Stdio::from(input)).stdout(Stdio::piped()).stderr(Stdio::piped());
     let mut child = started(&mut command)?;
     lines_of(vec![feeding], child.stdout.take(), child.stderr.take(), child)
@@ -247,7 +261,7 @@ fn lines_of(
     last: Child,
 ) -> Result<Lines, String> {
     children.push(last);
-    let stdout = stdout.ok_or("git gave no output.")?;
+    let stdout = stdout.ok_or_else(|| said!("cli.noOutput", "git gave no output."))?;
     // Read aside, so git never waits on a full error pipe while its output is read.
     let stderr = stderr.map(|mut stderr| {
         std::thread::spawn(move || {
@@ -266,7 +280,7 @@ pub fn top(root: &str) -> Result<(String, String), String> {
     let toplevel = lines.next().unwrap_or_default().trim().to_owned();
     let prefix = lines.next().unwrap_or_default().trim().to_owned();
     if toplevel.is_empty() {
-        return Err(format!("{root} is not in a git repository."));
+        return Err(said!("cli.notRepository", "{root} is not in a git repository.", root = root));
     }
     Ok((toplevel, prefix))
 }
@@ -279,7 +293,7 @@ pub fn revision(name: &str) -> Result<&str, String> {
         || name.contains("..")
         || name.contains('\0')
     {
-        return Err(format!("\"{name}\" is not a branch, tag or commit."));
+        return Err(said!("cli.notRevision", "\"{name}\" is not a branch, tag or commit.", name = name));
     }
     Ok(name)
 }

@@ -44,7 +44,10 @@ impl Writer<'_> {
         self.current_branch()?;
         let range = format!("{onto}..HEAD");
         if !read(self.root, &["rev-list", "--merges", "-n", "1", &range])?.trim().is_empty() {
-            return Err("There is a merge commit after that one. Rebasing across merges is not something Haunt does; pick a later commit.".into());
+            return Err(said!(
+                "rebase.merges",
+                "There is a merge commit after that one. Rebasing across merges is not something Haunt does; pick a later commit."
+            ));
         }
         let out = read(self.root, &["log", "--reverse", &format!("--format={COMMIT_FORMAT}"), &range])?;
         Ok(CommitInfo::all(&out))
@@ -52,7 +55,7 @@ impl Writer<'_> {
 
     /// Rebases the current branch onto `onto` with `steps`: every commit of the plan once, in the new order.
     pub fn rebase(&self, onto: &str, steps: &[RebaseStep]) -> Result<Outcome, String> {
-        self.refuse_checkout("Rebasing")?;
+        self.refuse_checkout(super::refs::Checkout::Rebase)?;
         self.refuse_busy()?;
         let plan = self.rebase_plan(onto)?;
         let onto = self.commit_of(onto)?;
@@ -61,22 +64,26 @@ impl Writer<'_> {
         wanted.sort_unstable();
         known.sort_unstable();
         if wanted != known {
-            return Err("The list of commits changed since it was read. Open the rebase again.".into());
+            return Err(said!(
+                "rebase.changed",
+                "The list of commits changed since it was read. Open the rebase again."
+            ));
         }
         match steps.iter().find(|step| step.action != RebaseAction::Drop) {
             Some(first) if matches!(first.action, RebaseAction::Squash | RebaseAction::Fixup) => {
-                return Err(
-                    "The first commit kept cannot be squashed: there is nothing before it to squash into.".into()
-                );
+                return Err(said!(
+                    "rebase.squashFirst",
+                    "The first commit kept cannot be squashed: there is nothing before it to squash into."
+                ));
             }
-            None => return Err("Every commit would be dropped. Reset the branch instead.".into()),
+            None => return Err(said!("rebase.allDropped", "Every commit would be dropped. Reset the branch instead.")),
             _ => {}
         }
         if steps.iter().any(|step| {
             step.action == RebaseAction::Reword
                 && step.message.as_deref().is_none_or(|message| message.trim().is_empty())
         }) {
-            return Err("A reworded commit needs its new message.".into());
+            return Err(said!("rebase.noMessage", "A reworded commit needs its new message."));
         }
 
         let dir = std::env::temp_dir().join(format!("haunt-rebase-{}-{}", std::process::id(), super::now_seconds()));

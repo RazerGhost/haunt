@@ -49,7 +49,10 @@ pub fn select(diff: &[u8], selected: &[LineRef], reverse: bool) -> Result<Option
             || line.starts_with(b"Binary files")
     });
     if whole {
-        return Err("Lines of a new, deleted or binary file cannot be picked: take the whole file.".into());
+        return Err(said!(
+            "patch.wholeFile",
+            "Lines of a new, deleted or binary file cannot be picked: take the whole file."
+        ));
     }
     let mut out: Vec<u8> = Vec::new();
     for line in header {

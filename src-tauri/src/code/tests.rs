@@ -201,7 +201,36 @@ fn a_csharp_project_namespaces_to_folders_and_calls_by_name() {
         seen.outline["Shop/Orders/Order.cs"],
         ["class Order exp :3", "  method Order exp :7", "  method Create exp :9", "  method Total exp :11"]
     );
-    assert_eq!(seen.calls, ["Create → Order", "Main → Create", "Main → Total", "Total → Rate"]);
+    // Properties with code and operators are methods with their calls; the auto-property Lines is left out.
+    assert_eq!(
+        seen.outline["Shop/Orders/Receipt.cs"],
+        [
+            "class Receipt exp :3",
+            "  method Receipt exp :7",
+            "  method Amount exp :11",
+            "  method Text exp :13",
+            "  method operator + exp :18",
+            "  method implicit operator int exp :20",
+            "  method Fee :22",
+            "  method Format :24",
+            "  method Merge :26"
+        ]
+    );
+    assert_eq!(
+        seen.calls,
+        [
+            "Amount → Fee",
+            "Amount → Total",
+            "Create → Order",
+            "Fee → Rate",
+            "Main → Create",
+            "Main → Total",
+            "Merge → Receipt",
+            "Text → Format",
+            "Total → Rate",
+            "operator + → Merge"
+        ]
+    );
     // A namespace is a folder: a using leads to its first file.
     assert_eq!(seen.imports, ["Shop/Program.cs → Shop/Orders/Order.cs (types)"]);
 }
@@ -220,8 +249,28 @@ fn a_ruby_project_require_relative_modules_and_private_methods() {
             "    method round :20"
         ]
     );
-    assert_eq!(seen.calls, ["main → self.make", "main → total", "total → round", "total → self.rate"]);
-    assert_eq!(seen.imports, ["lib/shop/order.rb → lib/shop/pricing.rb", "main.rb → lib/shop/order.rb"]);
+    // Names alone (`lines`, `footer`, `header`) are calls unless they are locals; a block's calls count for its method.
+    assert_eq!(
+        seen.calls,
+        [
+            "main → self.make",
+            "main → total",
+            "text → footer",
+            "text → format_line",
+            "text → header",
+            "text → lines",
+            "total → round",
+            "total → self.rate"
+        ]
+    );
+    assert_eq!(
+        seen.imports,
+        [
+            "lib/shop/order.rb → lib/shop/pricing.rb",
+            "lib/shop/receipt.rb → lib/shop/order.rb",
+            "main.rb → lib/shop/order.rb"
+        ]
+    );
 }
 
 #[test]
@@ -242,17 +291,37 @@ fn a_cpp_project_namespaces_classes_and_methods_written_outside_them() {
     let seen = seen("cpp-app", &[]);
     assert_eq!(
         seen.outline["src/shop/order.hpp"],
-        ["class shop exp :3", "  class Order exp :5", "    method Order :11"]
+        [
+            "class shop exp :3",
+            "  class Order exp :5",
+            "    method make exp :7",
+            "    method total exp :8",
+            "    method Order :11"
+        ]
+    );
+    // Declared and defined in one file: listed once, as the definition; count is only declared.
+    assert_eq!(
+        seen.outline["src/shop/basket.hpp"],
+        [
+            "class shop exp :5",
+            "  class Basket exp :7",
+            "    method count exp :9",
+            "    method print exp :11",
+            "  method Basket::sum exp :14"
+        ]
     );
     assert_eq!(
         seen.outline["src/shop/order.cpp"],
         ["class shop exp :4", "  method Order::make exp :6", "  method Order::total exp :10"]
     );
-    assert_eq!(seen.calls, ["Order::total → rate", "main → Order::make", "main → Order::total"]);
+    // The header declares make and total and order.cpp defines them: calls go to the definitions, where their calls
+    // are; a method only declared (count) is called as its declaration.
+    assert_eq!(seen.calls, ["Basket::sum → count", "Order::total → rate", "main → Order::make", "main → Order::total"]);
     assert_eq!(
         seen.imports,
         [
             "src/main.cpp → src/shop/order.hpp",
+            "src/shop/basket.hpp → src/shop/order.hpp",
             "src/shop/order.cpp → src/shop/order.hpp",
             "src/shop/order.cpp → src/shop/pricing.hpp"
         ]

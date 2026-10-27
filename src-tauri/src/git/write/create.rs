@@ -21,20 +21,21 @@ fn folder_name(name: &str) -> Result<&str, String> {
         || name.contains(['/', '\\', ':', '*', '?', '"', '<', '>', '|'])
         || name.chars().any(char::is_control);
     if bad {
-        return Err(format!("\"{name}\" cannot be a folder's name."));
+        return Err(said!("create.badName", "\"{name}\" cannot be a folder's name.", name = name));
     }
     Ok(name)
 }
 
 /// Where a new repository goes: `parent` exists, and `name` in it does not (or is an empty folder).
 fn new_folder(parent: &str, name: &str) -> Result<(String, String), String> {
-    let parent = crate::paths::canonical(parent).ok_or("The folder to put it in is not there.")?;
+    let parent = crate::paths::canonical(parent)
+        .ok_or_else(|| said!("create.noParent", "The folder to put it in is not there."))?;
     let name = folder_name(name)?;
     let target = Path::new(&parent).join(name);
     if target.exists() {
         let empty = target.is_dir() && std::fs::read_dir(&target).is_ok_and(|mut entries| entries.next().is_none());
         if !empty {
-            return Err(format!("{} is there already.", target.to_string_lossy()));
+            return Err(said!("create.there", "{path} is there already.", path = target.to_string_lossy()));
         }
     }
     Ok((parent, name.to_owned()))
@@ -52,20 +53,23 @@ pub fn clone(url: &str, parent: &str, name: &str, progress: &dyn Fn(&str)) -> Re
         progress,
     )?;
     if ran.cancelled {
-        return Err("The clone was stopped.".into());
+        return Err(said!("create.stopped", "The clone was stopped."));
     }
     if !ran.ok {
         return Err(said(&ran.stderr));
     }
-    crate::paths::canonical(&Path::new(&parent).join(&name).to_string_lossy()).ok_or("The clone is not there.".into())
+    crate::paths::canonical(&Path::new(&parent).join(&name).to_string_lossy())
+        .ok_or_else(|| said!("create.cloneGone", "The clone is not there."))
 }
 
 /// Makes an empty repository in `parent`/`name` (made when missing); its folder.
 pub fn init(parent: &str, name: &str) -> Result<String, String> {
     let (parent, name) = new_folder(parent, name)?;
     let target = Path::new(&parent).join(&name);
-    std::fs::create_dir_all(&target).map_err(|error| format!("The folder could not be made: {error}"))?;
-    let root = crate::paths::canonical(&target.to_string_lossy()).ok_or("The folder could not be made.")?;
+    std::fs::create_dir_all(&target)
+        .map_err(|error| said!("create.notMade", "The folder could not be made: {error}", error = error))?;
+    let root = crate::paths::canonical(&target.to_string_lossy())
+        .ok_or_else(|| said!("create.notMadeAtAll", "The folder could not be made."))?;
     Writer::new(&root, false).git(&["init"], None, &[], None)?;
     Ok(root)
 }

@@ -39,7 +39,7 @@ function useCustom() {
         <UButton type="submit" :label="t('ChangesByFunction.compare')" size="sm" color="neutral" variant="outline" />
       </form>
       <span v-if="changes" class="text-muted">
-        {{ t('ChangesByFunction.comparedWith') }} <b class="text-highlighted">{{ changes.base.label }}</b>
+        {{ t('ChangesByFunction.comparedWith') }} <b class="text-highlighted">{{ said(changes.base.label) }}</b>
         <span class="font-mono text-xs">({{ changes.base.sha.slice(0, 7) }})</span>
         <template v-if="changes.base.ahead || changes.base.behind"> · {{ t('ChangesByFunction.aheadBehind', { count: changes.base.ahead, behind: changes.base.behind }) }}</template>
       </span>
@@ -64,7 +64,7 @@ function useCustom() {
     <div v-else-if="changes && !changes.files.length" class="grid flex-1 place-items-center p-8 text-center text-muted">
       <div class="grid justify-items-center gap-2">
         <UIcon name="i-lucide-check-circle" class="size-6 text-success" />
-        <p>{{ t('ChangesByFunction.nothingSince', { base: changes.base.label }) }}</p>
+        <p>{{ t('ChangesByFunction.nothingSince', { base: said(changes.base.label) }) }}</p>
         <p class="text-xs">{{ t('ChangesByFunction.followsAlong') }}</p>
       </div>
     </div>

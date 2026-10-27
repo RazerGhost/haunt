@@ -48,7 +48,7 @@ const name = (path: string) => path.split(/[\\/]/).pop() ?? path
       </section>
 
       <p v-if="preview.problem" class="flex items-start gap-1.5 rounded border border-error/40 bg-error/5 p-3 text-sm text-error">
-        <UIcon name="i-lucide-circle-x" class="mt-0.5 size-4 shrink-0" /><span class="whitespace-pre-wrap">{{ preview.problem }} {{ t('pages.patches.doesNotApply') }}</span>
+        <UIcon name="i-lucide-circle-x" class="mt-0.5 size-4 shrink-0" /><span class="whitespace-pre-wrap">{{ said(preview.problem) }} {{ t('pages.patches.doesNotApply') }}</span>
       </p>
       <template v-else>
         <section class="grid gap-2">

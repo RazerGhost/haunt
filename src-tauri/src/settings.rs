@@ -269,7 +269,11 @@ impl Settings {
     /// Changes how a tab looks; a pinned tab goes to the end of the pinned ones.
     pub fn set_tab_look(&mut self, root: &str, look: TabLook) -> Result<(), String> {
         if !look.color.is_empty() && !TAB_COLORS.contains(&look.color.as_str()) {
-            return Err(format!("A tab's colour is one of {}.", TAB_COLORS.join(", ")));
+            return Err(said!(
+                "settings.tabColor",
+                "A tab's colour is one of {colors}.",
+                colors = TAB_COLORS.join(", ")
+            ));
         }
         let was_pinned = self.tab_looks.get(root).is_some_and(|known| known.pinned);
         if look.pinned && !was_pinned {
@@ -313,10 +317,10 @@ impl Settings {
     fn check_name(&self, name: &str) -> Result<String, String> {
         let name = name.trim();
         if name.is_empty() || name.chars().count() > 40 {
-            return Err("A profile's name is 1 to 40 characters.".into());
+            return Err(said!("settings.profileName", "A profile's name is 1 to 40 characters."));
         }
         if self.profile_names().iter().any(|known| known.to_lowercase() == name.to_lowercase()) {
-            return Err(format!("There is a profile called {name} already."));
+            return Err(said!("settings.profileExists", "There is a profile called {name} already.", name = name));
         }
         Ok(name.to_owned())
     }
@@ -343,7 +347,7 @@ impl Settings {
     /// The look of the profile in use; anything unknown is refused.
     pub fn set_appearance(&mut self, appearance: Appearance) -> Result<(), String> {
         if appearance.clone().checked() != appearance || appearance.mode.is_empty() {
-            return Err("That is not a look Haunt knows.".into());
+            return Err(said!("settings.unknownLook", "That is not a look Haunt knows."));
         }
         self.appearance = appearance;
         Ok(())
@@ -356,7 +360,7 @@ impl Settings {
 
     /// Adds a folder for the repository manager to look through; an existing folder only, once.
     pub fn add_repository_folder(&mut self, path: &str) -> Result<(), String> {
-        let folder = canonical(path).ok_or("That folder is not there.")?;
+        let folder = canonical(path).ok_or_else(|| said!("settings.folderMissing", "That folder is not there."))?;
         if !self.repository_folders.contains(&folder) {
             self.repository_folders.push(folder);
         }
@@ -372,7 +376,11 @@ impl Settings {
         if name == self.profile {
             return Ok(());
         }
-        let at = self.profiles.iter().position(|profile| profile.name == name).ok_or("There is no such profile.")?;
+        let at = self
+            .profiles
+            .iter()
+            .position(|profile| profile.name == name)
+            .ok_or_else(|| said!("settings.noProfile", "There is no such profile."))?;
         let next = self.profiles.remove(at);
         let current = self.put_away();
         self.profiles.push(current);
@@ -399,8 +407,11 @@ impl Settings {
         if old == self.profile {
             self.profile = new;
         } else {
-            let profile =
-                self.profiles.iter_mut().find(|profile| profile.name == old).ok_or("There is no such profile.")?;
+            let profile = self
+                .profiles
+                .iter_mut()
+                .find(|profile| profile.name == old)
+                .ok_or_else(|| said!("settings.noProfile", "There is no such profile."))?;
             profile.name = new;
         }
         Ok(())
@@ -409,12 +420,12 @@ impl Settings {
     /// Deletes a profile not in use (its folders stay where they are; only its tabs go).
     pub fn delete_profile(&mut self, name: &str) -> Result<(), String> {
         if name == self.profile {
-            return Err("Switch to another profile before deleting this one.".into());
+            return Err(said!("settings.switchFirst", "Switch to another profile before deleting this one."));
         }
         let before = self.profiles.len();
         self.profiles.retain(|profile| profile.name != name);
         if self.profiles.len() == before {
-            return Err("There is no such profile.".into());
+            return Err(said!("settings.noProfile", "There is no such profile."));
         }
         Ok(())
     }
@@ -425,10 +436,13 @@ impl Settings {
             return Ok(None);
         }
         if !self.tabs.iter().any(|tab| tab == root) {
-            return Err("That is not an open tab.".into());
+            return Err(said!("settings.notOpenTab", "That is not an open tab."));
         }
-        let target =
-            self.profiles.iter_mut().find(|profile| profile.name == name).ok_or("There is no such profile.")?;
+        let target = self
+            .profiles
+            .iter_mut()
+            .find(|profile| profile.name == name)
+            .ok_or_else(|| said!("settings.noProfile", "There is no such profile."))?;
         if !target.tabs.iter().any(|tab| tab == root) {
             target.tabs.push(root.to_owned());
         }

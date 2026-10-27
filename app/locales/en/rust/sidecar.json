@@ -1,0 +1,5 @@
+{
+  "noAnswer": "The scanner could not answer.",
+  "stoppedEarly": "The scanner stopped before it answered.",
+  "notRunning": "The scanner is not running."
+}

@@ -13,7 +13,7 @@ impl Writer<'_> {
     fn remote_name<'n>(&self, name: &'n str) -> Result<&'n str, String> {
         let bad = name.is_empty() || name.starts_with('-') || name.contains(char::is_whitespace);
         if bad || read(self.root, &["check-ref-format", &format!("refs/remotes/{name}/HEAD")]).is_err() {
-            return Err(format!("\"{name}\" cannot be a remote's name."));
+            return Err(said!("remotes.badName", "\"{name}\" cannot be a remote's name.", name = name));
         }
         Ok(name)
     }
@@ -23,7 +23,7 @@ impl Writer<'_> {
         if remotes.lines().any(|known| known.trim() == name) {
             Ok(())
         } else {
-            Err(format!("This repository has no remote \"{name}\"."))
+            Err(said!("remotes.none", "This repository has no remote \"{name}\".", name = name))
         }
     }
 
@@ -31,7 +31,7 @@ impl Writer<'_> {
         let name = self.remote_name(name.trim())?;
         let url = remote_url(url)?;
         if self.known_remote(name).is_ok() {
-            return Err(format!("This repository has a remote \"{name}\" already."));
+            return Err(said!("remotes.there", "This repository has a remote \"{name}\" already.", name = name));
         }
         let queue = queue(self.root);
         let _turn = queue.lock().unwrap();
@@ -46,7 +46,7 @@ impl Writer<'_> {
             return Ok(());
         }
         if self.known_remote(to).is_ok() {
-            return Err(format!("This repository has a remote \"{to}\" already."));
+            return Err(said!("remotes.there", "This repository has a remote \"{name}\" already.", name = to));
         }
         let queue = queue(self.root);
         let _turn = queue.lock().unwrap();
@@ -74,10 +74,10 @@ impl Writer<'_> {
 pub(super) fn remote_url(url: &str) -> Result<&str, String> {
     let url = url.trim();
     if url.is_empty() || url.starts_with('-') || url.contains(char::is_whitespace) {
-        return Err("That is not a URL git can use.".into());
+        return Err(said!("remotes.badUrl", "That is not a URL git can use."));
     }
     if url.to_lowercase().starts_with("ext::") {
-        return Err("Haunt does not use ext:: URLs: they run a command.".into());
+        return Err(said!("remotes.ext", "Haunt does not use ext:: URLs: they run a command."));
     }
     Ok(url)
 }

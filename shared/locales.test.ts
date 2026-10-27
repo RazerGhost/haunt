@@ -62,3 +62,19 @@ test('every key the window names is in English', () => {
   }
   assert.deepEqual(missing, [])
 })
+
+test('every text Rust says is in English, word for word', () => {
+  const rust = join(import.meta.dirname, '..', 'src-tauri', 'src')
+  const wrong: string[] = []
+  // said.rs holds only examples.
+  for (const path of files(rust, /\.rs$/).filter(path => !path.endsWith('said.rs'))) {
+    const source = readFileSync(path, 'utf8')
+    for (const [, key, literal] of source.matchAll(/said!\(\s*"([\w.]+)",\s*"((?:[^"\\]|\\.)*)"/g)) {
+      const english = literal!.replace(/\\(["\\n])/g, (_, c: string) => (c === 'n' ? '\n' : c))
+      const known = en.get(`rust.${key}`)
+      if (!known) wrong.push(`${relative(rust, path)}: rust.${key} is missing`)
+      else if (!known.plural && known.text !== english) wrong.push(`${relative(rust, path)}: rust.${key} reads "${known.text}" in English, Rust says "${english}"`)
+    }
+  }
+  assert.deepEqual(wrong, [])
+})

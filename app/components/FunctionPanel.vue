@@ -36,7 +36,7 @@ const reach = computed(() => affected.value.get(selected.value?.fn.id ?? ''))
         <UBadge v-if="selected.fn.exported" :label="t('FunctionPanel.exported')" size="sm" variant="soft" color="info" />
         <UBadge v-if="selected.fn.async" label="async" size="sm" variant="soft" color="secondary" />
         <UBadge :label="t('FunctionPanel.lines', { count: selected.fn.endLine - selected.fn.line + 1 })" size="sm" variant="outline" color="neutral" />
-        <UBadge v-if="change" :label="`${t('FunctionPanel.since', { status: t(`FunctionPanel.status.${change.status}`), base: changes?.base.label ?? '' })} · +${change.added} −${change.removed}`" size="sm" variant="soft" :color="change.status === 'added' ? 'success' : change.status === 'moved' ? 'info' : 'warning'" />
+        <UBadge v-if="change" :label="`${t('FunctionPanel.since', { status: t(`FunctionPanel.status.${change.status}`), base: said(changes?.base.label ?? '') })} · +${change.added} −${change.removed}`" size="sm" variant="soft" :color="change.status === 'added' ? 'success' : change.status === 'moved' ? 'info' : 'warning'" />
         <UBadge v-else-if="reach" :label="t('FunctionPanel.reach', { count: reach.distance })" size="sm" variant="outline" color="warning" />
       </div>
       <button type="button" class="text-left font-mono text-xs break-all text-muted hover:underline" @click="open(selected.file.path, selected.fn.line)">

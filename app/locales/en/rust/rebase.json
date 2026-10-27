@@ -1,0 +1,7 @@
+{
+  "merges": "There is a merge commit after that one. Rebasing across merges is not something Haunt does; pick a later commit.",
+  "changed": "The list of commits changed since it was read. Open the rebase again.",
+  "squashFirst": "The first commit kept cannot be squashed: there is nothing before it to squash into.",
+  "allDropped": "Every commit would be dropped. Reset the branch instead.",
+  "noMessage": "A reworded commit needs its new message."
+}

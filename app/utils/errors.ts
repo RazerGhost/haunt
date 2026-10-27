@@ -1,6 +1,6 @@
-/** What went wrong, for people: Haunt's own message (Rust sends a sentence), else `fallback`. */
+/** What went wrong, for people: Haunt's own message in the window's language (Rust sends it as `said`), else `fallback`. */
 export function errorMessage(error: unknown, fallback: string): string {
-  if (typeof error === 'string' && error) return error
-  if (error instanceof Error && error.message) return error.message
+  if (typeof error === 'string' && error) return said(error)
+  if (error instanceof Error && error.message) return said(error.message)
   return fallback
 }

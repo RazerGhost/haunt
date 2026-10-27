@@ -1,0 +1,5 @@
+{
+  "notRepository": "{root} is not in a git repository: {error}",
+  "notFound": "\"{name}\" is not a commit, branch or tag here.",
+  "notCommit": "\"{name}\" is not a commit."
+}

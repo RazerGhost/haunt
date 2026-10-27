@@ -1,0 +1,10 @@
+{
+  "notInstalled": "git kon niet starten: het is niet geïnstalleerd.",
+  "tookTooLong": "git duurde langer dan {minutes} minuten en is gestopt.",
+  "couldNotStart": "git kon niet starten: {error}",
+  "failed": "git is mislukt ({status})",
+  "noCommand": "Geen git-commando.",
+  "noOutput": "git gaf geen uitvoer.",
+  "notRepository": "{root} zit niet in een git-repository.",
+  "notRevision": "\"{name}\" is geen branch, tag of commit."
+}

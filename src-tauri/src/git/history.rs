@@ -96,7 +96,7 @@ fn blame(root: &str, path: &str, start: u32, end: u32) -> Result<(Vec<AuthorLine
             entry.subject = subject.into();
         } else if line.starts_with('\t') {
             let uncommitted = entry.sha.chars().all(|c| c == '0');
-            let name = if uncommitted { "You (not committed yet)".to_owned() } else { entry.author.clone() };
+            let name = if uncommitted { said!("history.you", "You (not committed yet)") } else { entry.author.clone() };
             match authors.iter_mut().find(|known| known.name == name) {
                 Some(known) => known.lines += 1,
                 None => authors.push(AuthorLines { name: name.clone(), lines: 1 }),
@@ -127,7 +127,7 @@ pub fn function_history(root: &str, path: &str, start: u32, end: u32) -> Functio
 /// elsewhere). None when no commit did.
 pub fn last_mention(root: &str, name: &str, path: &str) -> Result<Option<CommitInfo>, String> {
     if name.is_empty() || !name.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '$') {
-        return Err(format!("{name} is not a name Haunt can look for."));
+        return Err(said!("history.badName", "{name} is not a name Haunt can look for.", name = name));
     }
     let word = format!("(^|[^A-Za-z0-9_$]){}([^A-Za-z0-9_$]|$)", name.replace('$', r"\$"));
     let pick = format!("-S{word}");

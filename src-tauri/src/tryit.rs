@@ -55,18 +55,19 @@ pub struct HttpFile {
 
 /// The host, port and path of a local `http://` address; anything else is refused.
 fn local(url: &str) -> Result<(String, u16, String), String> {
-    let rest = url
-        .strip_prefix("http://")
-        .ok_or("Only http:// addresses on this machine: a dev server, such as http://localhost:3000.")?;
+    let rest = url.strip_prefix("http://").ok_or_else(|| {
+        said!("tryit.localOnly", "Only http:// addresses on this machine: a dev server, such as http://localhost:3000.")
+    })?;
     let (authority, path) = match rest.find('/') {
         Some(at) => (&rest[..at], &rest[at..]),
         None => (rest, "/"),
     };
     if authority.contains('@') {
-        return Err("Leave the user name and password out of the address.".into());
+        return Err(said!("tryit.noCredentials", "Leave the user name and password out of the address."));
     }
     let (host, port) = if let Some(inner) = authority.strip_prefix('[') {
-        let (host, after) = inner.split_once(']').ok_or("That address is not complete.")?;
+        let (host, after) =
+            inner.split_once(']').ok_or_else(|| said!("tryit.incomplete", "That address is not complete."))?;
         (host.to_owned(), after.strip_prefix(':'))
     } else {
         match authority.rsplit_once(':') {
@@ -75,14 +76,20 @@ fn local(url: &str) -> Result<(String, u16, String), String> {
         }
     };
     let port = match port {
-        Some(port) => port.parse::<u16>().map_err(|_| format!("\"{port}\" is not a port."))?,
+        Some(port) => {
+            port.parse::<u16>().map_err(|_| said!("tryit.notPort", "\"{port}\" is not a port.", port = port))?
+        }
         None => 80,
     };
     let host_lower = host.to_ascii_lowercase();
     let allowed =
         host_lower == "localhost" || host_lower.ends_with(".localhost") || host == "127.0.0.1" || host == "::1";
     if !allowed {
-        return Err(format!("{host} is not this machine: Try it only calls dev servers on localhost."));
+        return Err(said!(
+            "tryit.notLocal",
+            "{host} is not this machine: Try it only calls dev servers on localhost.",
+            host = host
+        ));
     }
     Ok((host, port, path.to_owned()))
 }
@@ -90,7 +97,7 @@ fn local(url: &str) -> Result<(String, u16, String), String> {
 fn checked_header(name: &str, value: &str) -> Result<(), String> {
     let bad = |text: &str| text.contains(['\r', '\n', '\0']);
     if name.is_empty() || bad(name) || bad(value) || name.contains(':') {
-        return Err(format!("\"{name}\" is not a header Haunt can send."));
+        return Err(said!("tryit.badHeader", "\"{name}\" is not a header Haunt can send.", name = name));
     }
     Ok(())
 }
@@ -116,7 +123,7 @@ fn unchunk(mut data: &[u8]) -> Vec<u8> {
 pub fn send(request: &HttpRequest) -> Result<HttpResponse, String> {
     let method = request.method.trim().to_ascii_uppercase();
     if method.is_empty() || !method.chars().all(|c| c.is_ascii_uppercase()) {
-        return Err(format!("\"{}\" is not an HTTP method.", request.method));
+        return Err(said!("tryit.notMethod", "\"{method}\" is not an HTTP method.", method = request.method));
     }
     let (host, port, path) = local(request.url.trim())?;
     for (name, value) in &request.headers {
@@ -133,7 +140,7 @@ pub fn send(request: &HttpRequest) -> Result<HttpResponse, String> {
         .filter(|address| address.ip().is_loopback())
         .collect();
     if addresses.is_empty() {
-        return Err(format!("{host} does not lead to this machine."));
+        return Err(said!("tryit.notThisMachine", "{host} does not lead to this machine.", host = host));
     }
     let key = (host.to_ascii_lowercase(), port);
     if let Some(last) = answered.lock().unwrap().get(&key) {
@@ -151,8 +158,14 @@ pub fn send(request: &HttpRequest) -> Result<HttpResponse, String> {
             Err(error) => refused = error.to_string(),
         }
     }
-    let mut stream = connected
-        .ok_or_else(|| format!("Nothing answers at {}: is the dev server running? ({refused})", request.url.trim()))?;
+    let mut stream = connected.ok_or_else(|| {
+        said!(
+            "tryit.nothingAnswers",
+            "Nothing answers at {url}: is the dev server running? ({refused})",
+            url = request.url.trim(),
+            refused = refused
+        )
+    })?;
     stream.set_read_timeout(Some(TIMEOUT)).ok();
     stream.set_write_timeout(Some(TIMEOUT)).ok();
     let host_header = if host.contains(':') { format!("[{host}]:{port}") } else { format!("{host}:{port}") };
@@ -187,18 +200,26 @@ pub fn send(request: &HttpRequest) -> Result<HttpResponse, String> {
                     break;
                 }
             }
-            Err(error) if raw.is_empty() => return Err(format!("The dev server did not answer: {error}")),
+            Err(error) if raw.is_empty() => {
+                return Err(said!("tryit.noAnswer", "The dev server did not answer: {error}", error = error))
+            }
             Err(_) => break,
         }
     }
     let ms = started.elapsed().as_millis() as u32;
-    let split = raw.windows(4).position(|window| window == b"\r\n\r\n").ok_or("The answer is not HTTP.")?;
+    let split = raw
+        .windows(4)
+        .position(|window| window == b"\r\n\r\n")
+        .ok_or_else(|| said!("tryit.notHttp", "The answer is not HTTP."))?;
     let head = String::from_utf8_lossy(&raw[..split]).into_owned();
     let mut lines = head.split("\r\n");
     let status_line = lines.next().unwrap_or_default();
     let mut parts = status_line.splitn(3, ' ');
     let _version = parts.next();
-    let status = parts.next().and_then(|code| code.parse().ok()).ok_or("The answer is not HTTP.")?;
+    let status = parts
+        .next()
+        .and_then(|code| code.parse().ok())
+        .ok_or_else(|| said!("tryit.notHttp", "The answer is not HTTP."))?;
     let reason = parts.next().unwrap_or_default().to_owned();
     let headers: Vec<(String, String)> = lines
         .filter_map(|line| line.split_once(':'))
@@ -331,7 +352,7 @@ pub fn save(root: &str, file: &str, variables: &[(String, String)], request: &Ht
     let bad =
         file.is_empty() || !file.ends_with(".http") || file.contains(['/', '\\', ':', '\0']) || file.starts_with('.');
     if bad {
-        return Err(format!("\"{file}\" is not a file name for requests (name.http)."));
+        return Err(said!("tryit.badFile", "\"{file}\" is not a file name for requests (name.http).", file = file));
     }
     let folder = PathBuf::from(root).join(FOLDER);
     std::fs::create_dir_all(&folder).map_err(|error| error.to_string())?;

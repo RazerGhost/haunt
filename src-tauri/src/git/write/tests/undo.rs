@@ -110,7 +110,7 @@ fn merges_cleanly_or_stops_on_conflicts_resolved_by_side_or_by_text() {
     let before = head(&r);
     assert_eq!(writer.merge("other").unwrap(), Outcome::Conflicts);
     let going = writer.operation().unwrap().unwrap();
-    assert_eq!(going.title, "Merging other into main");
+    assert_eq!(crate::said::english(&going.title), "Merging other into main");
     assert_eq!((going.ours.as_str(), going.theirs.as_str()), ("main", "other"));
     assert_eq!(going.conflicted, ["b.txt"]);
     // Another merge waits until this one is done.
@@ -124,7 +124,7 @@ fn merges_cleanly_or_stops_on_conflicts_resolved_by_side_or_by_text() {
     assert!(writer.conflict("a.txt").is_err(), "a file without conflicts has no conflict view");
 
     // Continuing waits for the last conflict.
-    assert!(writer.proceed().unwrap_err().contains("still conflicts"));
+    assert!(writer.proceed().unwrap_err().contains("1 files still conflict"));
     writer.resolve("b.txt", Some("both\n")).unwrap();
     assert!(writer.operation().unwrap().unwrap().conflicted.is_empty());
     assert_eq!(writer.proceed().unwrap(), Outcome::Done);
@@ -154,7 +154,7 @@ fn a_revert_or_cherry_pick_that_conflicts_is_continued_or_aborted() {
     let theirs = r.sh(&["rev-parse", "other~1"]).trim().to_owned();
     assert_eq!(writer.cherry_pick(&theirs).unwrap(), Outcome::Conflicts);
     let going = writer.operation().unwrap().unwrap();
-    assert!(going.title.starts_with("Cherry-picking \"Other's b\""), "{}", going.title);
+    assert!(crate::said::english(&going.title).starts_with("Cherry-picking \"Other's b\""), "{}", going.title);
     writer.take("b.txt", Side::Theirs).unwrap();
     assert_eq!(writer.proceed().unwrap(), Outcome::Done);
     assert!(writer.operation().unwrap().is_none());
@@ -165,7 +165,7 @@ fn a_revert_or_cherry_pick_that_conflicts_is_continued_or_aborted() {
     let mine = r.sh(&["rev-parse", "HEAD~1"]).trim().to_owned();
     let before = head(&r);
     assert_eq!(writer.revert(&mine).unwrap(), Outcome::Conflicts);
-    assert!(writer.operation().unwrap().unwrap().title.starts_with("Reverting \"Main's b\""));
+    assert!(crate::said::english(&writer.operation().unwrap().unwrap().title).starts_with("Reverting \"Main's b\""));
     writer.abort().unwrap();
     assert_eq!(head(&r), before);
     assert!(r.sh(&["status", "--porcelain"]).trim().is_empty());

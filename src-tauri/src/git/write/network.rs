@@ -156,7 +156,7 @@ pub(super) fn said(stderr: &str) -> String {
     let lines: Vec<&str> = stderr.lines().filter(|line| !is_progress(line)).collect();
     let text = lines.join("\n").trim().to_owned();
     if text.is_empty() {
-        "git failed without saying why.".into()
+        said!("network.silent", "git failed without saying why.")
     } else {
         text
     }
@@ -258,7 +258,9 @@ impl Writer<'_> {
         #[cfg(unix)]
         std::os::unix::process::CommandExt::process_group(&mut command, 0);
         let started = Instant::now();
-        let mut child = command.spawn().map_err(|error| format!("git could not start: {error}"))?;
+        let mut child = command
+            .spawn()
+            .map_err(|error| said!("network.couldNotStart", "git could not start: {error}", error = error))?;
         let stopped = Arc::new(AtomicBool::new(false));
         runs().lock().unwrap().insert(self.root.to_owned(), (child.id(), stopped.clone()));
 
@@ -331,7 +333,10 @@ impl Writer<'_> {
     pub(super) fn current_branch(&self) -> Result<String, String> {
         let name = read(self.root, &["symbolic-ref", "--short", "-q", "HEAD"]).unwrap_or_default().trim().to_owned();
         if name.is_empty() {
-            return Err("You are not on a branch (HEAD is detached). Switch to a branch first.".into());
+            return Err(said!(
+                "network.detached",
+                "You are not on a branch (HEAD is detached). Switch to a branch first."
+            ));
         }
         Ok(name)
     }
@@ -356,7 +361,7 @@ impl Writer<'_> {
     pub fn fetch(&self, progress: &dyn Fn(&str)) -> Result<(), String> {
         let remotes = self.remotes()?;
         if remotes.is_empty() {
-            return Err("This repository has no remote to fetch from.".into());
+            return Err(said!("network.noRemoteToFetch", "This repository has no remote to fetch from."));
         }
         let queue = queue(self.root);
         let _turn = queue.lock().unwrap();
@@ -405,9 +410,14 @@ impl Writer<'_> {
         let remotes = self.remotes()?;
         let remote = match remote {
             Some(name) if remotes.iter().any(|known| known == name) => name.to_owned(),
-            Some(name) => return Err(format!("This repository has no remote \"{name}\".")),
+            Some(name) => {
+                return Err(said!("network.noSuchRemote", "This repository has no remote \"{name}\".", name = name))
+            }
             None if remotes.iter().any(|known| known == "origin") => "origin".to_owned(),
-            None => remotes.first().cloned().ok_or("This repository has no remote to fetch from.")?,
+            None => remotes
+                .first()
+                .cloned()
+                .ok_or_else(|| said!("network.noRemoteToFetch", "This repository has no remote to fetch from."))?,
         };
         let queue = queue(self.root);
         let _turn = queue.lock().unwrap();
@@ -428,7 +438,7 @@ impl Writer<'_> {
             progress,
         )?;
         if listed.cancelled {
-            return Err("Fetching was stopped.".into());
+            return Err(said!("network.fetchStopped", "Fetching was stopped."));
         }
         if !listed.ok {
             return Err(said(&listed.stderr));
@@ -436,15 +446,22 @@ impl Writer<'_> {
         let mut found = pull_refs(&listed.stdout);
         let total = found.len() as u32;
         if found.is_empty() {
-            return Err(format!(
-                "{remote} offers no pull requests as refs. GitHub, GitLab and Gitea do; other hosts may not."
+            return Err(said!(
+                "network.noPullRefs",
+                "{remote} offers no pull requests as refs. GitHub, GitLab and Gitea do; other hosts may not.",
+                remote = remote
             ));
         }
         found.sort_by_key(|(n, _)| std::cmp::Reverse(*n));
         let mut wanted: Vec<(u32, String)> = found.iter().take(PULLS_FETCHED).cloned().collect();
         if let Some(number) = number {
             let Some(one) = found.iter().find(|(n, _)| *n == number) else {
-                return Err(format!("{remote} has no pull request #{number}."));
+                return Err(said!(
+                    "network.noPull",
+                    "{remote} has no pull request #{number}.",
+                    remote = remote,
+                    number = number
+                ));
             };
             if !wanted.iter().any(|(n, _)| *n == number) {
                 wanted.push(one.clone());
@@ -464,7 +481,7 @@ impl Writer<'_> {
         args.extend(specs.iter().map(String::as_str));
         let ran = self.network(&args, &extra, &env, progress)?;
         if ran.cancelled {
-            return Err("Fetching was stopped.".into());
+            return Err(said!("network.fetchStopped", "Fetching was stopped."));
         }
         if !ran.ok {
             return Err(said(&ran.stderr));
@@ -476,7 +493,7 @@ impl Writer<'_> {
         if self.trusted {
             let ran = self.network(&["fetch", "--all", "--prune", "--progress"], &[], &[], progress)?;
             if ran.cancelled {
-                return Err("Fetching was stopped.".into());
+                return Err(said!("network.fetchStopped", "Fetching was stopped."));
             }
             return if ran.ok { Ok(()) } else { Err(said(&ran.stderr)) };
         }
@@ -499,11 +516,11 @@ impl Writer<'_> {
             ];
             let ran = self.network(&args, &extra, &env, progress)?;
             if ran.cancelled {
-                return Err("Fetching was stopped.".into());
+                return Err(said!("network.fetchStopped", "Fetching was stopped."));
             }
             if !ran.ok {
                 failed.push(if remotes.len() > 1 {
-                    format!("{remote}: {}", said(&ran.stderr))
+                    format!("{remote}: {}", crate::said::english(&said(&ran.stderr)))
                 } else {
                     said(&ran.stderr)
                 });
@@ -519,16 +536,17 @@ impl Writer<'_> {
     /// Pulls the current branch's upstream into it: fast-forward, or merge or rebase as asked.
     pub fn pull(&self, mode: PullMode, progress: &dyn Fn(&str)) -> Result<PullResult, String> {
         if !self.trusted {
-            return Err(
-                "Pulling checks files out and can run this repository's hooks and filters, so it runs only in \
-                        a trusted folder. Fetch works here; trust this folder to pull."
-                    .into(),
-            );
+            return Err(said!(
+                "network.pullUntrusted",
+                "Pulling checks files out and can run this repository's hooks and filters, so it runs only in a trusted folder. Fetch works here; trust this folder to pull."
+            ));
         }
         let branch = self.current_branch()?;
         if read(self.root, &["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"]).is_err() {
-            return Err(format!(
-                "{branch} tracks no remote branch, so there is nothing to pull. Push it first to set one up."
+            return Err(said!(
+                "network.noUpstream",
+                "{branch} tracks no remote branch, so there is nothing to pull. Push it first to set one up.",
+                branch = branch
             ));
         }
         let queue = queue(self.root);
@@ -551,7 +569,7 @@ impl Writer<'_> {
             return Ok(PullResult::Conflicts);
         }
         if ran.cancelled {
-            return Err("Pulling was stopped.".into());
+            return Err(said!("network.pullStopped", "Pulling was stopped."));
         }
         if mode == PullMode::FastForward && ran.stderr.contains("Not possible to fast-forward") {
             return Ok(PullResult::Diverged);
@@ -563,11 +581,10 @@ impl Writer<'_> {
     /// when empty). Only in a trusted folder: it clones from the URLs in `.gitmodules` and checks files out.
     pub fn update_submodules(&self, paths: &[String], progress: &dyn Fn(&str)) -> Result<(), String> {
         if !self.trusted {
-            return Err(
-                "Updating submodules clones from the addresses in this repository's .gitmodules and checks files out, \
-                        so it runs only in a trusted folder. Trust this folder to update them."
-                    .into(),
-            );
+            return Err(said!(
+                "network.submodulesUntrusted",
+                "Updating submodules clones from the addresses in this repository's .gitmodules and checks files out, so it runs only in a trusted folder. Trust this folder to update them."
+            ));
         }
         let paths = paths.iter().map(|path| crate::git::local::checked(path)).collect::<Result<Vec<_>, _>>()?;
         let queue = queue(self.root);
@@ -579,7 +596,7 @@ impl Writer<'_> {
         args.extend(paths);
         let ran = self.network(&args, &[], &[], progress)?;
         if ran.cancelled {
-            return Err("Updating the submodules was stopped.".into());
+            return Err(said!("network.submodulesStopped", "Updating the submodules was stopped."));
         }
         if !ran.ok {
             return Err(said(&ran.stderr));
@@ -591,11 +608,11 @@ impl Writer<'_> {
     fn push_remote(&self, asked: Option<&str>) -> Result<Option<String>, String> {
         let remotes = self.remotes()?;
         if remotes.is_empty() {
-            return Err("This repository has no remote to push to.".into());
+            return Err(said!("network.noRemoteToPush", "This repository has no remote to push to."));
         }
         Ok(match asked {
             Some(name) if remotes.iter().any(|remote| remote == name) => Some(name.to_owned()),
-            Some(name) => return Err(format!("There is no remote named {name}.")),
+            Some(name) => return Err(said!("network.noRemoteNamed", "There is no remote named {name}.", name = name)),
             None if remotes.len() == 1 => remotes.into_iter().next(),
             None => None,
         })
@@ -605,11 +622,10 @@ impl Writer<'_> {
     /// then tracks. `force` overwrites the remote branch, only if it is still where Haunt last fetched it.
     pub fn push(&self, remote: Option<&str>, force: bool, progress: &dyn Fn(&str)) -> Result<PushResult, String> {
         if !self.trusted {
-            return Err(
-                "Pushing runs this repository's pre-push hook, so it runs only in a trusted folder. Trust this \
-                        folder to push."
-                    .into(),
-            );
+            return Err(said!(
+                "network.pushUntrusted",
+                "Pushing runs this repository's pre-push hook, so it runs only in a trusted folder. Trust this folder to push."
+            ));
         }
         let branch = self.current_branch()?;
         let tracked =
@@ -651,12 +667,14 @@ impl Writer<'_> {
             return Ok(PushResult::Pushed);
         }
         if ran.cancelled {
-            return Err("Pushing was stopped.".into());
+            return Err(said!("network.pushStopped", "Pushing was stopped."));
         }
         if ran.stderr.contains("stale info") {
-            return Err(format!(
-                "{remote}/{target} has changed since this repository last fetched it, so it was not overwritten. \
-                 Fetch and look at what is there first."
+            return Err(said!(
+                "network.stale",
+                "{remote}/{target} has changed since this repository last fetched it, so it was not overwritten. Fetch and look at what is there first.",
+                remote = remote,
+                target = target
             ));
         }
         if ran.stderr.contains("[rejected]") {
@@ -668,15 +686,14 @@ impl Writer<'_> {
     /// Pushes a tag to a remote (the only one, or the one asked for).
     pub fn push_tag(&self, name: &str, remote: Option<&str>, progress: &dyn Fn(&str)) -> Result<PushResult, String> {
         if !self.trusted {
-            return Err(
-                "Pushing runs this repository's pre-push hook, so it runs only in a trusted folder. Trust this \
-                        folder to push."
-                    .into(),
-            );
+            return Err(said!(
+                "network.pushUntrusted",
+                "Pushing runs this repository's pre-push hook, so it runs only in a trusted folder. Trust this folder to push."
+            ));
         }
         let name = self.tag_name(name)?;
         if read(self.root, &["rev-parse", "-q", "--verify", &format!("refs/tags/{name}")]).is_err() {
-            return Err(format!("There is no tag {name}."));
+            return Err(said!("network.noTag", "There is no tag {name}.", name = name));
         }
         let Some(remote) = self.push_remote(remote)? else {
             return Ok(PushResult::ChooseRemote { remotes: self.remotes()? });
@@ -691,10 +708,15 @@ impl Writer<'_> {
             return Ok(PushResult::Pushed);
         }
         if ran.cancelled {
-            return Err("Pushing was stopped.".into());
+            return Err(said!("network.pushStopped", "Pushing was stopped."));
         }
         if ran.stderr.contains("[rejected]") || ran.stderr.contains("already exists") {
-            return Err(format!("{remote} already has a tag {name} on another commit; it was left as it is."));
+            return Err(said!(
+                "network.tagThere",
+                "{remote} already has a tag {name} on another commit; it was left as it is.",
+                remote = remote,
+                name = name
+            ));
         }
         Err(said(&ran.stderr))
     }
@@ -763,6 +785,9 @@ mod tests {
             said(stderr),
             "To ../remote.git\n ! [rejected]        main -> main (fetch first)\nerror: failed to push some refs"
         );
-        assert_eq!(said("Receiving objects: 100% (5/5), done.\n"), "git failed without saying why.");
+        assert_eq!(
+            crate::said::english(&said("Receiving objects: 100% (5/5), done.\n")),
+            "git failed without saying why."
+        );
     }
 }

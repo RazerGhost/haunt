@@ -1,0 +1,14 @@
+{
+  "localOnly": "Alleen http://-adressen op deze computer: een dev-server, zoals http://localhost:3000.",
+  "noCredentials": "Laat de gebruikersnaam en het wachtwoord uit het adres.",
+  "incomplete": "Dat adres is niet compleet.",
+  "notPort": "\"{port}\" is geen poort.",
+  "notLocal": "{host} is niet deze computer: Proberen roept alleen dev-servers op localhost aan.",
+  "badHeader": "\"{name}\" is geen header die Haunt kan sturen.",
+  "notMethod": "\"{method}\" is geen HTTP-methode.",
+  "notThisMachine": "{host} leidt niet naar deze computer.",
+  "nothingAnswers": "Niets antwoordt op {url}: draait de dev-server? ({refused})",
+  "noAnswer": "De dev-server antwoordde niet: {error}",
+  "notHttp": "Het antwoord is geen HTTP.",
+  "badFile": "\"{file}\" is geen bestandsnaam voor requests (naam.http)."
+}

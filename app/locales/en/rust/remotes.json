@@ -1,0 +1,7 @@
+{
+  "badName": "\"{name}\" cannot be a remote's name.",
+  "none": "This repository has no remote \"{name}\".",
+  "there": "This repository has a remote \"{name}\" already.",
+  "badUrl": "That is not a URL git can use.",
+  "ext": "Haunt does not use ext:: URLs: they run a command."
+}

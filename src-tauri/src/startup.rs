@@ -70,11 +70,17 @@ pub fn find_runtime() -> Result<Runtime, String> {
         }
     }
     Err(match old_node {
-        Some(version) => format!(
-            "Haunt needs Node {}.{} or later to read TypeScript and JavaScript; this machine has {version}. PHP, Rust, Lua, Python, Go, Java, C#, Ruby, C and C++ are still read. Update Node (or install Bun or Deno), then open Haunt again.",
-            NODE_MIN.0, NODE_MIN.1
+        Some(version) => said!(
+            "startup.oldNode",
+            "Haunt needs Node {need} or later to read TypeScript and JavaScript; this machine has {version}. PHP, Rust, Lua, Python, Go, Java, C#, Ruby, C and C++ are still read. Update Node (or install Bun or Deno), then open Haunt again.",
+            need = format!("{}.{}", NODE_MIN.0, NODE_MIN.1),
+            version = version
         ),
-        None => "No JavaScript runtime was found, so Haunt reads only PHP, Rust, Lua, Python, Go, Java, C#, Ruby, C and C++. For TypeScript and JavaScript, install Node 22.18 or later from nodejs.org (or Bun or Deno), then open Haunt again.".into(),
+        None => said!(
+            "startup.noRuntime",
+            "No JavaScript runtime was found, so Haunt reads only PHP, Rust, Lua, Python, Go, Java, C#, Ruby, C and C++. For TypeScript and JavaScript, install Node {need} or later from nodejs.org (or Bun or Deno), then open Haunt again.",
+            need = format!("{}.{}", NODE_MIN.0, NODE_MIN.1)
+        ),
     })
 }
 
@@ -82,9 +88,10 @@ pub fn find_runtime() -> Result<Runtime, String> {
 pub fn find_node() -> Result<PathBuf, String> {
     match find_program("node") {
         Some((path, version)) if major_minor(&version).is_some_and(|found| found >= NODE_MIN) => Ok(path),
-        _ => Err(format!(
-            "Running tests needs Node {}.{} or later: install it from nodejs.org, then open Haunt again.",
-            NODE_MIN.0, NODE_MIN.1
+        _ => Err(said!(
+            "startup.testsNeedNode",
+            "Running tests needs Node {need} or later: install it from nodejs.org, then open Haunt again.",
+            need = format!("{}.{}", NODE_MIN.0, NODE_MIN.1)
         )),
     }
 }
@@ -139,10 +146,10 @@ pub fn major_minor(text: &str) -> Option<(u32, u32)> {
 
 pub fn check_git() -> Result<(), String> {
     match version_of(Path::new("git")) {
-        None => Err("Git was not found. Haunt works with the git on your machine: install it from git-scm.com, then open Haunt again.".into()),
+        None => Err(said!("startup.noGit", "Git was not found. Haunt works with the git on your machine: install it from git-scm.com, then open Haunt again.")),
         Some(version) => match major_minor(&version) {
             Some(found) if found >= GIT_MIN => Ok(()),
-            _ => Err(format!("Haunt needs git {}.{} or later; this machine has \"{version}\". Update it from git-scm.com, then open Haunt again.", GIT_MIN.0, GIT_MIN.1)),
+            _ => Err(said!("startup.oldGit", "Haunt needs git {need} or later; this machine has \"{version}\". Update it from git-scm.com, then open Haunt again.", need = format!("{}.{}", GIT_MIN.0, GIT_MIN.1), version = version)),
         },
     }
 }

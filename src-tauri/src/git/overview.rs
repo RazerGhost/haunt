@@ -91,14 +91,16 @@ pub struct ExtensionCount {
 
 /// The folder as a repository to read: its one form, and a git work tree at its top.
 pub fn repository(path: &str) -> Result<String, String> {
-    let root = crate::paths::canonical(path).ok_or("That folder is not there.")?;
-    let top = git(&root, &["rev-parse", "--show-toplevel"]).map_err(|_| "That folder is not a git repository.")?;
+    let root = crate::paths::canonical(path).ok_or_else(|| said!("overview.noFolder", "That folder is not there."))?;
+    let top = git(&root, &["rev-parse", "--show-toplevel"])
+        .map_err(|_| said!("overview.notRepository", "That folder is not a git repository."))?;
     Ok(crate::paths::canonical(top.trim()).unwrap_or(root))
 }
 
 pub fn overview(path: &str) -> Result<Overview, String> {
     let root = repository(path)?;
-    let refs = super::refs(&root)?.ok_or("That folder is not a git repository.")?;
+    let refs =
+        super::refs(&root)?.ok_or_else(|| said!("overview.notRepository", "That folder is not a git repository."))?;
     let has_head = refs.sha.is_some();
     let commits = if has_head { git(&root, &["rev-list", "--count", "HEAD"])?.trim().parse().unwrap_or(0) } else { 0 };
     let latest = if has_head {
@@ -159,10 +161,13 @@ fn remotes(root: &str) -> Vec<RemoteInfo> {
 /// other address is refused.
 pub fn open_remote_page(path: &str, remote: &str, url: &str) -> Result<(), String> {
     let root = repository(path)?;
-    let found = remotes(&root).into_iter().find(|known| known.name == remote).ok_or("That remote is not there.")?;
-    let page = found.web.ok_or("That remote has no page on the web.")?;
+    let found = remotes(&root)
+        .into_iter()
+        .find(|known| known.name == remote)
+        .ok_or_else(|| said!("overview.noRemote", "That remote is not there."))?;
+    let page = found.web.ok_or_else(|| said!("overview.noPage", "That remote has no page on the web."))?;
     if url != page.base && !url.starts_with(&format!("{}/", page.base)) {
-        return Err("Only pages of the repository's remotes can be opened.".into());
+        return Err(said!("overview.otherPage", "Only pages of the repository's remotes can be opened."));
     }
     crate::editor::open_url(url)
 }

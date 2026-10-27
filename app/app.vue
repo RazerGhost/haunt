@@ -38,7 +38,7 @@ useHead({ title: 'Haunt', htmlAttrs: { lang: language }, link: [{ rel: 'icon', t
       <TitleBar />
       <UAlert v-if="problems.length" color="error" variant="subtle" icon="i-lucide-circle-alert" :title="t('app.missing')" class="rounded-none">
         <template #description>
-          <p v-for="problem in problems" :key="problem">{{ problem }}</p>
+          <p v-for="problem in problems" :key="problem">{{ said(problem) }}</p>
         </template>
       </UAlert>
       <AppToolbar v-if="!choosing" />

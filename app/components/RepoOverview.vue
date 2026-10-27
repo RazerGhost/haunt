@@ -25,6 +25,20 @@ onMounted(async () => {
     loading.value = false
   }
 })
+// Its remotes, changed from here too (useRemotes with the path): the list follows each change.
+const remoteActions = useRemotes(computed(() => overview.value?.path ?? null))
+watch(overview, (found) => { if (found) remoteActions.list.value = found.remotes })
+const remotes = computed(() => remoteActions.list.value)
+function remoteMenu(name: string) {
+  return [
+    [
+      { label: t('RepoOverview.copyUrl'), icon: 'i-lucide-copy', onSelect: () => remoteActions.copyUrl(name) },
+      { label: t('RepoOverview.changeUrl'), icon: 'i-lucide-link', onSelect: () => remoteActions.changeUrl(name) },
+      { label: t('RepoOverview.renameRemote'), icon: 'i-lucide-pencil', onSelect: () => remoteActions.rename(name) }
+    ],
+    [{ label: t('RepoOverview.removeRemote'), icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: () => remoteActions.remove(name) }]
+  ]
+}
 const name = computed(() => overview.value?.name ?? props.path.split(/[\\/]/).filter(Boolean).pop() ?? props.path)
 const inTab = computed(() => info.value?.tabs.includes(overview.value?.path ?? props.path) ?? false)
 
@@ -175,13 +189,21 @@ async function open() {
         </section>
 
         <section class="grid content-start gap-2">
-          <h3 class="text-label font-semibold tracking-wider text-muted uppercase">{{ t('RepoOverview.remotes') }}</h3>
-          <p v-if="!overview.remotes.length" class="text-muted">{{ t('RepoOverview.noRemotes') }}</p>
-          <div v-for="remote in overview.remotes" :key="remote.name" class="grid gap-1.5 rounded-md border border-default p-3">
+          <h3 class="flex items-center gap-2 text-label font-semibold tracking-wider text-muted uppercase">
+            {{ t('RepoOverview.remotes') }}
+            <UTooltip :text="t('RepoOverview.addRemote')">
+              <UButton icon="i-lucide-plus" size="xs" color="neutral" variant="ghost" class="ml-auto" :aria-label="t('RepoOverview.addRemote')" @click="remoteActions.add()" />
+            </UTooltip>
+          </h3>
+          <p v-if="!remotes.length" class="text-muted">{{ t('RepoOverview.noRemotes') }}</p>
+          <div v-for="remote in remotes" :key="remote.name" class="grid gap-1.5 rounded-md border border-default p-3">
             <div class="flex min-w-0 items-center gap-2">
               <UIcon name="i-lucide-cloud" class="size-4 shrink-0 text-muted" />
               <span class="font-medium text-highlighted">{{ remote.name }}</span>
-              <span class="truncate font-mono text-label text-muted" :title="remote.url">{{ remote.url }}</span>
+              <span class="min-w-0 flex-1 truncate font-mono text-label text-muted" :title="remote.url">{{ remote.url }}</span>
+              <UDropdownMenu :items="remoteMenu(remote.name)">
+                <UButton icon="i-lucide-ellipsis" size="xs" color="neutral" variant="ghost" :aria-label="t('RepoOverview.remoteActions', { name: remote.name })" />
+              </UDropdownMenu>
             </div>
             <div v-if="remote.web" class="flex flex-wrap gap-1">
               <UButton :label="t('RepoOverview.openOn', { host: hostName(remote.web.kind) })" icon="i-lucide-external-link" size="xs" color="neutral" variant="outline" @click="openPage(remote, remote.web.base)" />

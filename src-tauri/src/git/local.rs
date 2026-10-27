@@ -129,7 +129,7 @@ pub fn checked(path: &str) -> Result<&str, String> {
         || path.contains(':')
         || path.split('/').any(|part| part.is_empty() || part == "." || part == "..");
     if bad {
-        return Err(format!("\"{path}\" is not a file in this folder."));
+        return Err(said!("local.notFile", "\"{path}\" is not a file in this folder.", path = path));
     }
     Ok(path)
 }

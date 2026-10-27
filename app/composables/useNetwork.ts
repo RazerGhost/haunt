@@ -68,7 +68,7 @@ export function startNetwork(): void {
         actions: [{ label: t('composables.useNetwork.seeThem'), color: 'neutral', variant: 'outline', onClick: () => { void navigateTo('/incoming') } }]
       })
     } else if (news.type === 'notice') {
-      toast.add({ title: news.message, color: 'warning', icon: 'i-lucide-folder-x' })
+      toast.add({ title: said(news.message), color: 'warning', icon: 'i-lucide-folder-x' })
     } else if (news.type === 'asked' && questionShown === news.id) {
       questionShown = null
       dialog.asking.value?.done(null)

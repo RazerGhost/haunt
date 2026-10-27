@@ -1,0 +1,7 @@
+{
+  "noFolder": "Die map is er niet.",
+  "notRepository": "Die map is geen git-repository.",
+  "noRemote": "Die remote is er niet.",
+  "noPage": "Die remote heeft geen pagina op het web.",
+  "otherPage": "Alleen pagina's van de remotes van de repository kunnen open."
+}

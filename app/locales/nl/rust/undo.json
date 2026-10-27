@@ -1,0 +1,9 @@
+{
+  "notCommit": "\"{at}\" is hier geen commit.",
+  "busyMerge": "Een merge is nog niet af. Ga eerst verder of breek hem af.",
+  "busyRevert": "Een revert is nog niet af. Ga eerst verder of breek hem af.",
+  "busyCherryPick": "Een cherry-pick is nog niet af. Ga eerst verder of breek hem af.",
+  "busyRebase": "Een rebase is nog niet af. Ga eerst verder of breek hem af.",
+  "firstCommit": "De eerste commit van een repository kan niet zo ongedaan gemaakt worden.",
+  "merge": "De laatste commit is een merge. Reset de branch naar de commit die je wilt."
+}

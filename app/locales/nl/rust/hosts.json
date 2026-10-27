@@ -1,0 +1,11 @@
+{
+  "timedOut": "{tool} antwoordde niet binnen {seconds} seconden.",
+  "notListed": "{tool} kon ze niet ophalen: {problem}",
+  "unreadable": "{tool} antwoordde op een manier die Haunt niet kan lezen: {problem}",
+  "noBitbucket": "Haunt heeft geen tool om pull requests op Bitbucket te maken.",
+  "teaNoDrafts": "tea van Gitea maakt geen drafts.",
+  "pickBranches": "Kies de branch waar hij vandaan komt en de branch waar hij in gaat.",
+  "needsTitle": "Een pull request heeft een titel nodig.",
+  "notInstalled": "{tool} is niet geïnstalleerd. Installeer het en log in ({tool} auth login) om pull requests vanuit Haunt te maken.",
+  "notMade": "{tool} kon hem niet maken: {problem}"
+}

@@ -1,0 +1,8 @@
+{
+  "notFull": "De map van een worktree is een volledig pad.",
+  "notEmpty": "{path} bestaat al en is niet leeg: kies een andere map.",
+  "noBranch": "Er is geen branch die \"{branch}\" heet.",
+  "unknown": "Dat is geen worktree van deze repository.",
+  "main": "De eigen map van de repository is geen worktree om te verwijderen.",
+  "changes": "{path} heeft wijzigingen die nog niet gecommit zijn."
+}

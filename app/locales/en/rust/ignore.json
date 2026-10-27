@@ -1,0 +1,6 @@
+{
+  "badLine": "\"{line}\" cannot go in .gitignore.",
+  "nothing": "Nothing to ignore.",
+  "link": "This repository's .gitignore is a link: Haunt leaves it alone.",
+  "notWritten": ".gitignore could not be written: {error}"
+}

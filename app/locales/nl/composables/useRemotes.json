@@ -21,5 +21,6 @@
   },
   "removeHelpNone": "Alleen hier: op de remote zelf verandert niets.",
   "removeRemote": "Remote verwijderen",
-  "notRemoved": "De remote is niet verwijderd"
+  "notRemoved": "De remote is niet verwijderd",
+  "removeHelpAny": "Zijn remote branches gaan ook weg, en de branches die ze volgden volgen daarna niets meer. Op de remote zelf verandert niets."
 }

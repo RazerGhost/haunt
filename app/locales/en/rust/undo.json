@@ -1,0 +1,9 @@
+{
+  "notCommit": "\"{at}\" is not a commit here.",
+  "busyMerge": "A merge is not finished. Continue or abort it first.",
+  "busyRevert": "A revert is not finished. Continue or abort it first.",
+  "busyCherryPick": "A cherry-pick is not finished. Continue or abort it first.",
+  "busyRebase": "A rebase is not finished. Continue or abort it first.",
+  "firstCommit": "The first commit of a repository cannot be undone this way.",
+  "merge": "The last commit is a merge. Reset the branch to the commit you want instead."
+}

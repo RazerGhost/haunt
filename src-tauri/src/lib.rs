@@ -5,6 +5,9 @@
 //! pulls or pushes.
 //! While Haunt is worked on, the same commands also answer on 127.0.0.1 for the dev server's page (devbridge.rs).
 
+// First: the said! macro is used by the modules after it.
+#[macro_use]
+mod said;
 mod alerts;
 mod api;
 mod askpass;
@@ -90,7 +93,10 @@ pub fn run() {
                 let paths = paths.clone();
                 std::thread::spawn(move || {
                     let Some(folder) = paths.iter().find(|path| path.is_dir()) else {
-                        return api.repos.notice("Drop a folder to open it: a project or a git repository.");
+                        return api.repos.notice(&said!(
+                            "lib.dropFolder",
+                            "Drop a folder to open it: a project or a git repository."
+                        ));
                     };
                     if let Err(problem) = api.repos.open(&folder.to_string_lossy()) {
                         api.repos.notice(&problem);

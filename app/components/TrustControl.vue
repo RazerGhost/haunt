@@ -37,7 +37,7 @@ function ask() {
           <TrustReading v-if="!root.trusted" class="text-muted" />
           <p class="text-muted">{{ root.trusted ? t('TrustControl.itRuns') : t('TrustControl.wouldRun') }}</p>
           <ul class="grid gap-0.5 text-muted">
-            <li v-for="want in root.wants" :key="want.path">{{ t('TrustControl.its', { label: want.label }) }} <code class="text-xs">{{ want.path }}</code></li>
+            <li v-for="want in root.wants" :key="want.path">{{ t('TrustControl.its', { label: said(want.label) }) }} <code class="text-xs">{{ want.path }}</code></li>
           </ul>
           <UButton :label="t('TrustControl.see')" size="xs" color="neutral" variant="link" class="justify-self-start px-0" @click="reading = true" />
           <p v-if="problem" class="text-xs text-error">{{ problem }}</p>

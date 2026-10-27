@@ -27,7 +27,7 @@ const UNSAFE: [char; 9] = ['"', '%', '^', '&', '|', '<', '>', '!', '\n'];
 /// Opens a folder in the system's file manager (Explorer, Finder, or what xdg-open picks).
 pub fn reveal(folder: &Path) -> Result<(), String> {
     if !folder.is_dir() {
-        return Err(format!("{} is not there yet.", folder.display()));
+        return Err(said!("editor.notThereYet", "{folder} is not there yet.", folder = folder.display()));
     }
     let program = if cfg!(windows) {
         "explorer"
@@ -43,7 +43,7 @@ pub fn reveal(folder: &Path) -> Result<(), String> {
         .stderr(Stdio::null())
         .spawn()
         .map(drop)
-        .map_err(|error| format!("The file manager could not start: {error}"))
+        .map_err(|error| said!("editor.fileManager", "The file manager could not start: {error}", error = error))
 }
 
 /// Opens a terminal in a folder: HAUNT_TERMINAL when set (a command, started in the folder), else Windows Terminal or
@@ -51,7 +51,7 @@ pub fn reveal(folder: &Path) -> Result<(), String> {
 /// the working directory, not inside a command line.
 pub fn terminal(folder: &Path) -> Result<(), String> {
     if !folder.is_dir() {
-        return Err(format!("{} is not there.", folder.display()));
+        return Err(said!("editor.notThere", "{folder} is not there.", folder = folder.display()));
     }
     let start = |program: &str, args: &[&str]| {
         Command::new(program)
@@ -70,7 +70,7 @@ pub fn terminal(folder: &Path) -> Result<(), String> {
         return if start(program, &args) {
             Ok(())
         } else {
-            Err(format!("HAUNT_TERMINAL (\"{custom}\") could not start."))
+            Err(said!("editor.customTerminal", "HAUNT_TERMINAL (\"{custom}\") could not start.", custom = custom))
         };
     }
     let started = if cfg!(windows) {
@@ -87,14 +87,17 @@ pub fn terminal(folder: &Path) -> Result<(), String> {
     if started {
         Ok(())
     } else {
-        Err("No terminal could be started. Set HAUNT_TERMINAL to the one you use, e.g. \"wezterm\".".into())
+        Err(said!(
+            "editor.noTerminal",
+            "No terminal could be started. Set HAUNT_TERMINAL to the one you use, e.g. \"wezterm\"."
+        ))
     }
 }
 
 /// Opens a web page in the system's browser; only `https://` addresses.
 pub fn open_url(url: &str) -> Result<(), String> {
     if !url.starts_with("https://") || url.chars().any(|c| c.is_whitespace() || c == '"' || c == '\'') {
-        return Err("Only web addresses (https) can be opened.".into());
+        return Err(said!("editor.httpsOnly", "Only web addresses (https) can be opened."));
     }
     let mut command = if cfg!(windows) {
         // Through the shell's URL handler: `start` would read & and ^ in the address as its own.
@@ -112,7 +115,7 @@ pub fn open_url(url: &str) -> Result<(), String> {
         .stderr(Stdio::null())
         .spawn()
         .map(drop)
-        .map_err(|error| format!("The browser could not start: {error}"))
+        .map_err(|error| said!("editor.browser", "The browser could not start: {error}", error = error))
 }
 
 /// A command's path on the PATH, as `where` (Windows) or `which` finds it.
@@ -148,8 +151,12 @@ pub fn installed() -> Vec<String> {
 /// The command and its arguments for an editor.
 fn launch(editor: &str, root: &str, file: &str, line: u32, column: u32) -> Result<(String, Vec<String>), String> {
     if editor == "custom" {
-        let template = custom()
-            .ok_or("Set HAUNT_EDITOR to a command, e.g. \"nvim-qt +{line} {file}\" ({root} is the project folder).")?;
+        let template = custom().ok_or_else(|| {
+            said!(
+                "editor.noCustom",
+                "Set HAUNT_EDITOR to a command, e.g. \"nvim-qt +{line} {file}\" ({root} is the project folder)."
+            )
+        })?;
         let mut parts = template.split_whitespace();
         let command = parts.next().unwrap_or_default().to_string();
         let args = parts
@@ -165,7 +172,7 @@ fn launch(editor: &str, root: &str, file: &str, line: u32, column: u32) -> Resul
     let (_, command, args) = LAUNCHES
         .iter()
         .find(|(name, _, _)| *name == editor)
-        .ok_or_else(|| format!("Haunt does not know the editor \"{editor}\"."))?;
+        .ok_or_else(|| said!("editor.unknown", "Haunt does not know the editor \"{editor}\".", editor = editor))?;
     Ok((command.to_string(), args(root, file, line, column)))
 }
 
@@ -173,7 +180,11 @@ pub fn open(editor: &str, root: &str, file: &Path, line: u32, column: u32) -> Re
     let file = file.to_string_lossy();
     let (command, args) = launch(editor, root, &file, line, column)?;
     let found = locate(&command).ok_or_else(|| {
-        format!("\"{command}\" is not on your PATH. Install the editor's command line tool, or pick another editor.")
+        said!(
+            "editor.notOnPath",
+            "\"{command}\" is not on your PATH. Install the editor's command line tool, or pick another editor.",
+            command = command
+        )
     })?;
     // Windows runs the editors' .cmd launchers through cmd.exe, so every argument is quoted and checked first.
     let through_shell = cfg!(windows)
@@ -181,7 +192,10 @@ pub fn open(editor: &str, root: &str, file: &Path, line: u32, column: u32) -> Re
     let mut process = if through_shell {
         let all: Vec<String> = std::iter::once(found.to_string_lossy().into_owned()).chain(args).collect();
         if all.iter().any(|arg| arg.contains(UNSAFE)) {
-            return Err("That path has characters the Windows launcher cannot pass on safely.".into());
+            return Err(said!(
+                "editor.unsafePath",
+                "That path has characters the Windows launcher cannot pass on safely."
+            ));
         }
         let mut shell = Command::new("cmd");
         shell.arg("/C").arg(all.iter().map(|arg| format!("\"{arg}\"")).collect::<Vec<_>>().join(" "));
@@ -193,7 +207,9 @@ pub fn open(editor: &str, root: &str, file: &Path, line: u32, column: u32) -> Re
     };
     process.stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
     crate::startup::hide_console(&mut process);
-    process.spawn().map(|_| ()).map_err(|error| format!("Could not start {command}: {error}"))
+    process.spawn().map(|_| ()).map_err(|error| {
+        said!("editor.notStarted", "Could not start {command}: {error}", command = command, error = error)
+    })
 }
 
 #[cfg(test)]

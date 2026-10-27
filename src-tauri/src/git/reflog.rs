@@ -46,7 +46,7 @@ pub fn reflog(root: &str, reference: &str) -> Result<Reflog, String> {
         let name = super::cli::revision(reference)?;
         let full = format!("refs/heads/{name}");
         git(root, &["show-ref", "--verify", "--quiet", &full])
-            .map_err(|_| format!("There is no branch \"{name}\"."))?;
+            .map_err(|_| said!("reflog.noBranch", "There is no branch \"{name}\".", name = name))?;
         full
     };
     let count = format!("--max-count={}", MOST + 1);
