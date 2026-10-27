@@ -595,3 +595,33 @@ fn a_commit_names_its_branches_and_tags_annotated_or_not() {
     names.sort();
     assert_eq!(names, ["Tag heavy", "Tag light"]);
 }
+
+#[test]
+fn drafts_a_pull_request_from_a_branchs_commits() {
+    let r = Repo::new();
+    r.write("a.txt", "a\n");
+    r.sh(&["add", "."]);
+    r.sh(&["commit", "-q", "-m", "First"]);
+    let remote = tempfile::tempdir().unwrap();
+    let remote_path = remote.path().to_string_lossy().into_owned();
+    assert!(Command::new("git").args(["init", "-q", "--bare", &remote_path]).status().unwrap().success());
+    r.sh(&["remote", "add", "origin", &remote_path]);
+    r.sh(&["push", "-q", "-u", "origin", "main"]);
+    r.sh(&["switch", "-q", "-c", "fix/login-redirect"]);
+    r.sh(&["commit", "-q", "--allow-empty", "-m", "Keep the page"]);
+    r.sh(&["commit", "-q", "--allow-empty", "-m", "Redirect after login"]);
+
+    let draft = crate::git::pull_draft(&r.root, "fix/login-redirect", None).unwrap();
+    assert_eq!((draft.remote.as_str(), draft.base.as_str()), ("origin", "main"));
+    assert!(!draft.pushed, "not on the remote yet");
+    assert_eq!(draft.commits, ["Redirect after login", "Keep the page"]);
+    assert_eq!(draft.title, "Login redirect");
+    assert_eq!(draft.body, "- Keep the page\n- Redirect after login");
+
+    r.sh(&["push", "-q", "-u", "origin", "fix/login-redirect"]);
+    let draft = crate::git::pull_draft(&r.root, "fix/login-redirect", None).unwrap();
+    assert!(draft.pushed);
+    assert_eq!(draft.bases, ["main"], "its own branch is not a base");
+    assert!(crate::git::pull_draft(&r.root, "fix/login-redirect", Some("nope")).is_err());
+    assert!(crate::git::pull_draft(&r.root, "--all", None).is_err());
+}

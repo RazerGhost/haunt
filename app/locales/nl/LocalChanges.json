@@ -21,5 +21,18 @@
   "noChanges": "Geen lokale wijzigingen.",
   "discardTitle": "Deze wijzigingen weggooien?",
   "discardDescription": "{what}. Ze blijven 30 dagen bewaard in Onlangs weggegooid.",
-  "keep": "Houden"
+  "keep": "Houden",
+  "stashFile": "Dit bestand stashen",
+  "ignoreFile": "Dit bestand negeren",
+  "ignoreExtension": "Elk {extension}-bestand negeren",
+  "ignoreFolder": "De map {folder} negeren",
+  "stashSome": "Een paar bestanden stashen…",
+  "stashTitle": "Bestanden stashen",
+  "stashHelp": "De aangevinkte bestanden gaan in een nieuwe stash; de rest blijft zoals hij is.",
+  "stashMessage": "Bericht (optioneel)",
+  "stashTicked": {
+    "one": "{count} bestand stashen",
+    "other": "{count} bestanden stashen"
+  },
+  "untracked": "nieuw"
 }

@@ -121,6 +121,10 @@ export function useLocalChanges() {
       : run(at => haunt.lines(at, path, picked, action)),
     discard: (paths: string[]) => discardWithUndo(paths.length === 1 ? t('composables.useLocalChanges.discardedFile', { path: paths[0]! }) : t('composables.useLocalChanges.discardedFiles', { count: paths.length }), at => haunt.discard(at, paths)),
     restore: (id: string) => run(at => haunt.restore(at, id)),
+    /** Adds patterns to the repository's .gitignore; the lists follow on the git news. */
+    ignore: (patterns: string[]) => run(at => haunt.ignore(at, patterns)),
+    /** Stashes only these files (untracked ones too when any is untracked). */
+    stashFiles: (paths: string[], untracked: boolean, message: string) => run(at => haunt.stash(at, message.trim() || null, untracked, paths)),
     commit: (message: string, amend: boolean, signoff: boolean) => run(at => haunt.commitStaged(at, message, amend, signoff))
   }
 }

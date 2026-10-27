@@ -189,8 +189,10 @@ impl Writer<'_> {
     /* ---------- stashes ---------- */
 
     /// Stashes the changes in the working tree (untracked files too when asked), with an optional message.
-    pub fn stash(&self, message: Option<&str>, untracked: bool) -> Result<(), String> {
+    /// Stashes the changes, or only those of `paths` (relative to the opened folder; untracked ones need `untracked`).
+    pub fn stash(&self, message: Option<&str>, untracked: bool, paths: &[String]) -> Result<(), String> {
         self.refuse_checkout("Stashing")?;
+        let paths = if paths.is_empty() { Vec::new() } else { super::checked_all(paths)? };
         let queue = queue(self.root);
         let _turn = queue.lock().unwrap();
         self.wait_for_lock()?;
@@ -200,6 +202,10 @@ impl Writer<'_> {
         }
         if let Some(message) = message.map(str::trim).filter(|message| !message.is_empty()) {
             args.extend(["-m", message]);
+        }
+        if !paths.is_empty() {
+            args.push("--");
+            args.extend(paths);
         }
         let out = self.git(&args, None, &[], None)?;
         if out.contains("No local changes to save") {

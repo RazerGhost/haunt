@@ -142,6 +142,107 @@ pub fn web_remote(root: &str) -> Option<WebRemote> {
     web_page(&name, &url).map(|page| WebRemote { prefix, ..page })
 }
 
+/// The web page of the remote `name`; None when it has none.
+pub fn remote_page(root: &str, name: &str) -> Option<WebRemote> {
+    let url = git(root, &["remote", "get-url", "--", name]).ok()?;
+    web_page(name, &url)
+}
+
+/// What a new pull request for a branch starts from: where it can go, and a title and description from its commits.
+#[derive(Debug, Clone, Serialize, Type)]
+pub struct PullDraft {
+    /// The remote it goes to: the branch's own, else the one with a web page.
+    pub remote: String,
+    /// The remote's branches it could go into.
+    pub bases: Vec<String>,
+    pub base: String,
+    /// The branch is on the remote with all its commits.
+    pub pushed: bool,
+    /// The commits it would bring, newest first (at most 50).
+    pub commits: Vec<String>,
+    pub title: String,
+    pub body: String,
+}
+
+fn lines_of(out: &str) -> Vec<String> {
+    out.lines().map(str::trim).filter(|line| !line.is_empty()).map(str::to_owned).collect()
+}
+
+/// A title from a branch's name: "fix/login-redirect" is "Login redirect".
+fn title_from(branch: &str) -> String {
+    let words = branch.rsplit('/').next().unwrap_or(branch).replace(['-', '_'], " ");
+    let mut chars = words.trim().chars();
+    match chars.next() {
+        Some(first) => first.to_uppercase().chain(chars).collect(),
+        None => branch.to_owned(),
+    }
+}
+
+/// A new pull request for `branch` into `base` (the remote's default branch when None).
+pub fn pull_draft(root: &str, branch: &str, base: Option<&str>) -> Result<PullDraft, String> {
+    let branch = super::cli::revision(branch)?;
+    git(root, &["show-ref", "--verify", "--quiet", &format!("refs/heads/{branch}")])
+        .map_err(|_| format!("There is no branch \"{branch}\"."))?;
+    let own =
+        git(root, &["config", "--get", &format!("branch.{branch}.remote")]).ok().map(|name| name.trim().to_owned());
+    let remote = own
+        .filter(|name| !name.is_empty() && name != ".")
+        .or_else(|| web_remote(root).map(|page| page.remote))
+        .or_else(|| {
+            // No page to go by: origin, or the only remote.
+            let remotes = lines_of(&git(root, &["remote"]).unwrap_or_default());
+            remotes
+                .iter()
+                .find(|name| *name == "origin")
+                .cloned()
+                .or_else(|| (remotes.len() == 1).then(|| remotes[0].clone()))
+        })
+        .ok_or("This repository has no remote to make a pull request on.")?;
+    let listed = git(root, &["for-each-ref", "--format=%(refname:short)", &format!("refs/remotes/{remote}/")])?;
+    let prefix = format!("{remote}/");
+    let bases: Vec<String> = lines_of(&listed)
+        .into_iter()
+        .filter_map(|name| name.strip_prefix(&prefix).map(str::to_owned))
+        .filter(|name| name != "HEAD" && name != branch)
+        .collect();
+    let default = git(root, &["symbolic-ref", "--short", "-q", &format!("refs/remotes/{remote}/HEAD")])
+        .ok()
+        .and_then(|name| name.trim().strip_prefix(&prefix).map(str::to_owned))
+        .filter(|name| bases.contains(name))
+        .or_else(|| ["main", "master", "develop"].iter().map(|name| name.to_string()).find(|name| bases.contains(name)))
+        .or_else(|| bases.first().cloned())
+        .ok_or("The remote has no branch to go into: fetch first.")?;
+    let base = match base {
+        Some(wanted) if bases.iter().any(|known| known == wanted) => wanted.to_owned(),
+        Some(wanted) => return Err(format!("{remote} has no branch \"{wanted}\".")),
+        None => default,
+    };
+    let upstream = git(root, &["rev-parse", "--abbrev-ref", "--end-of-options", &format!("{branch}@{{upstream}}")])
+        .ok()
+        .map(|name| name.trim().to_owned());
+    let pushed = upstream.is_some_and(|upstream| count_between(root, &upstream, branch) == 0);
+    let commits = lines_of(
+        &git(
+            root,
+            &["log", "--max-count=50", "--format=%s", "--end-of-options", &format!("{remote}/{base}..{branch}")],
+        )
+        .unwrap_or_default(),
+    );
+    let title = match commits.as_slice() {
+        [only] => only.clone(),
+        _ => title_from(branch),
+    };
+    let body = if commits.len() > 1 {
+        commits.iter().rev().map(|subject| format!("- {subject}")).collect::<Vec<_>>().join(
+            "
+",
+        )
+    } else {
+        String::new()
+    };
+    Ok(PullDraft { remote, bases, base, pushed, commits, title, body })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

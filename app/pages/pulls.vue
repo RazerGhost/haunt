@@ -19,6 +19,8 @@ const { times } = usePreferences()
 const { byNumber } = useHostPulls()
 
 const pulls = shallowRef<PullRequest[] | null>(null)
+// New pull request (PullCreate).
+const creating = ref(false)
 const problem = ref('')
 const fetching = ref(false)
 const number = ref('')
@@ -92,6 +94,7 @@ const when = (seconds: number) => times.value === 'date'
     <aside class="flex min-h-0 flex-col border-r border-default">
       <div class="grid gap-2 border-b border-default p-3">
         <UButton :label="pulls?.length ? t('pages.pulls.fetchAgain') : t('pages.pulls.fetchPulls')" icon="i-lucide-cloud-download" size="sm" :loading="fetching" block @click="fetchThem()" />
+        <UButton :label="t('pages.pulls.newPull')" icon="i-lucide-git-pull-request-create" size="sm" color="neutral" variant="outline" block @click="creating = true" />
         <form class="flex gap-1.5" @submit.prevent="fetchNumber">
           <UInput v-model="number" size="xs" :placeholder="t('pages.pulls.numberPlaceholder')" class="flex-1" :aria-label="t('pages.pulls.number')" />
           <UButton type="submit" :label="t('pages.pulls.fetch')" size="xs" color="neutral" variant="outline" :disabled="!number.trim() || fetching" />
@@ -157,5 +160,6 @@ const when = (seconds: number) => times.value === 'date'
     <div v-else class="grid place-items-center p-8 text-center text-sm text-muted">
       <p>{{ pulls?.length ? t('pages.pulls.pick') : t('pages.pulls.fetchToReview') }}</p>
     </div>
+    <PullCreate v-model:open="creating" />
   </div>
 </template>

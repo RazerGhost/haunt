@@ -85,6 +85,7 @@ const groups = computed(() => {
         { label: t('AppPalette.releaseNotes'), suffix: t('AppPalette.releaseNotesHelp'), icon: 'i-lucide-scroll-text', to: '/release' },
         { label: t('AppPalette.patches'), icon: 'i-lucide-file-diff', to: '/patches' },
         { label: t('AppPalette.health'), suffix: t('AppPalette.healthHelp'), icon: 'i-lucide-heart-pulse', to: '/health' },
+        { label: t('AppPalette.grep'), suffix: t('AppPalette.grepHelp'), icon: 'i-lucide-text-search', to: '/grep' },
         ...branch ? [{ label: t('AppPalette.review', { name: branch.name }), suffix: t('AppPalette.reviewHelp'), icon: 'i-lucide-list-checks', to: '/review' }] : [],
         ...operation.value ? [{ label: t('AppPalette.conflicts', { title: operation.value.title }), icon: 'i-lucide-git-merge', to: '/conflicts' }] : [],
         { label: t('AppPalette.layers'), icon: 'i-lucide-layers', to: '/layers' },

@@ -323,13 +323,54 @@ mod refs {
     }
 
     #[test]
+    fn stashes_only_the_files_asked_for() {
+        let r = repo();
+        let writer = Writer::new(&r.root, true);
+        r.write(
+            "a.txt", "changed
+",
+        );
+        r.write(
+            "new.txt",
+            "untracked
+",
+        );
+        r.write(
+            "other.txt",
+            "untracked too
+",
+        );
+        writer.stash(Some("Some"), true, &["a.txt".into(), "new.txt".into()]).unwrap();
+        assert!(!r.path("new.txt").exists(), "the untracked file asked for went into the stash");
+        assert!(r.path("other.txt").exists(), "the one not asked for stayed");
+        assert!(r.sh(&["status", "--porcelain", "--", "a.txt"]).trim().is_empty(), "a.txt is back as committed");
+        assert!(writer.stash(None, false, &["../out.txt".into()]).is_err());
+    }
+
+    #[test]
+    fn ignores_files_in_the_top_gitignore() {
+        let r = repo();
+        let writer = Writer::new(&r.root, true);
+        r.write(".gitignore", "node_modules");
+        writer.ignore(&["*.log".into(), "/build/".into(), "node_modules".into()]).unwrap();
+        assert_eq!(
+            fs::read_to_string(r.path(".gitignore")).unwrap(),
+            "node_modules
+*.log
+/build/
+"
+        );
+        assert!(writer.ignore(&["!keep".into()]).is_err());
+    }
+
+    #[test]
     fn stashes_applies_pops_drops_and_brings_back() {
         let r = repo();
         let writer = Writer::new(&r.root, true);
-        assert!(writer.stash(None, false).is_err(), "nothing to stash");
+        assert!(writer.stash(None, false, &[]).is_err(), "nothing to stash");
         r.write("a.txt", "one\n");
         r.write("new.txt", "untracked\n");
-        writer.stash(Some("First"), true).unwrap();
+        writer.stash(Some("First"), true, &[]).unwrap();
         assert!(!r.path("new.txt").exists());
         writer.apply_stash(0, false).unwrap();
         assert_eq!(fs::read_to_string(r.path("new.txt")).unwrap(), "untracked\n");
@@ -339,7 +380,7 @@ mod refs {
         writer.apply_stash(0, true).unwrap();
         assert!(r.sh(&["stash", "list"]).trim().is_empty(), "pop drops it");
 
-        writer.stash(Some("Second"), true).unwrap();
+        writer.stash(Some("Second"), true, &[]).unwrap();
         writer.drop_stash(0).unwrap();
         assert!(r.sh(&["stash", "list"]).trim().is_empty());
         let dropped = writer.dropped().unwrap();
@@ -378,7 +419,7 @@ mod refs {
         r.sh(&["commit", "-m", "lfs"]);
         assert!(writer.switch_branch("other", SwitchMode::Carry).unwrap_err().contains("trusted"));
         r.write("a.txt", "changed\n");
-        assert!(writer.stash(None, false).unwrap_err().contains("trusted"));
+        assert!(writer.stash(None, false, &[]).unwrap_err().contains("trusted"));
         // Creating a branch without switching writes no files: allowed.
         writer.create_branch("third", None, false).unwrap();
         assert_eq!(current(&r), "main");

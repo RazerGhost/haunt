@@ -607,8 +607,22 @@ commands! {
     }
     /// Where HEAD, or a local branch, pointed before, newest first, with the commits only the reflog keeps marked.
     fn reflog(api, repo: String, reference: String) -> crate::git::reflog::Reflog { api.repos.require(&repo)?; crate::git::reflog::reflog(&repo, &reference) }
+    /// A commit's signature, checked with your own gpg or ssh-keygen settings (never the repository's).
+    fn commit_signature(api, repo: String, sha: String) -> crate::git::signature::Signature { api.repos.require(&repo)?; crate::git::signature::check(&repo, &sha) }
+    /// Lines `start` to `end` of a file as it was at a commit (at most 200), for a preview; empty when it was not there.
+    fn lines_at(api, repo: String, at: String, path: String, start: u32, end: u32) -> Vec<String> {
+        api.repos.require(&repo)?;
+        crate::git::cli_revision(&at)?;
+        let path = crate::git::local::checked(&path)?;
+        let text = crate::git::file_at(&repo, &at, path).unwrap_or_default();
+        let start = start.max(1) as usize;
+        let end = (end as usize).min(start + 199);
+        Ok(text.lines().skip(start - 1).take(end.saturating_sub(start) + 1).map(str::to_owned).collect())
+    }
     /// The room the history takes, its largest files, and the files that belong in Git LFS.
     fn health(api, repo: String) -> crate::git::Health { api.repos.require(&repo)?; crate::git::health(&repo) }
+    /// The lines of the files at commit `at` that hold `pattern`, by file, from the opened folder down.
+    fn grep(api, repo: String, at: String, pattern: String, mode: crate::git::grep::GrepMode, ignore_case: bool, path: Option<String>) -> crate::git::grep::GrepResult { api.repos.require(&repo)?; crate::git::grep::grep(&repo, &at, &pattern, mode, ignore_case, path.as_deref()) }
     /// What the folder would run once trusted (hooks, its architecture script, its TypeScript), with each file's text.
     fn wanted_texts(api, repo: String) -> Vec<crate::repos::WantedText> { api.repos.require(&repo)?; Ok(crate::repos::wanted_texts(&repo)) }
     /// The HTTP routes in the code: Hono and Express from the scanner, WordPress's REST routes read here.
@@ -641,6 +655,19 @@ commands! {
             Some(page) if api.repos.host_tools() => crate::hosts::host_pulls(&page),
             page => crate::hosts::HostPulls { tool: None, host: page.map(|page| page.host).unwrap_or_default(), pulls: Vec::new(), problem: None },
         })
+    }
+    /// What a new pull request for `branch` starts from: the remote's branches it could go into, and a title and
+    /// description from its commits (into `base`, or the remote's default branch).
+    fn pull_request_draft(api, repo: String, branch: String, base: Option<String>) -> crate::git::PullDraft {
+        api.repos.require(&repo)?;
+        crate::git::pull_draft(&repo, &branch, base.as_deref())
+    }
+    /// Makes a pull request (a merge request on GitLab) through the host's tool, on the remote the branch goes to.
+    fn create_pull_request(api, repo: String, pull: crate::hosts::NewPull) -> crate::hosts::CreatedPull {
+        api.repos.require(&repo)?;
+        let draft = crate::git::pull_draft(&repo, &pull.branch, Some(&pull.base))?;
+        let page = crate::git::remote_page(&repo, &draft.remote).ok_or("That remote has no host Haunt knows.")?;
+        crate::hosts::create_pull(&page, &pull)
     }
     /// Opens a release page of Haunt itself in the browser (the update check's See it); nothing else.
     fn open_release(api, url: String) -> () {
@@ -676,9 +703,11 @@ commands! {
         let undo = Undo::Recreate { name: name.clone(), sha };
         api.undoable(&repo, &["refs"], undo, |_| format!("Deleted {name}"), |writer| writer.delete_branch(&name, unmerged))
     }
-    fn stash(api, repo: String, message: Option<String>, untracked: bool) -> () {
-        api.write(&repo, &["stash", "index"], |writer| writer.stash(message.as_deref(), untracked))
+    fn stash(api, repo: String, message: Option<String>, untracked: bool, paths: Vec<String>) -> () {
+        api.write(&repo, &["stash", "index"], |writer| writer.stash(message.as_deref(), untracked, &paths))
     }
+    /// Adds patterns to the repository's top .gitignore (anchored ones relative to the opened folder).
+    fn ignore(api, repo: String, patterns: Vec<String>) -> () { api.write(&repo, &["index"], |writer| writer.ignore(&patterns)) }
     /// Applies a stash; `pop` also drops it when it applied cleanly.
     fn apply_stash(api, repo: String, index: u32, pop: bool) -> () {
         api.write(&repo, &["stash", "index"], |writer| writer.apply_stash(index, pop))

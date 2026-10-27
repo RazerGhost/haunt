@@ -60,6 +60,7 @@ const menu = computed(() => {
       ...commit.refs.some(ref => ref.kind === 'head') ? [] : [{ label: t('CommitList.bisectGood'), icon: 'i-lucide-crosshair', onSelect: () => navigateTo({ path: '/bisect', query: { good: commit.sha } }) }]
     ],
     [
+      { label: t('CommitList.searchFiles'), icon: 'i-lucide-text-search', onSelect: () => navigateTo({ path: '/grep', query: { at: commit.sha } }) },
       { label: t('CommitList.copySha'), icon: 'i-lucide-copy', onSelect: () => navigator.clipboard?.writeText(commit.sha) },
       { label: t('CommitList.copyMessage'), icon: 'i-lucide-copy', onSelect: () => copyMessage(commit.sha) },
       { label: t('CommitList.savePatch'), icon: 'i-lucide-file-diff', onSelect: () => patches.save(commit.sha) },
@@ -200,6 +201,7 @@ function when(seconds: number): string {
             </template>
             <span class="truncate" :class="commits[at]!.sha === props.selected ? 'text-highlighted' : ''" :title="commits[at]!.subject">{{ commits[at]!.subject }}</span>
           </span>
+          <UIcon v-if="commits[at]!.signed" name="i-lucide-shield-check" class="size-3.5 shrink-0 text-dimmed" :title="t('CommitList.signed')" />
           <span class="w-36 shrink-0 truncate text-muted" :title="commits[at]!.email">{{ commits[at]!.author }}</span>
           <span class="shrink-0 text-right text-muted tabular-nums" :class="times === 'date' ? 'w-32' : 'w-20'" :title="new Date(commits[at]!.time * 1000).toLocaleString()">{{ when(commits[at]!.time) }}</span>
           <span class="w-16 shrink-0 text-right font-mono text-dimmed">{{ commits[at]!.sha.slice(0, 7) }}</span>

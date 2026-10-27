@@ -40,5 +40,23 @@
   "canvas": "Canvas",
   "noneInCode": "None of the changed functions is in the code now.",
   "workingOut": "Working out the call graph…",
-  "callsHint": "Changed in the middle, callers left, callees right · double-click to open in Calls"
+  "callsHint": "Changed in the middle, callers left, callees right · double-click to open in Calls",
+  "signature": {
+    "good": "Signed",
+    "unknown": "Signed, key not trusted",
+    "expired": "Signed, expired",
+    "revoked": "Signed, key revoked",
+    "bad": "Bad signature",
+    "unchecked": "Signed, not checked"
+  },
+  "signatureHelp": {
+    "good": "The signature holds, made by a key you trust.",
+    "unknown": "The signature holds, but the key is not one you have said you trust (in gpg, or your SSH allowed signers).",
+    "expired": "The signature holds, but the key or the signature has expired since.",
+    "revoked": "The signature holds, but the key has been revoked since.",
+    "bad": "The signature does not hold: the commit was changed after it was signed, or not signed by that key.",
+    "unchecked": "It could not be checked: the key or the program for it is missing on this computer."
+  },
+  "signedBy": "By {signer}",
+  "signedWith": "{format} key {key}"
 }

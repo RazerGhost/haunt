@@ -86,6 +86,7 @@ fn commit(line: &str) -> LogCommit {
         time: time.parse().unwrap_or(0),
         subject,
         refs: decorations(&refs),
+        signed: false,
     }
 }
 
@@ -191,6 +192,10 @@ pub fn log(root: &str, query: &LogQuery) -> Result<LogPage, String> {
         } else {
             Err(error.lines().next().unwrap_or(&error).to_owned())
         };
+    }
+    let signed = super::objects::signed(root, commits.iter().map(|commit| commit.sha.as_str()));
+    for (commit, signed) in commits.iter_mut().zip(signed) {
+        commit.signed = signed;
     }
     reader.next += commits.len() as u32;
     if !more {

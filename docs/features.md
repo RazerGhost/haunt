@@ -84,10 +84,13 @@ Haunt reads git, and writes only what you ask for.
   hooks or signing will not run because the folder is not trusted, or when amending rewrites a commit that is on a
   remote already. **Draft** writes a message from what is staged, by function, such as "Entries: adds resolveSlug;
   changes createEntry; 2 callers in Api", worked out on your machine without AI. Activity lists every git command Haunt
-  ran to write.
+  ran to write. The diff is unified or side by side (one choice for every diff), and lines are picked in either.
+  Right-click a file to stash just it, or, for an untracked one, to ignore it, every file with its extension or its
+  folder (added to the repository's `.gitignore`); **Stash some files** stashes the files you tick.
 - **Branches, stashes and tags**: create a branch anywhere and switch to it (taking your changes along or stashing
   them), check out a remote branch, rename and delete (saying when commits would be lost), stash with or without
-  untracked files, apply, pop and drop, and create, delete and push tags.
+  untracked files (or only the files you pick, from Local changes), apply, pop and drop, and create, delete and push
+  tags.
 - **Fetch, pull and push**: fetch every remote; pull with fast-forward, merge or rebase (Haunt asks when the branches
   went apart); push to the tracked branch or a new one, and overwrite only if the remote branch is still where your
   last fetch saw it. **Before pulling**, the incoming commits can be read by function, with the functions you changed
@@ -96,6 +99,11 @@ Haunt reads git, and writes only what you ask for.
   undo the last commit, merge a branch (or drag it onto yours), rebase (drag yours onto another), and rebase
   interactively: reorder commits and keep, reword, squash, fix up or drop each, with no editor. Haunt says when a commit
   you are about to change is on a remote already.
+- **Search files** (More, the palette, or a commit's menu): the files at any commit that hold some text, a regular
+  expression or a whole word (`git grep`), by file, with each line around a match shown as it was then.
+- **Signed commits**: the commit list marks the commits that carry a signature, and a commit's details check it (good,
+  key not trusted, expired, revoked, bad, or not checkable here) with your own gpg or ssh-keygen settings: a
+  repository's own config cannot pick the program that checks, or the signers it trusts.
 - **Undo** for the last write that moved history: a commit or amend, merge, pull, revert, cherry-pick, reset, rebase,
   branch switch, or a branch made, renamed or deleted. A toast says what Undo would do, and the palette offers it while
   nothing has moved since.
@@ -104,7 +112,9 @@ Haunt reads git, and writes only what you ask for.
   the result.
 - **Pull requests**, reviewed without switching your branch: fetched from the remote as refs (GitHub, GitLab and Gitea
   offer them), with no account, and read with every lens of the commit list. With pull request status switched on,
-  each branch shows its pull request and checks through `gh`, `glab` or `tea` (Gitea is untested so far).
+  each branch shows its pull request and checks through `gh`, `glab` or `tea` (Gitea is untested so far). **New pull
+  request** makes one (a merge request on GitLab) through the same tool, signed in as you: the branch it goes into, a
+  title and description made from its commits, and draft or not; a branch not on the remote yet is pushed first.
 - **Worktrees**: more branches checked out side by side, each in its own folder and tab.
 - **Submodules**: listed with whether each is checked out at the recorded commit, opened in their own tab, and updated
   (in a trusted folder, since updating clones from the addresses in `.gitmodules`).

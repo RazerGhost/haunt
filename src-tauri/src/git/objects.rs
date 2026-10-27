@@ -42,6 +42,24 @@ fn open(root: &str) -> Result<(gix::Repository, String), String> {
     Ok((repo, prefix))
 }
 
+/// Whether each commit carries a signature: a `gpgsig` header, read in the process; checking it is
+/// `signature::check`'s, for one commit at a time.
+pub fn signed<'a>(root: &str, shas: impl Iterator<Item = &'a str>) -> Vec<bool> {
+    let Ok((repo, _)) = open(root) else { return shas.map(|_| false).collect() };
+    shas.map(|sha| {
+        let Ok(id) = gix::ObjectId::from_hex(sha.as_bytes()) else { return false };
+        repo.find_commit(id)
+            .ok()
+            .and_then(|commit| {
+                commit.decode().ok().map(|decoded| {
+                    decoded.extra_headers.iter().any(|(name, _)| *name == "gpgsig" || *name == "gpgsig-sha256")
+                })
+            })
+            .unwrap_or(false)
+    })
+    .collect()
+}
+
 fn commit_of<'repo>(repo: &'repo gix::Repository, name: &str) -> Result<gix::Commit<'repo>, String> {
     let name = revision(name)?;
     repo.rev_parse_single(name)

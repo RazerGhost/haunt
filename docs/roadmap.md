@@ -37,14 +37,8 @@ Done (app/pages/reflog.vue, src-tauri/src/git/reflog.rs).
 
 ## 5. Git
 
-Smallest first.
-
-- **Ignore a file** from Local changes (add it to `.gitignore`).
-- **Stash only some files** rather than everything.
-- **Side-by-side diffs**; diffs are one column today.
-- **Create pull requests** (`gh pr create`, `glab mr create`); today Haunt only reads them and their status.
-- **Search file contents at a commit** (`git grep`).
-- **Signed commits:** show which commits carry a signature and whether it checks out.
+Done: ignoring files and stashing some from Local changes, side-by-side diffs there too, new pull requests through
+`gh` and `glab`, searching files at a commit, and signed commits.
 
 ## 6. Code map
 

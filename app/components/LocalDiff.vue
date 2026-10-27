@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ThemedToken } from 'shiki/core'
 import type { DiffLine, FileDiffView, LineRef } from '~/bindings'
+import { splitRows } from '~~/shared/splitRows'
 
 /*
  * One file's local diff, on the side it was picked from: unstaged (the index against the working tree, or a whole new
@@ -8,7 +9,9 @@ import type { DiffLine, FileDiffView, LineRef } from '~/bindings'
  * the picked lines are staged, unstaged or discarded on their own, the rest stays as it is. Without a pick, the
  * buttons act on the whole file. A new file's lines, and a binary file's, are taken whole. The functions the changes
  * are in show above the diff: click one to pick all of its changed lines, so a function is staged, unstaged or
- * discarded at once.
+ * discarded at once. Unified or side by side (the same choice as a commit's diff); side by side, a removed line is
+ * picked on the left and an added line on the right, the same line either way, and shift-click picks a range on the
+ * side clicked.
  */
 const props = defineProps<{ path: string, oldPath: string, staged: boolean, untracked: boolean, conflicted: boolean }>()
 const emit = defineEmits<{ discard: [what: { lines: LineRef[] } | { file: true }] }>()
@@ -19,6 +22,7 @@ const changed = gitChanged('head', 'index')
 const { structure: scan } = useCode()
 // Local diffs keep whitespace (lines are staged from them exactly); wrapping and a tab's width apply.
 const { diffWrap, tabWidth } = usePreferences()
+const split = usePersisted('diff-split', false, value => typeof value === 'boolean')
 
 const diff = shallowRef<FileDiffView | null>(null)
 const problem = ref('')
@@ -65,7 +69,10 @@ function pick(line: DiffLine, event: MouseEvent): void {
   const next = new Set(picked.value)
   if (event.shiftKey && lastPicked.value !== null) {
     const [from, to] = [Math.min(lastPicked.value, at), Math.max(lastPicked.value, at)]
-    for (const item of changes.value.slice(from, to + 1)) next.add(key(item))
+    // Side by side, a range takes only the lines on the side clicked.
+    for (const item of changes.value.slice(from, to + 1)) {
+      if (!split.value || item.kind === line.kind) next.add(key(item))
+    }
   } else if (next.has(key(line))) {
     next.delete(key(line))
   } else {
@@ -148,10 +155,12 @@ const shown = computed(() => (diff.value?.hunks ?? []).map((hunk, index) => {
       if (line.kind !== 'add') oldAt++
       if (line.kind !== 'del') newAt++
       const pieces: Piece[] = own?.length ? own.map(token => ({ content: token.content, htmlStyle: token.htmlStyle as Record<string, string> | undefined })) : [{ content: line.text }]
-      return { line, pieces }
+      return { kind: line.kind, line, pieces }
     })
   }
 }))
+/** Side by side: the same lines in rows, removed left and added right. */
+const pairs = computed(() => shown.value.map(({ hunk, lines }) => ({ hunk, rows: splitRows(lines) })))
 const BACKGROUND = { add: 'bg-success/10', del: 'bg-error/10', context: '' } as const
 const SIGN = { add: '+', del: '−', context: ' ' } as const
 </script>
@@ -165,6 +174,10 @@ const SIGN = { add: '+', del: '−', context: ' ' } as const
       <span v-if="pickable && !count" class="text-muted">{{ t('LocalDiff.clickToPick') }}</span>
       <UButton v-if="!props.untracked" :label="t('LocalDiff.history')" icon="i-lucide-history" size="xs" color="neutral" variant="ghost" :to="{ path: '/history', query: { path: props.path } }" />
       <UButton v-if="!props.untracked" :label="t('LocalDiff.blame')" icon="i-lucide-user-round-search" size="xs" color="neutral" variant="ghost" :to="{ path: '/blame', query: { path: props.path } }" />
+      <UFieldGroup size="xs">
+        <UButton :label="t('DiffView.unified')" :color="split ? 'neutral' : 'primary'" :variant="split ? 'outline' : 'solid'" @click="split = false" />
+        <UButton :label="t('DiffView.sideBySide')" :color="split ? 'primary' : 'neutral'" :variant="split ? 'solid' : 'outline'" @click="split = true" />
+      </UFieldGroup>
       <UButton v-if="count" :label="t('LocalDiff.clearPicked', { count })" size="xs" color="neutral" variant="ghost" @click="picked = new Set()" />
       <template v-if="!props.staged">
         <UButton :label="count ? t('LocalDiff.stageLines', { count }) : t('LocalDiff.stageFile')" icon="i-lucide-plus" size="xs" :disabled="busy" @click="act('stage')" />
@@ -196,7 +209,7 @@ const SIGN = { add: '+', del: '−', context: ' ' } as const
     <p v-else-if="diff && !diff.hunks.length" class="p-3 text-sm text-muted">{{ t('LocalDiff.noLines') }}</p>
 
     <div v-else-if="diff" class="min-h-0 flex-1 overflow-auto font-mono text-xs leading-[1.6]">
-      <table class="w-full border-collapse">
+      <table v-if="!split" class="w-full border-collapse">
         <tbody v-for="({ hunk, lines }, index) in shown" :key="index">
           <tr class="bg-elevated/60 text-muted">
             <td colspan="5" class="px-3 py-0.5 text-label">
@@ -217,6 +230,33 @@ const SIGN = { add: '+', del: '−', context: ' ' } as const
             <td class="w-12 px-2 text-right text-dimmed select-none">{{ line.new ?? '' }}</td>
             <td class="w-4 text-center text-muted select-none">{{ SIGN[line.kind] }}</td>
             <td class="pr-4" :class="diffWrap ? 'break-all whitespace-pre-wrap' : 'whitespace-pre'" :style="{ tabSize: tabWidth }"><span v-for="(piece, at) in pieces" :key="at" class="code-token" :style="piece.htmlStyle">{{ piece.content }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <table v-else class="w-full table-fixed border-collapse">
+        <tbody v-for="({ hunk, rows }, index) in pairs" :key="index">
+          <tr class="bg-elevated/60 text-muted">
+            <td colspan="2" class="px-3 py-0.5 text-label">
+              <span class="text-dimmed">@@ −{{ hunk.oldStart }} +{{ hunk.newStart }} @@</span>
+              <span v-if="hunk.section" class="ml-2 text-default">{{ hunk.section }}</span>
+            </td>
+          </tr>
+          <tr v-for="(pair, row) in rows" :key="row">
+            <td
+              v-for="(side, at) in [pair.left, pair.right]"
+              :key="at"
+              class="overflow-hidden align-top"
+              :class="[side ? BACKGROUND[side.kind] : 'bg-elevated/30', at ? '' : 'border-r border-default', side && side.kind !== 'context' && pickable ? 'cursor-pointer hover:brightness-110' : '', side && side.kind !== 'context' && picked.has(key(side.line)) ? 'outline outline-1 -outline-offset-1 outline-primary/60' : '']"
+              @click="side && pick(side.line, $event)"
+            >
+              <div class="flex">
+                <span class="w-5 shrink-0 text-center select-none">
+                  <UIcon v-if="side && side.kind !== 'context' && picked.has(key(side.line))" name="i-lucide-check" class="size-3 text-highlighted" />
+                </span>
+                <span class="w-12 shrink-0 px-2 text-right text-dimmed select-none">{{ (at ? side?.line.new : side?.line.old) ?? '' }}</span>
+                <span class="min-w-0 flex-1 pr-2" :class="diffWrap ? 'break-all whitespace-pre-wrap' : 'whitespace-pre'" :style="{ tabSize: tabWidth }"><span v-for="(piece, place) in side?.pieces ?? []" :key="place" class="code-token" :style="piece.htmlStyle">{{ piece.content }}</span></span>
+              </div>
+            </td>
           </tr>
         </tbody>
       </table>

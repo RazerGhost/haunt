@@ -103,7 +103,7 @@ export function useRefActions() {
       checkbox: { label: t('composables.useRefActions.untracked'), value: true },
       confirm: t('composables.useRefActions.stash')
     })
-    if (answer) await run(t('composables.useRefActions.notStashed'), where => haunt.stash(where, answer.text || null, answer.checked))
+    if (answer) await run(t('composables.useRefActions.notStashed'), where => haunt.stash(where, answer.text || null, answer.checked, []))
   }
 
   const applyStash = (index: number, pop: boolean) => run(pop ? t('composables.useRefActions.notPopped') : t('composables.useRefActions.notApplied'), where => haunt.applyStash(where, index, pop))

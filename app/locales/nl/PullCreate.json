@@ -1,0 +1,22 @@
+{
+  "title": "Nieuwe pull request",
+  "from": "Van",
+  "into": "Naar, op {remote}",
+  "pushFirst": "{branch} staat nog niet met al zijn commits op {remote}: push hem eerst.",
+  "push": "Pushen",
+  "pushOther": "Alleen de branch waar je op staat kan hier gepusht worden: schakel ernaar, of push hem zelf.",
+  "noCommits": "Hij heeft geen commits die {base} mist.",
+  "titleLabel": "Titel",
+  "body": "Beschrijving",
+  "commits": {
+    "one": "Gemaakt van zijn commit.",
+    "other": "Gemaakt van zijn {count} commits."
+  },
+  "asDraft": "Als draft",
+  "through": "Gemaakt met gh of glab, ingelogd als jij.",
+  "make": "Pull request maken",
+  "made": "Pull request gemaakt",
+  "openIt": "Openen",
+  "notMade": "Niet gemaakt",
+  "notRead": "De branch kon niet gelezen worden"
+}

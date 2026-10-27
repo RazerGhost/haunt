@@ -31,5 +31,7 @@
   "commits": "Commits",
   "branch": "Branch",
   "remoteBranch": "Remote branch",
-  "tag": "Tag"
+  "tag": "Tag",
+  "searchFiles": "Search the files here…",
+  "signed": "Signed: the commit's details check the signature"
 }

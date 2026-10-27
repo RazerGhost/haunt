@@ -31,5 +31,6 @@
   "newBranch": "Nieuwe branch hiervandaan…",
   "allChanges": "Alle wijzigingen",
   "pick": "Kies een pull request om te reviewen.",
-  "fetchToReview": "Haal pull requests op om ze te reviewen zonder van branch te wisselen."
+  "fetchToReview": "Haal pull requests op om ze te reviewen zonder van branch te wisselen.",
+  "newPull": "Nieuwe pull request"
 }

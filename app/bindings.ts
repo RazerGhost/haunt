@@ -141,8 +141,14 @@ export const commands = {
 	updateSubmodules: (repo: string, paths: string[]) => __TAURI_INVOKE<null>("update_submodules", { repo, paths }),
 	/**  Where HEAD, or a local branch, pointed before, newest first, with the commits only the reflog keeps marked. */
 	reflog: (repo: string, reference: string) => __TAURI_INVOKE<Reflog>("reflog", { repo, reference }),
+	/**  A commit's signature, checked with your own gpg or ssh-keygen settings (never the repository's). */
+	commitSignature: (repo: string, sha: string) => __TAURI_INVOKE<Signature>("commit_signature", { repo, sha }),
+	/**  Lines `start` to `end` of a file as it was at a commit (at most 200), for a preview; empty when it was not there. */
+	linesAt: (repo: string, at: string, path: string, start: number, end: number) => __TAURI_INVOKE<string[]>("lines_at", { repo, at, path, start, end }),
 	/**  The room the history takes, its largest files, and the files that belong in Git LFS. */
 	health: (repo: string) => __TAURI_INVOKE<Health>("health", { repo }),
+	/**  The lines of the files at commit `at` that hold `pattern`, by file, from the opened folder down. */
+	grep: (repo: string, at: string, pattern: string, mode: GrepMode, ignoreCase: boolean, path: string | null) => __TAURI_INVOKE<GrepResult>("grep", { repo, at, pattern, mode, ignoreCase, path }),
 	/**  What the folder would run once trusted (hooks, its architecture script, its TypeScript), with each file's text. */
 	wantedTexts: (repo: string) => __TAURI_INVOKE<WantedText[]>("wanted_texts", { repo }),
 	/**  The HTTP routes in the code: Hono and Express from the scanner, WordPress's REST routes read here. */
@@ -155,6 +161,13 @@ export const commands = {
 	saveRequest: (repo: string, file: string, variables: ([string, string])[], request: HttpRequest) => __TAURI_INVOKE<string>("save_request", { repo, file, variables, request }),
 	/**  The remote's pull requests through its host's tool (gh, glab, tea), when switched on in Settings; empty otherwise. */
 	hostPulls: (repo: string) => __TAURI_INVOKE<HostPulls>("host_pulls", { repo }),
+	/**
+	 *  What a new pull request for `branch` starts from: the remote's branches it could go into, and a title and
+	 *  description from its commits (into `base`, or the remote's default branch).
+	 */
+	pullRequestDraft: (repo: string, branch: string, base: string | null) => __TAURI_INVOKE<PullDraft>("pull_request_draft", { repo, branch, base }),
+	/**  Makes a pull request (a merge request on GitLab) through the host's tool, on the remote the branch goes to. */
+	createPullRequest: (repo: string, pull: NewPull) => __TAURI_INVOKE<CreatedPull>("create_pull_request", { repo, pull }),
 	/**  Opens a release page of Haunt itself in the browser (the update check's See it); nothing else. */
 	openRelease: (url: string) => __TAURI_INVOKE<null>("open_release", { url }),
 	bisectStop: (repo: string) => __TAURI_INVOKE<null>("bisect_stop", { repo }),
@@ -171,7 +184,9 @@ export const commands = {
 	unmerged: (repo: string, name: string) => __TAURI_INVOKE<number>("unmerged", { repo, name }),
 	/**  Deletes a branch; one with commits no other ref has only with `unmerged` (after asking). */
 	deleteBranch: (repo: string, name: string, unmerged: boolean) => __TAURI_INVOKE<null>("delete_branch", { repo, name, unmerged }),
-	stash: (repo: string, message: string | null, untracked: boolean) => __TAURI_INVOKE<null>("stash", { repo, message, untracked }),
+	stash: (repo: string, message: string | null, untracked: boolean, paths: string[]) => __TAURI_INVOKE<null>("stash", { repo, message, untracked, paths }),
+	/**  Adds patterns to the repository's top .gitignore (anchored ones relative to the opened folder). */
+	ignore: (repo: string, patterns: string[]) => __TAURI_INVOKE<null>("ignore", { repo, patterns }),
 	/**  Applies a stash; `pop` also drops it when it applied cleanly. */
 	applyStash: (repo: string, index: number, pop: boolean) => __TAURI_INVOKE<null>("apply_stash", { repo, index, pop }),
 	/**  Drops a stash, kept for 30 days so it can be brought back. */
@@ -559,6 +574,12 @@ export type ConflictFile = {
 	binary: boolean,
 };
 
+/**  The pull request made: its page. */
+export type CreatedPull = {
+	tool: string,
+	url: string | null,
+};
+
 /**  A branch, remote branch or tag pointing at a commit, or HEAD. */
 export type Decoration = {
 	kind: DecorationKind,
@@ -684,6 +705,36 @@ export type FunctionKind = "function" | "arrow" | "method" | "class";
 export type FunctionStatus = "added" | "changed" | "removed" | 
 /**  Removed in one place and added in another with the same body, or nearly: `from` says where it was. */
 "moved";
+
+export type GrepFile = {
+	/**  Relative to the opened folder. */
+	path: string,
+	matches: GrepLine[],
+};
+
+export type GrepLine = {
+	/**  From 1. */
+	line: number,
+	/**  The line, cut after `LINE_CHARS` characters. */
+	text: string,
+};
+
+/**  How the pattern is read. */
+export type GrepMode = 
+/**  The text as it is. */
+"text" | 
+/**  An extended regular expression, as `grep -E` reads it. */
+"regex" | 
+/**  The text as it is, as a whole word. */
+"word";
+
+export type GrepResult = {
+	/**  The commit searched, as a full sha. */
+	at: string,
+	files: GrepFile[],
+	/**  There were more matches than these. */
+	cut: boolean,
+};
 
 /**  The branch checked out (None when HEAD is detached) and its commit (None before the first commit). */
 export type Head = {
@@ -897,6 +948,8 @@ export type LogCommit = {
 	time: number,
 	subject: string,
 	refs: Decoration[],
+	/**  It carries a signature (GPG, SSH or X.509), checked or not; the commit's details check it. */
+	signed: boolean,
 };
 
 export type LogPage = {
@@ -948,6 +1001,17 @@ export type MovedFrom = {
 	qualified: string,
 	line: number,
 	endLine: number,
+};
+
+/**  A pull request to make, from the window. */
+export type NewPull = {
+	/**  The branch it is from, pushed already. */
+	branch: string,
+	/**  The branch it goes into. */
+	base: string,
+	title: string,
+	body: string,
+	draft: boolean,
 };
 
 /**  A merge, revert, cherry-pick or rebase that has not finished. */
@@ -1030,6 +1094,21 @@ export type PathStatus = "added" | "modified" | "deleted" | "renamed" | "copied"
 export type PullChoice = 
 /**  Ask each time. */
 "ask" | "rebase" | "merge";
+
+/**  What a new pull request for a branch starts from: where it can go, and a title and description from its commits. */
+export type PullDraft = {
+	/**  The remote it goes to: the branch's own, else the one with a web page. */
+	remote: string,
+	/**  The remote's branches it could go into. */
+	bases: string[],
+	base: string,
+	/**  The branch is on the remote with all its commits. */
+	pushed: boolean,
+	/**  The commits it would bring, newest first (at most 50). */
+	commits: string[],
+	title: string,
+	body: string,
+};
 
 /**  What fetching a remote's pull requests found. */
 export type PullFetch = {
@@ -1241,6 +1320,32 @@ export type Route = {
 
 /**  One side of a conflict. */
 export type Side = "ours" | "theirs";
+
+export type Signature = {
+	status: SignatureStatus,
+	/**  gpg, ssh or x509, from how the signature is written. */
+	format: string | null,
+	/**  Who the signature says signed it (a name and email for gpg, a principal for SSH); empty when not known. */
+	signer: string,
+	/**  The key, as the program names it. */
+	key: string,
+};
+
+export type SignatureStatus = 
+/**  Good, and the key is one you trust. */
+"good" | 
+/**  Good, but the key's trust is not known (a gpg key you never marked, an SSH key not in your allowed signers). */
+"unknown" | 
+/**  Good, made by a key that has expired since, or a signature that has itself expired. */
+"expired" | 
+/**  Good, made by a key revoked since. */
+"revoked" | 
+/**  It does not hold: the commit changed after it was signed, or it was not signed by that key. */
+"bad" | 
+/**  It could not be checked: the key is missing, or the program is. */
+"unchecked" | 
+/**  Not signed. */
+"none";
 
 /**  Lines of a scanned file as it is now. */
 export type Source = {

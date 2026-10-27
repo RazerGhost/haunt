@@ -1,0 +1,35 @@
+{
+  "title": "Search files",
+  "intro": "Find a text in the files of a commit, as they were then: HEAD, a branch, a tag or any commit. Binary files are skipped. Click a line to see it in its file.",
+  "at": "Commit to search",
+  "atHelp": "A branch, a tag or a commit's sha",
+  "pickAt": "Pick a branch or tag",
+  "pattern": "Text to find",
+  "search": "Search",
+  "mode": {
+    "text": "Text",
+    "regex": "Regex",
+    "word": "Whole word"
+  },
+  "ignoreCase": "Ignore case",
+  "path": "Only in (folder, file or *.ts)",
+  "pathHelp": "A folder, a file or a glob, from the opened folder",
+  "searchFailed": "The search did not work",
+  "searching": "Searching…",
+  "nothing": "Nothing in {at} holds \"{pattern}\".",
+  "lines": {
+    "one": "{count} line",
+    "other": "{count} lines"
+  },
+  "files": {
+    "one": "in {count} file",
+    "other": "in {count} files"
+  },
+  "cut": "There are more matches than these: narrow the search to see the rest.",
+  "open": "See line {line} in its file",
+  "previewAt": "Line {line} at {at}",
+  "readFailed": "{path} could not be read",
+  "reading": "Reading the file…",
+  "blame": "Blame",
+  "showCommit": "Show the commit"
+}

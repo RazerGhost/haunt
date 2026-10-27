@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ElementDefinition } from 'cytoscape'
 import type { ChangedFile, ChangedPath, CommitDetail, RangeChanges } from '~~/shared/types'
+import type { Signature } from '~/bindings'
 
 /*
  * The change picked in the commit list: one commit (against its first parent) or two compared (older to newer), with
@@ -17,6 +18,26 @@ const colorMode = useColorMode()
 const router = useRouter()
 
 const detail = shallowRef<CommitDetail | null>(null)
+/* Its signature, checked after the rest is shown (checking runs gpg or ssh-keygen, which can take a moment). */
+const signature = shallowRef<Signature | null>(null)
+const signatureAsk = latest(repo)
+watch(() => detail.value?.sha, async (sha) => {
+  signature.value = null
+  if (!sha) return
+  try {
+    const found = await signatureAsk.run(at => haunt.commitSignature(at, sha))
+    if (found !== undefined && detail.value?.sha === sha) signature.value = found
+  } catch { /* shown without it */ }
+})
+const SIGNATURE_LOOK: Record<Signature['status'], { color: 'success' | 'warning' | 'error' | 'neutral', icon: string }> = {
+  good: { color: 'success', icon: 'i-lucide-shield-check' },
+  unknown: { color: 'neutral', icon: 'i-lucide-shield-question' },
+  expired: { color: 'warning', icon: 'i-lucide-shield-alert' },
+  revoked: { color: 'error', icon: 'i-lucide-shield-x' },
+  bad: { color: 'error', icon: 'i-lucide-shield-x' },
+  unchecked: { color: 'neutral', icon: 'i-lucide-shield-question' },
+  none: { color: 'neutral', icon: 'i-lucide-shield' }
+}
 const other = shallowRef<CommitDetail | null>(null)
 const rangeFiles = shallowRef<ChangedPath[] | null>(null)
 const problem = ref('')
@@ -187,6 +208,15 @@ async function copy(text: string): Promise<void> {
             <span :title="detail.email">{{ detail.author }}</span>
             <span>{{ new Date(detail.time * 1000).toLocaleString() }}</span>
             <span v-if="detail.committer !== detail.author">{{ t('CommitDetails.committedBy', { name: detail.committer }) }}</span>
+            <UBadge
+              v-if="signature && signature.status !== 'none'"
+              :label="t(`CommitDetails.signature.${signature.status}`)"
+              :icon="SIGNATURE_LOOK[signature.status].icon"
+              :color="SIGNATURE_LOOK[signature.status].color"
+              variant="subtle"
+              size="sm"
+              :title="[t(`CommitDetails.signatureHelp.${signature.status}`), signature.signer && t('CommitDetails.signedBy', { signer: signature.signer }), signature.key && t('CommitDetails.signedWith', { format: signature.format ?? '', key: signature.key })].filter(Boolean).join('\n')"
+            />
             <span v-if="detail.parents.length" class="flex items-center gap-1">
               {{ t('CommitDetails.parents', { count: detail.parents.length }) }}
               <button v-for="parent in detail.parents" :key="parent" type="button" class="font-mono text-default hover:underline" @click="emit('select', parent)">{{ parent.slice(0, 7) }}</button>

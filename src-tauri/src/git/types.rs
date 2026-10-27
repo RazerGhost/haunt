@@ -33,6 +33,8 @@ pub struct LogCommit {
     pub time: i64,
     pub subject: String,
     pub refs: Vec<Decoration>,
+    /// It carries a signature (GPG, SSH or X.509), checked or not; the commit's details check it.
+    pub signed: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Type)]

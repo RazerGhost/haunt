@@ -31,5 +31,7 @@
   "commits": "Commits",
   "branch": "Branch",
   "remoteBranch": "Remote branch",
-  "tag": "Tag"
+  "tag": "Tag",
+  "searchFiles": "In de bestanden hier zoeken…",
+  "signed": "Ondertekend: de details van de commit controleren de handtekening"
 }

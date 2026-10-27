@@ -38,5 +38,6 @@
   "droppedTitle": "{message} · gedropt {when}",
   "resize": "Sleep om de zijbalk breder of smaller te maken",
   "resizeHelp": "Slepen om de breedte te wijzigen · dubbelklikken om te herstellen",
-  "reflog": "Reflog"
+  "reflog": "Reflog",
+  "grep": "Bestanden doorzoeken"
 }

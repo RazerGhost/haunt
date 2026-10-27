@@ -17,6 +17,7 @@
 mod bisect;
 mod conflicts;
 mod create;
+mod ignore;
 mod last;
 mod network;
 mod patch;

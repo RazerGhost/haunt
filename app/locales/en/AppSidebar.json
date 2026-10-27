@@ -38,5 +38,6 @@
   "droppedTitle": "{message} · dropped {when}",
   "resize": "Drag to resize the sidebar",
   "resizeHelp": "Drag to resize · double-click to reset",
-  "reflog": "Reflog"
+  "reflog": "Reflog",
+  "grep": "Search files"
 }

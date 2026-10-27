@@ -1,13 +1,15 @@
 <script setup lang="ts">
+import type { ContextMenuItem } from '@nuxt/ui'
 import type { LineRef, LocalFile } from '~/bindings'
 
 /*
  * Local changes as files: the unstaged files above, the staged ones below, the picked file's diff on the
  * right (lines can be picked in it) and the commit box under it. Double-click a file to stage or unstage it; from the
  * keyboard, ↑ and ↓ move through the files and Space stages or unstages the picked one. A discard asks first and is
- * saved: "Recently discarded" brings it back for 30 days.
+ * saved: "Recently discarded" brings it back for 30 days. Right-click a file to ignore it (an untracked one: the file,
+ * its extension or its folder, added to .gitignore) or to stash just it; Stash… stashes the files ticked.
  */
-const { status, discarded, problem, busy, stage, unstage, lines, discard, restore } = useLocalChanges()
+const { status, discarded, problem, busy, stage, unstage, lines, discard, restore, ignore, stashFiles } = useLocalChanges()
 
 const picked = ref<{ path: string, staged: boolean } | null>(null)
 const unstaged = computed(() => status.value?.unstaged ?? [])
@@ -75,6 +77,55 @@ const confirmText = computed(() => {
   return what.paths.length === 1 ? what.paths[0]! : t('LocalChanges.files', { count: what.paths.length })
 })
 const when = (seconds: number) => new Date(seconds * 1000).toLocaleString()
+
+/* A file's menu: stage or unstage, stash just it, and for an untracked file, ignore it, its extension or its folder. */
+function fileMenu(file: LocalFile, isStaged: boolean) {
+  const items: ContextMenuItem[][] = [[
+    isStaged
+      ? { label: t('LocalChanges.unstage'), icon: 'i-lucide-minus', onSelect: () => unstage([file.path]) }
+      : { label: t('LocalChanges.stage'), icon: 'i-lucide-plus', onSelect: () => stage([file.path]) },
+    { label: t('LocalChanges.stashFile'), icon: 'i-lucide-archive', onSelect: () => stashFiles([file.path], file.untracked, '') }
+  ]]
+  if (!isStaged && file.untracked) {
+    const extension = name(file.path).includes('.') && !name(file.path).startsWith('.') ? name(file.path).slice(name(file.path).lastIndexOf('.')) : ''
+    const dir = folder(file.path)
+    items.push([
+      { label: t('LocalChanges.ignoreFile'), icon: 'i-lucide-eye-off', onSelect: () => ignore([`/${file.path}`]) },
+      ...extension ? [{ label: t('LocalChanges.ignoreExtension', { extension }), icon: 'i-lucide-eye-off', onSelect: () => ignore([`*${extension}`]) }] : [],
+      ...dir ? [{ label: t('LocalChanges.ignoreFolder', { folder: dir }), icon: 'i-lucide-eye-off', onSelect: () => ignore([`/${dir}`]) }] : []
+    ])
+  }
+  if (!isStaged) items.push([{ label: t('LocalChanges.discard'), icon: 'i-lucide-undo-2', color: 'error' as const, onSelect: () => { confirming.value = { paths: [file.path] } } }])
+  return items
+}
+
+/* Stash…: the changed files with a tick each (all ticked to start), and a message. */
+const stashing = ref(false)
+const stashTicked = ref<Set<string>>(new Set())
+const stashMessage = ref('')
+const changedFiles = computed(() => {
+  const seen = new Map<string, LocalFile>()
+  for (const file of [...staged.value, ...unstaged.value]) if (!seen.has(file.path)) seen.set(file.path, file)
+  return [...seen.values()]
+})
+function openStash(): void {
+  stashTicked.value = new Set(changedFiles.value.map(file => file.path))
+  stashMessage.value = ''
+  stashing.value = true
+}
+function tick(path: string, on: boolean): void {
+  const next = new Set(stashTicked.value)
+  if (on) next.add(path)
+  else next.delete(path)
+  stashTicked.value = next
+}
+async function confirmStash(): Promise<void> {
+  const paths = [...stashTicked.value]
+  if (!paths.length) return
+  const untracked = changedFiles.value.some(file => file.untracked && stashTicked.value.has(file.path))
+  stashing.value = false
+  await stashFiles(paths, untracked, stashMessage.value)
+}
 </script>
 
 <template>
@@ -83,24 +134,25 @@ const when = (seconds: number) => new Date(seconds * 1000).toLocaleString()
       <section class="flex min-h-0 flex-1 flex-col">
         <header class="flex items-center gap-1 border-b border-default px-3 py-1.5">
           <h2 class="flex-1 text-label font-semibold tracking-wider text-muted uppercase">{{ t('LocalChanges.unstaged') }} <span class="font-normal tabular-nums">{{ unstaged.length }}</span></h2>
+          <UButton v-if="unstaged.length || staged.length" icon="i-lucide-archive" size="xs" color="neutral" variant="ghost" :aria-label="t('LocalChanges.stashSome')" :title="t('LocalChanges.stashSome')" :disabled="busy" @click="openStash" />
           <UButton v-if="unstaged.length" :label="t('LocalChanges.stageAll')" size="xs" color="neutral" variant="ghost" :disabled="busy" @click="stage(unstaged.map(file => file.path))" />
           <UButton v-if="unstaged.length" icon="i-lucide-undo-2" size="xs" color="neutral" variant="ghost" :aria-label="t('LocalChanges.discardAll')" :title="t('LocalChanges.discardAll')" :disabled="busy" @click="confirming = { paths: unstaged.map(file => file.path) }" />
         </header>
         <ul class="min-h-0 flex-1 overflow-y-auto py-1">
-          <li
-            v-for="file in unstaged"
-            :key="file.path"
-            class="group flex cursor-default items-center gap-2 px-3 py-1 text-ui"
-            :class="picked?.path === file.path && !picked.staged ? 'bg-elevated text-highlighted' : 'hover:bg-elevated/60'"
-            :title="file.path"
-            @click="picked = { path: file.path, staged: false }"
-            @dblclick="stage([file.path])"
-          >
-            <span class="w-3 shrink-0 text-center font-mono text-label font-semibold" :class="file.conflicted ? 'text-error' : STATUS[file.status].class">{{ file.conflicted ? '!' : file.untracked ? '?' : STATUS[file.status].letter }}</span>
-            <span class="min-w-0 flex-1 truncate"><span class="text-muted">{{ folder(file.path) }}</span>{{ name(file.path) }}</span>
-            <UButton icon="i-lucide-undo-2" size="xs" color="neutral" variant="ghost" class="opacity-0 group-hover:opacity-100" :aria-label="t('LocalChanges.discard')" :title="t('LocalChanges.discard')" :disabled="busy" @click.stop="confirming = { paths: [file.path] }" />
-            <UButton icon="i-lucide-plus" size="xs" color="neutral" variant="ghost" class="opacity-0 group-hover:opacity-100" :aria-label="t('LocalChanges.stage')" :title="t('LocalChanges.stage')" :disabled="busy" @click.stop="stage([file.path])" />
-          </li>
+          <UContextMenu v-for="file in unstaged" :key="file.path" :items="fileMenu(file, false)">
+            <li
+              class="group flex cursor-default items-center gap-2 px-3 py-1 text-ui"
+              :class="picked?.path === file.path && !picked.staged ? 'bg-elevated text-highlighted' : 'hover:bg-elevated/60'"
+              :title="file.path"
+              @click="picked = { path: file.path, staged: false }"
+              @dblclick="stage([file.path])"
+            >
+              <span class="w-3 shrink-0 text-center font-mono text-label font-semibold" :class="file.conflicted ? 'text-error' : STATUS[file.status].class">{{ file.conflicted ? '!' : file.untracked ? '?' : STATUS[file.status].letter }}</span>
+              <span class="min-w-0 flex-1 truncate"><span class="text-muted">{{ folder(file.path) }}</span>{{ name(file.path) }}</span>
+              <UButton icon="i-lucide-undo-2" size="xs" color="neutral" variant="ghost" class="opacity-0 group-hover:opacity-100" :aria-label="t('LocalChanges.discard')" :title="t('LocalChanges.discard')" :disabled="busy" @click.stop="confirming = { paths: [file.path] }" />
+              <UButton icon="i-lucide-plus" size="xs" color="neutral" variant="ghost" class="opacity-0 group-hover:opacity-100" :aria-label="t('LocalChanges.stage')" :title="t('LocalChanges.stage')" :disabled="busy" @click.stop="stage([file.path])" />
+            </li>
+          </UContextMenu>
           <li v-if="!unstaged.length" class="px-3 py-2 text-ui text-muted">{{ t('LocalChanges.nothingUnstaged') }}</li>
         </ul>
       </section>
@@ -111,19 +163,19 @@ const when = (seconds: number) => new Date(seconds * 1000).toLocaleString()
           <UButton v-if="staged.length" :label="t('LocalChanges.unstageAll')" size="xs" color="neutral" variant="ghost" :disabled="busy" @click="unstage(staged.map(file => file.path))" />
         </header>
         <ul class="min-h-0 flex-1 overflow-y-auto py-1">
-          <li
-            v-for="file in staged"
-            :key="file.path"
-            class="group flex cursor-default items-center gap-2 px-3 py-1 text-ui"
-            :class="picked?.path === file.path && picked.staged ? 'bg-elevated text-highlighted' : 'hover:bg-elevated/60'"
-            :title="file.oldPath !== file.path ? `${file.oldPath} → ${file.path}` : file.path"
-            @click="picked = { path: file.path, staged: true }"
-            @dblclick="unstage([file.path])"
-          >
-            <span class="w-3 shrink-0 text-center font-mono text-label font-semibold" :class="STATUS[file.status].class">{{ STATUS[file.status].letter }}</span>
-            <span class="min-w-0 flex-1 truncate"><span class="text-muted">{{ folder(file.path) }}</span>{{ name(file.path) }}</span>
-            <UButton icon="i-lucide-minus" size="xs" color="neutral" variant="ghost" class="opacity-0 group-hover:opacity-100" :aria-label="t('LocalChanges.unstage')" :title="t('LocalChanges.unstage')" :disabled="busy" @click.stop="unstage([file.path])" />
-          </li>
+          <UContextMenu v-for="file in staged" :key="file.path" :items="fileMenu(file, true)">
+            <li
+              class="group flex cursor-default items-center gap-2 px-3 py-1 text-ui"
+              :class="picked?.path === file.path && picked.staged ? 'bg-elevated text-highlighted' : 'hover:bg-elevated/60'"
+              :title="file.oldPath !== file.path ? `${file.oldPath} → ${file.path}` : file.path"
+              @click="picked = { path: file.path, staged: true }"
+              @dblclick="unstage([file.path])"
+            >
+              <span class="w-3 shrink-0 text-center font-mono text-label font-semibold" :class="STATUS[file.status].class">{{ STATUS[file.status].letter }}</span>
+              <span class="min-w-0 flex-1 truncate"><span class="text-muted">{{ folder(file.path) }}</span>{{ name(file.path) }}</span>
+              <UButton icon="i-lucide-minus" size="xs" color="neutral" variant="ghost" class="opacity-0 group-hover:opacity-100" :aria-label="t('LocalChanges.unstage')" :title="t('LocalChanges.unstage')" :disabled="busy" @click.stop="unstage([file.path])" />
+            </li>
+          </UContextMenu>
           <li v-if="!staged.length" class="px-3 py-2 text-ui text-muted">{{ t('LocalChanges.nothingStaged') }}</li>
         </ul>
       </section>
@@ -159,6 +211,25 @@ const when = (seconds: number) => new Date(seconds * 1000).toLocaleString()
       <p v-else class="grid flex-1 place-items-center text-sm text-muted">{{ status ? t('LocalChanges.noChanges') : '' }}</p>
       <CommitBox :staged="staged.length" class="border-t border-default" />
     </div>
+
+    <UModal v-model:open="stashing" :title="t('LocalChanges.stashTitle')" :description="t('LocalChanges.stashHelp')">
+      <template #body>
+        <form class="grid gap-3" @submit.prevent="confirmStash">
+          <ul class="grid max-h-72 gap-1 overflow-y-auto">
+            <li v-for="file in changedFiles" :key="file.path">
+              <UCheckbox :model-value="stashTicked.has(file.path)" :ui="{ label: 'font-mono text-xs' }" @update:model-value="tick(file.path, !!$event)">
+                <template #label><span class="text-muted">{{ folder(file.path) }}</span>{{ name(file.path) }}<span v-if="file.untracked" class="text-muted"> · {{ t('LocalChanges.untracked') }}</span></template>
+              </UCheckbox>
+            </li>
+          </ul>
+          <UInput v-model="stashMessage" :placeholder="t('LocalChanges.stashMessage')" class="w-full" />
+          <div class="flex justify-end gap-2">
+            <UButton :label="t('common.cancel')" color="neutral" variant="ghost" @click="stashing = false" />
+            <UButton type="submit" icon="i-lucide-archive" :label="t('LocalChanges.stashTicked', { count: stashTicked.size })" :disabled="!stashTicked.size" />
+          </div>
+        </form>
+      </template>
+    </UModal>
 
     <UModal v-model:open="open" :title="t('LocalChanges.discardTitle')" :description="t('LocalChanges.discardDescription', { what: confirmText })">
       <template #footer>

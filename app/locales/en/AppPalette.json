@@ -46,5 +46,7 @@
   "description": "Search for an action, a screen, a branch, a repository or a function.",
   "placeholder": "Type an action, a screen, a branch or a function…",
   "reflog": "Reflog",
-  "reflogHelp": "where HEAD and the branches pointed"
+  "reflogHelp": "where HEAD and the branches pointed",
+  "grep": "Search files",
+  "grepHelp": "find text in the files of a commit"
 }

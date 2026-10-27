@@ -3,6 +3,7 @@
 //! remote's host. Only when switched on in Settings (off by default); without the tool,
 //! or signed out, nothing changes but a note. The tool runs in a folder of its own with the repository named on its
 //! command line, so nothing of the repository (its config, its hooks) runs; it uses the account you signed in with.
+//! A new pull request is made the same way, when asked for (`create_pull`), whether or not the status is switched on.
 
 use std::process::{Command, Stdio};
 use std::time::Duration;
@@ -50,6 +51,10 @@ pub struct HostPulls {
 
 /// Runs a tool in a folder of its own; None when it is not installed.
 fn run(program: &str, args: &[&str]) -> Option<Result<String, String>> {
+    run_for(program, args, TIMEOUT)
+}
+
+fn run_for(program: &str, args: &[&str], timeout: Duration) -> Option<Result<String, String>> {
     let mut command = Command::new(program);
     command
         .args(args)
@@ -58,11 +63,11 @@ fn run(program: &str, args: &[&str]) -> Option<Result<String, String>> {
         .env("NO_COLOR", "1")
         .env("GLAB_NO_PROMPT", "1")
         .stdin(Stdio::null());
-    let done = match crate::process::run(command, TIMEOUT) {
+    let done = match crate::process::run(command, timeout) {
         Ok(done) => done,
         Err(crate::process::Failure::NotFound) => return None,
         Err(crate::process::Failure::TimedOut) => {
-            return Some(Err(format!("{program} did not answer within {} seconds.", TIMEOUT.as_secs())))
+            return Some(Err(format!("{program} did not answer within {} seconds.", timeout.as_secs())))
         }
         Err(crate::process::Failure::Other(error)) => return Some(Err(error)),
     };
@@ -277,9 +282,178 @@ pub fn host_pulls(page: &WebRemote) -> HostPulls {
     }
 }
 
+/// A pull request to make, from the window.
+#[derive(Debug, Clone, serde::Deserialize, Type)]
+pub struct NewPull {
+    /// The branch it is from, pushed already.
+    pub branch: String,
+    /// The branch it goes into.
+    pub base: String,
+    pub title: String,
+    pub body: String,
+    pub draft: bool,
+}
+
+/// The pull request made: its page.
+#[derive(Debug, Clone, Serialize, Type)]
+pub struct CreatedPull {
+    pub tool: String,
+    pub url: Option<String>,
+}
+
+/// The tool and its arguments for `pull` on the remote's host; every value goes in one `--flag=value` argument, so
+/// a title or a branch can never be read as an option.
+fn create_args(page: &WebRemote, pull: &NewPull) -> Result<(&'static str, Vec<String>), String> {
+    let path = path_of(page);
+    let repo = format!("{}/{path}", page.host);
+    let mut args: Vec<String> = match page.kind {
+        WebKind::Github => vec![
+            "pr".into(),
+            "create".into(),
+            format!("--repo={repo}"),
+            format!("--head={}", pull.branch),
+            format!("--base={}", pull.base),
+            format!("--title={}", pull.title),
+            format!("--body={}", pull.body),
+        ],
+        WebKind::Gitlab => vec![
+            "mr".into(),
+            "create".into(),
+            format!("--repo={repo}"),
+            format!("--source-branch={}", pull.branch),
+            format!("--target-branch={}", pull.base),
+            format!("--title={}", pull.title),
+            format!("--description={}", pull.body),
+            "--yes".into(),
+        ],
+        WebKind::Gitea => vec![
+            "pulls".into(),
+            "create".into(),
+            format!("--repo={path}"),
+            format!("--head={}", pull.branch),
+            format!("--base={}", pull.base),
+            format!("--title={}", pull.title),
+            format!("--description={}", pull.body),
+        ],
+        WebKind::Bitbucket => return Err("Haunt has no tool to make pull requests on Bitbucket.".into()),
+    };
+    if pull.draft {
+        match page.kind {
+            WebKind::Github | WebKind::Gitlab => args.push("--draft".into()),
+            _ => return Err("Gitea's tea does not make drafts.".into()),
+        }
+    }
+    let tool = match page.kind {
+        WebKind::Github => "gh",
+        WebKind::Gitlab => "glab",
+        _ => "tea",
+    };
+    Ok((tool, args))
+}
+
+/// The last web address in a tool's answer: the new pull request's page.
+fn created_url(said: &str) -> Option<String> {
+    said.split_whitespace()
+        .rfind(|word| word.starts_with("https://"))
+        .map(|url| url.trim_end_matches(['.', ',']).to_owned())
+}
+
+/// Makes a pull request (a merge request on GitLab) on the remote's host, through its tool.
+pub fn create_pull(page: &WebRemote, pull: &NewPull) -> Result<CreatedPull, String> {
+    let names_ok = |name: &str| !name.is_empty() && !name.starts_with('-') && !name.contains(char::is_whitespace);
+    if !names_ok(&pull.branch) || !names_ok(&pull.base) {
+        return Err("Pick the branch it is from and the one it goes into.".into());
+    }
+    if pull.title.trim().is_empty() {
+        return Err("A pull request needs a title.".into());
+    }
+    let (tool, args) = create_args(page, pull)?;
+    let args: Vec<&str> = args.iter().map(String::as_str).collect();
+    match run_for(tool, &args, Duration::from_secs(60)) {
+        None => Err(format!(
+            "{tool} is not installed. Install it and sign in ({tool} auth login) to make pull requests from Haunt."
+        )),
+        Some(Err(problem)) => Err(format!("{tool} could not make it: {problem}")),
+        Some(Ok(said)) => Ok(CreatedPull { tool: tool.to_owned(), url: created_url(&said) }),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn makes_pull_requests_with_every_value_in_its_own_argument() {
+        let page = WebRemote {
+            remote: "origin".into(),
+            base: "https://github.com/o/r".into(),
+            kind: WebKind::Github,
+            host: "github.com".into(),
+            prefix: String::new(),
+        };
+        let pull = NewPull {
+            branch: "feature".into(),
+            base: "main".into(),
+            title: "--delete everything".into(),
+            body: "Why
+
+- a"
+            .into(),
+            draft: true,
+        };
+        let (tool, args) = create_args(&page, &pull).unwrap();
+        assert_eq!(tool, "gh");
+        assert_eq!(
+            args,
+            [
+                "pr",
+                "create",
+                "--repo=github.com/o/r",
+                "--head=feature",
+                "--base=main",
+                "--title=--delete everything",
+                "--body=Why
+
+- a",
+                "--draft"
+            ]
+        );
+        let lab = WebRemote {
+            base: "https://gitlab.com/g/r".into(),
+            kind: WebKind::Gitlab,
+            host: "gitlab.com".into(),
+            ..page.clone()
+        };
+        let (tool, args) = create_args(&lab, &NewPull { draft: false, ..pull.clone() }).unwrap();
+        assert_eq!(tool, "glab");
+        assert!(args.contains(&"--source-branch=feature".to_owned()) && args.contains(&"--yes".to_owned()));
+        assert!(create_pull(&page, &NewPull { branch: "-x".into(), ..pull.clone() }).is_err());
+        assert!(create_pull(&page, &NewPull { title: " ".into(), ..pull }).is_err());
+    }
+
+    #[test]
+    fn finds_the_new_pull_requests_page_in_the_answer() {
+        assert_eq!(
+            created_url(
+                "https://github.com/o/r/pull/12
+"
+            )
+            .as_deref(),
+            Some("https://github.com/o/r/pull/12")
+        );
+        assert_eq!(
+            created_url(
+                "Creating merge request for feature into main in g/r
+
+!7 Title (feature)
+ https://gitlab.com/g/r/-/merge_requests/7
+"
+            )
+            .as_deref(),
+            Some("https://gitlab.com/g/r/-/merge_requests/7")
+        );
+        assert_eq!(created_url("done"), None);
+    }
 
     #[test]
     fn reads_gh_with_checks_drafts_and_reviews() {

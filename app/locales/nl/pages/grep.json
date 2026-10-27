@@ -1,0 +1,35 @@
+{
+  "title": "Bestanden doorzoeken",
+  "intro": "Zoek een tekst in de bestanden van een commit, zoals ze toen waren: HEAD, een branch, een tag of welke commit ook. Binaire bestanden worden overgeslagen. Klik op een regel om hem in zijn bestand te zien.",
+  "at": "Commit om te doorzoeken",
+  "atHelp": "Een branch, een tag of de sha van een commit",
+  "pickAt": "Kies een branch of tag",
+  "pattern": "Tekst om te vinden",
+  "search": "Zoeken",
+  "mode": {
+    "text": "Tekst",
+    "regex": "Regex",
+    "word": "Heel woord"
+  },
+  "ignoreCase": "Hoofdletters negeren",
+  "path": "Alleen in (map, bestand of *.ts)",
+  "pathHelp": "Een map, een bestand of een glob, vanaf de geopende map",
+  "searchFailed": "Het zoeken lukte niet",
+  "searching": "Aan het zoeken…",
+  "nothing": "Niets in {at} bevat \"{pattern}\".",
+  "lines": {
+    "one": "{count} regel",
+    "other": "{count} regels"
+  },
+  "files": {
+    "one": "in {count} bestand",
+    "other": "in {count} bestanden"
+  },
+  "cut": "Er zijn meer treffers dan deze: maak de zoekopdracht kleiner om de rest te zien.",
+  "open": "Regel {line} in zijn bestand bekijken",
+  "previewAt": "Regel {line} in {at}",
+  "readFailed": "{path} kon niet gelezen worden",
+  "reading": "Het bestand wordt gelezen…",
+  "blame": "Blame",
+  "showCommit": "De commit tonen"
+}

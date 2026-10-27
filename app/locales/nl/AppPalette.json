@@ -46,5 +46,7 @@
   "description": "Zoek een actie, een scherm, een branch, een repository of een functie.",
   "placeholder": "Typ een actie, een scherm, een branch of een functie…",
   "reflog": "Reflog",
-  "reflogHelp": "waar HEAD en de branches naar wezen"
+  "reflogHelp": "waar HEAD en de branches naar wezen",
+  "grep": "Bestanden doorzoeken",
+  "grepHelp": "tekst zoeken in de bestanden van een commit"
 }

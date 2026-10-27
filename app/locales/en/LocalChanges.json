@@ -21,5 +21,18 @@
   "noChanges": "No local changes.",
   "discardTitle": "Discard these changes?",
   "discardDescription": "{what}. They are kept in Recently discarded for 30 days.",
-  "keep": "Keep them"
+  "keep": "Keep them",
+  "stashFile": "Stash this file",
+  "ignoreFile": "Ignore this file",
+  "ignoreExtension": "Ignore every {extension} file",
+  "ignoreFolder": "Ignore the folder {folder}",
+  "stashSome": "Stash some files…",
+  "stashTitle": "Stash files",
+  "stashHelp": "The ticked files go into a new stash; the others stay as they are.",
+  "stashMessage": "Message (optional)",
+  "stashTicked": {
+    "one": "Stash {count} file",
+    "other": "Stash {count} files"
+  },
+  "untracked": "new"
 }

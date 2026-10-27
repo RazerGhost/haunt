@@ -40,5 +40,23 @@
   "canvas": "Canvas",
   "noneInCode": "Geen van de gewijzigde functies staat nu in de code.",
   "workingOut": "Bezig met de aanroepgraaf…",
-  "callsHint": "Gewijzigd in het midden, aanroepers links, aangeroepen functies rechts · dubbelklik om te openen in Aanroepen"
+  "callsHint": "Gewijzigd in het midden, aanroepers links, aangeroepen functies rechts · dubbelklik om te openen in Aanroepen",
+  "signature": {
+    "good": "Ondertekend",
+    "unknown": "Ondertekend, sleutel niet vertrouwd",
+    "expired": "Ondertekend, verlopen",
+    "revoked": "Ondertekend, sleutel ingetrokken",
+    "bad": "Ongeldige handtekening",
+    "unchecked": "Ondertekend, niet gecontroleerd"
+  },
+  "signatureHelp": {
+    "good": "De handtekening klopt, gemaakt met een sleutel die je vertrouwt.",
+    "unknown": "De handtekening klopt, maar je hebt niet aangegeven dat je de sleutel vertrouwt (in gpg, of je SSH allowed signers).",
+    "expired": "De handtekening klopt, maar de sleutel of de handtekening is inmiddels verlopen.",
+    "revoked": "De handtekening klopt, maar de sleutel is inmiddels ingetrokken.",
+    "bad": "De handtekening klopt niet: de commit is na het ondertekenen veranderd, of niet met die sleutel ondertekend.",
+    "unchecked": "Hij kon niet gecontroleerd worden: de sleutel of het programma ervoor ontbreekt op deze computer."
+  },
+  "signedBy": "Door {signer}",
+  "signedWith": "{format}-sleutel {key}"
 }

@@ -1,0 +1,22 @@
+{
+  "title": "New pull request",
+  "from": "From",
+  "into": "Into, on {remote}",
+  "pushFirst": "{branch} is not on {remote} with all its commits yet: push it first.",
+  "push": "Push",
+  "pushOther": "Only the branch you are on can be pushed from here: switch to it, or push it yourself.",
+  "noCommits": "It has no commits that {base} lacks.",
+  "titleLabel": "Title",
+  "body": "Description",
+  "commits": {
+    "one": "Made from its commit.",
+    "other": "Made from its {count} commits."
+  },
+  "asDraft": "As a draft",
+  "through": "Made with gh or glab, signed in as you.",
+  "make": "Make pull request",
+  "made": "Pull request made",
+  "openIt": "Open it",
+  "notMade": "Not made",
+  "notRead": "The branch could not be read"
+}

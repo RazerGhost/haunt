@@ -4,6 +4,7 @@
 
 pub(crate) mod cli;
 pub mod diff;
+pub mod grep;
 mod health;
 mod history;
 pub mod knowledge;
@@ -16,11 +17,13 @@ pub mod reflog;
 mod refs;
 mod release;
 mod remote;
+pub mod signature;
 mod submodules;
 pub mod types;
 pub mod write;
 
 pub use cli::forget_config;
+pub use cli::revision as cli_revision;
 pub use health::{health, Health};
 pub use history::{
     churn, file_blame, file_history, first_parent_changes, first_parents, function_history, last_mention, line_history,
@@ -35,7 +38,9 @@ pub use refs::{local_changes, merged_branches, refs};
 pub use release::{release_commits, ReleaseCommit};
 #[cfg(test)]
 pub use remote::web_page;
-pub use remote::{count_between, incoming, upstream_tip, web_remote, Incoming, WebKind, WebRemote};
+pub use remote::{
+    count_between, incoming, pull_draft, remote_page, upstream_tip, web_remote, Incoming, PullDraft, WebKind, WebRemote,
+};
 pub use submodules::{submodules, Submodule};
 
 #[cfg(test)]
