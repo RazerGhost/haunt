@@ -1,0 +1,76 @@
+# Puts a published release on the AUR as haunt-bin (packaging/aur/haunt-bin): the version and checksums are set from
+# the release's .deb, the package is built and checked on Arch, and the PKGBUILD and .SRCINFO are pushed. Runs when a
+# release is published (a draft from release.yml made public, pre-releases too), or by hand for a tag.
+#
+# Needs the secret AUR_SSH_KEY: the private half of an SSH key added to the AUR account that maintains haunt-bin.
+# Without it the job says so and stops.
+name: AUR
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The release's tag (v0.2.0)
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  haunt-bin:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and push haunt-bin
+        env:
+          AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [ -z "$AUR_SSH_KEY" ]; then
+            echo "::warning::No AUR_SSH_KEY secret: haunt-bin was not updated."
+            exit 0
+          fi
+          version="${TAG#v}"
+          pacman -Syu --noconfirm --needed git openssh pacman-contrib namcap
+
+          # makepkg will not run as root.
+          useradd -m builder
+          cp -r packaging/aur/haunt-bin /home/builder/pkg
+          cd /home/builder/pkg
+          sed -i "s/^_version=.*/_version=${version}/; s/^pkgrel=.*/pkgrel=1/" PKGBUILD
+          chown -R builder .
+          su builder -c 'updpkgsums'
+          # Built and installed once, so a broken package never reaches the AUR.
+          (source PKGBUILD && pacman -S --noconfirm --needed "${depends[@]}")
+          su builder -c 'makepkg --noconfirm'
+          namcap haunt-bin-*.pkg.tar.zst
+          pacman -U --noconfirm haunt-bin-*.pkg.tar.zst
+          if ldd /usr/bin/haunt | grep 'not found'; then exit 1; fi
+          su builder -c 'makepkg --printsrcinfo > .SRCINFO'
+
+          # The AUR's host key, as the Arch wiki publishes it (SHA256:RFzBCUItH9LZS0cKB5UE6ceAYhBD5C8GeOBip8Z11+4).
+          # Named outright: in a job's container ssh looks in root's home, not $HOME.
+          keys=/tmp/aur-ssh
+          mkdir -m 700 "$keys"
+          echo 'aur.archlinux.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEuBKrPzbawxA/k2g6NcyV5jmqwJ2s+zpgZGZ7tpLIcN' > "$keys/known_hosts"
+          printf '%s\n' "$AUR_SSH_KEY" > "$keys/key"
+          chmod 600 "$keys/key"
+          export GIT_SSH_COMMAND="ssh -i $keys/key -o IdentitiesOnly=yes -o UserKnownHostsFile=$keys/known_hosts -o StrictHostKeyChecking=yes"
+
+          git clone ssh://aur@aur.archlinux.org/haunt-bin.git /tmp/aur
+          cp PKGBUILD .SRCINFO /tmp/aur/
+          cd /tmp/aur
+          git config user.name 'Dimitri de Jong'
+          git config user.email '90572937+RazerGhost@users.noreply.github.com'
+          git add PKGBUILD .SRCINFO
+          if git diff --cached --quiet; then
+            echo "haunt-bin is at ${version} already."
+            exit 0
+          fi
+          git commit -m "Haunt ${version}"
+          git push origin HEAD:master

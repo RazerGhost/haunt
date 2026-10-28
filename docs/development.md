@@ -16,6 +16,10 @@ answer, and a release build has none of this.
 development with C++"); on Linux the WebKitGTK libraries listed in `.github/workflows/release.yml`. A version tag
 (`git tag v0.2.0 && git push --tags`), or running the Release workflow by hand, builds every platform on GitHub Actions
 and attaches the installers to a draft release, with `docs/releases/<tag>.md` as its notes when that file exists.
+Publishing that release puts it on the AUR as `haunt-bin` (`.github/workflows/aur.yml`): the PKGBUILD in
+`packaging/aur/haunt-bin` gets the version and the `.deb`'s checksums, is built and installed on Arch, and is pushed.
+Edit the package there, not in the AUR. The workflow needs the secret `AUR_SSH_KEY`, the private half of an SSH key
+on the AUR account that maintains `haunt-bin`; without it the job says so and stops.
 
 ## How it is put together
 

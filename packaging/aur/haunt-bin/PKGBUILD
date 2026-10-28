@@ -1,0 +1,40 @@
+# Maintainer: Dimitri de Jong <90572937+RazerGhost at users dot noreply dot github dot com>
+#
+# Haunt from the .deb each GitHub release has, for Arch and its derivatives (CachyOS, EndeavourOS, Manjaro). The
+# release workflow (.github/workflows/release.yml, job "aur") sets _version and the checksums and pushes this to the
+# AUR; edit it here, not in the AUR's copy.
+
+pkgname=haunt-bin
+_version=0.2.0
+pkgver=${_version//-/_}
+pkgrel=1
+pkgdesc='A git client that maps the code: every function, what calls it, and what a change touches'
+arch=('x86_64')
+url='https://github.com/RazerGhost/haunt'
+license=('Apache-2.0')
+depends=('cairo' 'dbus' 'gdk-pixbuf2' 'git' 'glib2' 'glibc' 'gtk3' 'hicolor-icon-theme' 'libgcc' 'libsoup3'
+  'webkit2gtk-4.1')
+optdepends=('nodejs: read TypeScript and JavaScript projects (22.18 or later)'
+  'bun: read TypeScript and JavaScript projects, in place of Node'
+  'deno: read TypeScript and JavaScript projects, in place of Node'
+  "xdg-desktop-portal: follow the desktop's light or dark and accent colour")
+provides=('haunt')
+conflicts=('haunt')
+# The program is stripped already; makepkg's debug package would be empty.
+options=('!strip' '!debug')
+source=("Haunt_${_version}_amd64.deb::${url}/releases/download/v${_version}/Haunt_${_version}_amd64.deb"
+  "LICENSE-${_version}::https://raw.githubusercontent.com/RazerGhost/haunt/v${_version}/LICENSE"
+  "NOTICE-${_version}::https://raw.githubusercontent.com/RazerGhost/haunt/v${_version}/NOTICE")
+sha256sums=('c7142b39a72da30eb5618178633258d62466c6aef7f721727b1a2a19b3b83b75'
+            '62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a'
+            '5e4bf42e4aa198b5f3bcbc874b13c750d7ed99523d8380a9ceac57964bfb02ca')
+
+package() {
+  # makepkg unpacked the .deb; its files are in data.tar.gz, under /usr.
+  bsdtar -xf data.tar.gz -C "$pkgdir"
+  # The scanner's own tests and their sample projects ride along in the release; Haunt never reads them.
+  find "$pkgdir/usr/lib/Haunt/sidecar" "$pkgdir/usr/lib/Haunt/shared" \( -name '*.test.ts' -o -name fixtures \) -prune \
+    -exec rm -rf {} +
+  install -Dm644 "LICENSE-${_version}" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 "NOTICE-${_version}" "$pkgdir/usr/share/licenses/$pkgname/NOTICE"
+}

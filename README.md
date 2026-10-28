@@ -42,6 +42,12 @@ Download the installer for your system from the [releases](https://github.com/ra
 `.exe` for Windows, `.dmg` for macOS, `.deb`, `.rpm` or `.AppImage` for Linux. The builds are not signed yet, so
 Windows and macOS warn the first time you open Haunt.
 
+On Arch and its derivatives (CachyOS, EndeavourOS, Manjaro), install it from the AUR:
+
+```bash
+paru -S haunt-bin
+```
+
 Haunt uses the git on your machine (2.24 or later) and reads TypeScript with the Node you already have (22.18 or
 later). Without Node it uses Bun or Deno; running a project's tests still needs Node. With none of the three, it still
 reads PHP, Rust, Lua, Python, Go, Java, C#, Ruby, C and C++. It checks these when it starts and says what is missing.
