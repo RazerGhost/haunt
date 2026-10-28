@@ -11,5 +11,6 @@
   "nothingToAmend": "Er is nog geen commit om te amenden.",
   "noFiles": "Geen bestanden opgegeven.",
   "stopped": "git {command} is gestopt.",
-  "tookTooLong": "git {command} duurde langer dan {minutes} minuten en is gestopt."
+  "tookTooLong": "git {command} duurde langer dan {minutes} minuten en is gestopt.",
+  "pinentry": "gpg kon niet om het wachtwoord van je sleutel vragen: de pinentry heeft een terminal nodig, en Haunt heeft er geen. Stel er een met een venster in, in ~/.gnupg/gpg-agent.conf (\"pinentry-program /usr/bin/pinentry-qt\", of pinentry-gnome3), en voer dan \"gpgconf --reload gpg-agent\" uit.\n\n{error}"
 }

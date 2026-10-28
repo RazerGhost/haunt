@@ -57,6 +57,10 @@ show (a portal, a compositor, WebKitGTK drawing) is left, on a real machine:
 - **GNOME** (the accent, followed as it changes) and **KDE** (the accent, the system's title bar).
 - **The font**: what `system-ui` gives in WebKitGTK (fontconfig's default sans); if it is not the desktop's, read
   `font-name` from `org.gnome.desktop.interface`. theme.json's `font` covers it meanwhile.
+- **Editors and terminals**: Zed as `zeditor`, a Flatpak editor through its exported command, Neovim in kitty or
+  foot from "Runs in a terminal", and the terminal from `xdg-terminal-exec` or `$TERMINAL`
+  (src-tauri/src/editor.rs). "Open with" Haunt on a folder in a file manager (the desktop entry's `%f`,
+  src-tauri/linux/haunt.desktop), and the window class Hyprland sees (`hyprctl clients`) for a window rule.
 
 Left out: reading a GTK or Qt theme's own widget colours and shapes, which differs per theme; the portal and a theme
 file cover what people use.

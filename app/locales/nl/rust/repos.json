@@ -23,5 +23,6 @@
   "scriptNote": "Uitgevoerd door de scanner met Node, om de code in lagen in te delen.",
   "hookNote": "Uitgevoerd door git als Haunt iets doet waar hij op reageert.",
   "husky": "{name} (Husky)",
-  "huskyNote": "Waar de hook hierboven aan doorgeeft."
+  "huskyNote": "Waar de hook hierboven aan doorgeeft.",
+  "toolCommand": "Een opdracht is één regel van hoogstens 500 tekens."
 }

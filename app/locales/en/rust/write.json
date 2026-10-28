@@ -11,5 +11,6 @@
   "nothingToAmend": "There is no commit to amend yet.",
   "noFiles": "No files given.",
   "stopped": "git {command} was stopped.",
-  "tookTooLong": "git {command} took longer than {minutes} minutes and was stopped."
+  "tookTooLong": "git {command} took longer than {minutes} minutes and was stopped.",
+  "pinentry": "gpg could not ask for your key's passphrase: its pinentry needs a terminal, and Haunt has none. Set one with a window in ~/.gnupg/gpg-agent.conf (\"pinentry-program /usr/bin/pinentry-qt\", or pinentry-gnome3), then run \"gpgconf --reload gpg-agent\".\n\n{error}"
 }

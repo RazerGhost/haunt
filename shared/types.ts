@@ -156,5 +156,5 @@ export interface DesktopLook {
 /** A part of git; each view reads again only for the parts it shows. */
 export type GitPart = 'head' | 'refs' | 'index' | 'stash'
 
-export const EDITORS = ['vscode', 'cursor', 'windsurf', 'zed', 'webstorm', 'sublime', 'custom'] as const
+export const EDITORS = ['vscode', 'vscodium', 'cursor', 'windsurf', 'zed', 'webstorm', 'sublime', 'kate', 'custom'] as const
 export type Editor = (typeof EDITORS)[number]

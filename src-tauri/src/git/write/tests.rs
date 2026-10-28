@@ -97,6 +97,21 @@ fn commits_amends_and_signs_off() {
 }
 
 #[test]
+fn says_what_to_change_when_gpgs_pinentry_needs_a_terminal() {
+    let failed = "error: gpg failed to sign the data:
+gpg: signing failed: Inappropriate ioctl for device
+fatal: failed to write commit object";
+    let said = super::pinentry_help(failed);
+    assert!(crate::said::english(&said).contains("pinentry-qt"));
+    assert!(crate::said::english(&said).ends_with(failed));
+    // Any other failure, signing included, as git said it.
+    let other = "error: gpg failed to sign the data:
+gpg: skipped \"ABC\": No secret key";
+    assert_eq!(super::pinentry_help(other), other);
+    assert_eq!(super::pinentry_help("fatal: nothing"), "fatal: nothing");
+}
+
+#[test]
 fn discards_and_brings_back_files_lines_and_untracked_files() {
     let r = repo();
     r.write("a.txt", "one\nTWO\nthree\nFOUR\nfive\n");

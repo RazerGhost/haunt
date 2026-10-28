@@ -21,6 +21,12 @@ pub struct AppSettings {
     pub update_check: bool,
     /// The system's window frame and title bar instead of Haunt's own buttons (Windows and Linux).
     pub system_title_bar: bool,
+    /// The custom editor's command line; empty is HAUNT_EDITOR, $VISUAL or $EDITOR.
+    pub editor_command: String,
+    /// The custom editor runs inside a terminal.
+    pub editor_in_terminal: bool,
+    /// The terminal's command line; empty is the first usual one found.
+    pub terminal_command: String,
     pub trusted: Vec<TrustedFolder>,
     pub version: String,
     pub folders: AppFolders,
@@ -61,6 +67,9 @@ impl Repos {
             host_tools: inner.settings.host_tools,
             update_check: inner.settings.update_check,
             system_title_bar: inner.settings.system_title_bar,
+            editor_command: inner.settings.editor_command.clone(),
+            editor_in_terminal: inner.settings.editor_in_terminal,
+            terminal_command: inner.settings.terminal_command.clone(),
             trusted: inner
                 .settings
                 .trusted
@@ -114,6 +123,33 @@ impl Repos {
             inner.settings.save(&self.context.settings);
         }
         self.app_settings()
+    }
+
+    /// The custom editor's command, whether it runs in a terminal, and the terminal's command.
+    pub fn set_tools(&self, editor: &str, editor_in_terminal: bool, terminal: &str) -> Result<AppSettings, String> {
+        let (Some(editor), Some(terminal)) =
+            (crate::settings::tool_command(editor), crate::settings::tool_command(terminal))
+        else {
+            return Err(said!("repos.toolCommand", "A command is one line of at most 500 characters."));
+        };
+        {
+            let mut inner = self.inner.lock();
+            inner.settings.editor_command = editor;
+            inner.settings.editor_in_terminal = editor_in_terminal;
+            inner.settings.terminal_command = terminal;
+            inner.settings.save(&self.context.settings);
+        }
+        Ok(self.app_settings())
+    }
+
+    /// The editor and terminal Settings names, for opening them.
+    pub fn tools(&self) -> crate::editor::Tools {
+        let inner = self.inner.lock();
+        crate::editor::Tools {
+            editor: inner.settings.editor_command.clone(),
+            editor_in_terminal: inner.settings.editor_in_terminal,
+            terminal: inner.settings.terminal_command.clone(),
+        }
     }
 
     pub fn system_title_bar(&self) -> bool {

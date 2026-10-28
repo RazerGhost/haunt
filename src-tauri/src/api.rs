@@ -190,7 +190,7 @@ commands! {
     /// Shows an open tab's folder in the file manager.
     fn reveal_tab(api, path: String) -> () { crate::editor::reveal(&api.repos.tab_folder(&path)?) }
     /// Opens a terminal in an open tab's folder.
-    fn terminal_tab(api, path: String) -> () { crate::editor::terminal(&api.repos.tab_folder(&path)?) }
+    fn terminal_tab(api, path: String) -> () { crate::editor::terminal(&api.repos.tools(), &api.repos.tab_folder(&path)?) }
 
     /* Trust, the scan, the changes by function, and reading git (code/, git/) */
 
@@ -298,10 +298,10 @@ commands! {
     /// Opens a scanned file at a line in your editor.
     fn open_file(api, repo: String, editor: String, path: String, line: u32) -> () {
         let file = api.repos.scanned(&repo, &path)?;
-        crate::editor::open(&editor, &repo, &file, line.max(1), 1)
+        crate::editor::open(&api.repos.tools(), &editor, &repo, &file, line.max(1), 1)
     }
-    /// The editors whose command line tool is on the PATH.
-    fn editors(api) -> Vec<String> { let _ = api; Ok(crate::editor::installed()) }
+    /// The editors found, and "custom" when one is set.
+    fn editors(api) -> Vec<String> { Ok(crate::editor::installed(&api.repos.tools())) }
     /// Saves an exported picture (the canvas, the layer map) where the save dialog said: base64 for a PNG.
     fn save_export(api, path: String, data: String, base64: bool) -> () { let _ = api; crate::export::save(&path, &data, base64) }
 
@@ -668,6 +668,10 @@ commands! {
     fn set_online(api, host_tools: bool, update_check: bool) -> AppSettings { Ok(api.repos.set_online(host_tools, update_check)) }
     /// The system's title bar instead of Haunt's own buttons (Windows and Linux); the window changes its frame.
     fn set_system_title_bar(api, on: bool) -> AppSettings { Ok(api.repos.set_system_title_bar(on)) }
+    /// The custom editor's command, whether it runs in a terminal, and the terminal's command (empty: found).
+    fn set_tools(api, editor_command: String, editor_in_terminal: bool, terminal_command: String) -> AppSettings {
+        api.repos.set_tools(&editor_command, editor_in_terminal, &terminal_command)
+    }
     /// Stops trusting a folder, shown or not.
     fn forget_trust(api, path: String) -> AppSettings { Ok(api.repos.forget_trust(&path)) }
     /// Removes the kept call graphs; how many there were.

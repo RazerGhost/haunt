@@ -3,19 +3,38 @@ import { EDITORS, type Editor } from '~~/shared/types'
 
 /* Settings, General: the language, test files, the editor, commit times and order, diffs and the text size, kept in the window. */
 const { includeTests, editor, textSize, times, order, diffWrap, tabWidth, ignoreSpace } = usePreferences()
+const { app, save } = useAppSettings()
 const language = useLanguage()
 const languages = LANGUAGES.map(value => ({ value, label: LANGUAGE_NAMES[value] }))
 
 const editorLabels = computed<Record<Editor, string>>(() => ({
-  vscode: 'VS Code', cursor: 'Cursor', windsurf: 'Windsurf', zed: 'Zed', webstorm: 'WebStorm', sublime: 'Sublime Text', custom: t('SettingsGeneral.customEditor')
+  vscode: 'VS Code', vscodium: 'VSCodium', cursor: 'Cursor', windsurf: 'Windsurf', zed: 'Zed', webstorm: 'WebStorm', sublime: 'Sublime Text', kate: 'Kate', custom: t('SettingsGeneral.customEditor')
 }))
 // Installed editors first; the others stay pickable (their tool may be installed later).
 const installed = ref<Editor[]>([])
-onMounted(async () => {
+async function findEditors(): Promise<void> {
   try {
     installed.value = await haunt.editors()
   } catch { /* none found: every editor stays pickable */ }
-})
+}
+onMounted(findEditors)
+
+// The custom editor's and the terminal's commands, kept by Rust; saved when a field is left.
+const editorCommand = ref('')
+const editorInTerminal = ref(false)
+const terminalCommand = ref('')
+watch(app, (settings) => {
+  if (!settings) return
+  editorCommand.value = settings.editorCommand
+  editorInTerminal.value = settings.editorInTerminal
+  terminalCommand.value = settings.terminalCommand
+}, { immediate: true })
+async function saveTools(): Promise<void> {
+  const settings = app.value
+  if (settings && editorCommand.value === settings.editorCommand && editorInTerminal.value === settings.editorInTerminal && terminalCommand.value === settings.terminalCommand) return
+  if (await save(haunt.setTools(editorCommand.value, editorInTerminal.value, terminalCommand.value))) await findEditors()
+}
+const placeholders = { file: '{file}', line: '{line}', column: '{column}', root: '{root}', folder: '{folder}', command: '{command}' }
 const editors = computed(() => EDITORS
   .map(value => ({
     value,
@@ -37,6 +56,15 @@ const sizes = ['small', 'normal', 'large'] as const
     <USwitch v-model="includeTests" :label="t('SettingsGeneral.showTests')" :description="t('SettingsGeneral.showTestsHelp')" />
     <UFormField :label="t('SettingsGeneral.editor')" :help="installed.length ? undefined : t('SettingsGeneral.noEditor')">
       <USelect v-model="editor" :items="editors" icon="i-lucide-square-pen" class="w-72" />
+    </UFormField>
+    <div v-if="editor === 'custom'" class="grid gap-2">
+      <UFormField :label="t('SettingsGeneral.customCommand')" :help="t('SettingsGeneral.customCommandHelp', placeholders)">
+        <UInput v-model="editorCommand" placeholder="nvim +{line} {file}" class="w-96 max-w-full font-mono" @change="saveTools" />
+      </UFormField>
+      <USwitch v-model="editorInTerminal" :label="t('SettingsGeneral.inTerminal')" :description="t('SettingsGeneral.inTerminalHelp')" @update:model-value="saveTools" />
+    </div>
+    <UFormField :label="t('SettingsGeneral.terminal')" :help="t('SettingsGeneral.terminalHelp', placeholders)">
+      <UInput v-model="terminalCommand" :placeholder="t('SettingsGeneral.terminalFound')" icon="i-lucide-square-terminal" class="w-96 max-w-full font-mono" @change="saveTools" />
     </UFormField>
     <UFormField :label="t('SettingsGeneral.times')" :help="times === 'ago' ? t('SettingsGeneral.timesAgoHelp') : t('SettingsGeneral.timesDateHelp')">
       <UFieldGroup>

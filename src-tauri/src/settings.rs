@@ -227,10 +227,22 @@ pub struct Settings {
     pub update_check: bool,
     /// The system's own window frame and title bar instead of Haunt's buttons (Windows and Linux). Off by default.
     pub system_title_bar: bool,
+    /// The custom editor's command line (Settings, General); empty is HAUNT_EDITOR, $VISUAL or $EDITOR.
+    pub editor_command: String,
+    /// The custom editor runs inside a terminal.
+    pub editor_in_terminal: bool,
+    /// The terminal's command line; empty is HAUNT_TERMINAL, $TERMINAL or the first usual one found.
+    pub terminal_command: String,
     /// Pinned and coloured tabs, by folder.
     pub tab_looks: HashMap<String, TabLook>,
     /// The folders the repository manager looks through for repositories, for every profile.
     pub repository_folders: Vec<String>,
+}
+
+/// An editor's or terminal's command line as kept: trimmed, one line, at most 500 characters; None when it is not.
+pub fn tool_command(command: &str) -> Option<String> {
+    let command = command.trim();
+    (command.chars().count() <= 500 && !command.chars().any(char::is_control)).then(|| command.to_owned())
 }
 
 impl Settings {
@@ -299,6 +311,9 @@ impl Settings {
             host_tools: read.host_tools,
             update_check: read.update_check,
             system_title_bar: read.system_title_bar,
+            editor_command: tool_command(&read.editor_command).unwrap_or_default(),
+            editor_in_terminal: read.editor_in_terminal,
+            terminal_command: tool_command(&read.terminal_command).unwrap_or_default(),
             tab_looks,
             repository_folders,
         };

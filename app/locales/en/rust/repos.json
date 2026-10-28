@@ -23,5 +23,6 @@
   "scriptNote": "Run by the scanner with Node, to sort the code into layers.",
   "hookNote": "Run by git when Haunt does what triggers it.",
   "husky": "{name} (Husky)",
-  "huskyNote": "What the hook above hands over to."
+  "huskyNote": "What the hook above hands over to.",
+  "toolCommand": "A command is one line of at most 500 characters."
 }

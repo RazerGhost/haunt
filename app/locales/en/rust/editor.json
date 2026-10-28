@@ -2,13 +2,14 @@
   "notThereYet": "{folder} is not there yet.",
   "fileManager": "The file manager could not start: {error}",
   "notThere": "{folder} is not there.",
-  "customTerminal": "HAUNT_TERMINAL (\"{custom}\") could not start.",
-  "noTerminal": "No terminal could be started. Set HAUNT_TERMINAL to the one you use, e.g. \"wezterm\".",
+  "customTerminal": "The terminal \"{custom}\" could not start.",
+  "noTerminal": "No terminal could be started. Name the one you use in Settings, General, e.g. \"wezterm\".",
   "httpsOnly": "Only web addresses (https) can be opened.",
   "browser": "The browser could not start: {error}",
-  "noCustom": "Set HAUNT_EDITOR to a command, e.g. \"nvim-qt +{line} {file}\" ({root} is the project folder).",
+  "noCustom": "Set the custom editor's command in Settings, General, e.g. \"nvim-qt +{line} {file}\" ({root} is the project folder).",
   "unknown": "Haunt does not know the editor \"{editor}\".",
   "notOnPath": "\"{command}\" is not on your PATH. Install the editor's command line tool, or pick another editor.",
   "unsafePath": "That path has characters the Windows launcher cannot pass on safely.",
-  "notStarted": "Could not start {command}: {error}"
+  "notStarted": "Could not start {command}: {error}",
+  "macTerminal": "Terminal cannot be given an editor to run: set a terminal in Settings, General (kitty, WezTerm, Alacritty or Ghostty)."
 }

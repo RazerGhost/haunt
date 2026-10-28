@@ -17,8 +17,8 @@ Everything Haunt does, by part of the window. The [README](../README.md) has the
 
 - **Tabs**, one per repository, with a + to open another, a recent one, or the tab closed last (Ctrl Shift T). Drag a
   tab to move it; right-click it to pin it (first in the row, only its icon, no close button) or give it a colour, to
-  close it, the others or those to its right, to show its folder, to open a terminal there (`HAUNT_TERMINAL` picks
-  which), or to move it to another profile. The tabs, the screen each one was on and the window's size are kept between launches. A tab in the
+  close it, the others or those to its right, to show its folder, to open a terminal there (Settings, General
+  picks which), or to move it to another profile. The tabs, the screen each one was on and the window's size are kept between launches. A tab in the
   background does not scan; going back to it shows its last scan at once while it scans again.
 - **The repository manager**, shown when no repository is open and from the + beside the tabs. On the left, the
   recent repositories with each one's branch, uncommitted files and last commit, and the repositories in the folders
@@ -47,8 +47,13 @@ Everything Haunt does, by part of the window. The [README](../README.md) has the
 - **The function panel**: a function's code, where it is written, what it calls and what calls it, and its history.
   Pin a function to keep it a click away. In a diff, the function a hunk is in opens in the panel.
 - **Open in your editor**: every function and file opens at its line, with the project's folder, so the editor shows
-  the whole project. VS Code, Cursor, Windsurf, Zed, WebStorm and Sublime Text work through their command line tools;
-  for anything else set `HAUNT_EDITOR`, such as `nvim-qt +{line} {file}` (`{root}` is the project's folder).
+  the whole project. VS Code, VSCodium, Cursor, Windsurf, Zed, WebStorm, Sublime Text and Kate work through their
+  command line tools, found on the PATH, the login shell's PATH, `~/.local/bin`, JetBrains Toolbox's scripts and
+  Flatpak's exported commands (Arch's `zeditor` and `code-oss` too). For anything else, Settings, General takes a
+  command, such as `nvim-qt +{line} {file}` (`{root}` is the project's folder); one that "runs in a terminal"
+  (Neovim, Helix) opens in the terminal Settings names. Left empty, `HAUNT_EDITOR`, `$VISUAL` or `$EDITOR` is used.
+- **Commit signing** with a gpg key needs a pinentry with a window (pinentry-qt, pinentry-gnome3): Haunt has no
+  terminal for pinentry-curses, and says so when a signed commit fails for it.
 - **When something fails**, the message says what git said, with Copy, and offers to trust the folder when its trust
   was the reason; it stays until you close it. After a discard, a dropped stash, an undone commit or a reset, Undo shows for a few seconds; the
   Recently discarded and Recently dropped lists keep them for 30 days either way. Further back, the **Reflog** (More,

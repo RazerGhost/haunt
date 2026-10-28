@@ -2,13 +2,14 @@
   "notThereYet": "{folder} is er nog niet.",
   "fileManager": "Bestandsbeheer kon niet starten: {error}",
   "notThere": "{folder} is er niet.",
-  "customTerminal": "HAUNT_TERMINAL (\"{custom}\") kon niet starten.",
-  "noTerminal": "Er kon geen terminal starten. Zet HAUNT_TERMINAL op degene die je gebruikt, bijvoorbeeld \"wezterm\".",
+  "customTerminal": "De terminal \"{custom}\" kon niet starten.",
+  "noTerminal": "Er kon geen terminal starten. Noem de terminal die je gebruikt in Instellingen, Algemeen, bijv. \"wezterm\".",
   "httpsOnly": "Alleen webadressen (https) kunnen open.",
   "browser": "De browser kon niet starten: {error}",
-  "noCustom": "Zet HAUNT_EDITOR op een commando, bijvoorbeeld \"nvim-qt +{line} {file}\" ({root} is de projectmap).",
+  "noCustom": "Stel de opdracht van de eigen editor in bij Instellingen, Algemeen, bijv. \"nvim-qt +{line} {file}\" ({root} is de map van het project).",
   "unknown": "Haunt kent de editor \"{editor}\" niet.",
   "notOnPath": "\"{command}\" staat niet in je PATH. Installeer de commandlinetool van de editor, of kies een andere editor.",
   "unsafePath": "Dat pad heeft tekens die de Windows-starter niet veilig kan doorgeven.",
-  "notStarted": "{command} kon niet starten: {error}"
+  "notStarted": "{command} kon niet starten: {error}",
+  "macTerminal": "Terminal kan geen editor starten: kies een terminal in Instellingen, Algemeen (kitty, WezTerm, Alacritty of Ghostty)."
 }

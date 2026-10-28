@@ -93,7 +93,7 @@ export const commands = {
 	source: (repo: string, path: string, start: number, end: number) => __TAURI_INVOKE<Source>("source", { repo, path, start, end }),
 	/**  Opens a scanned file at a line in your editor. */
 	openFile: (repo: string, editor: string, path: string, line: number) => __TAURI_INVOKE<null>("open_file", { repo, editor, path, line }),
-	/**  The editors whose command line tool is on the PATH. */
+	/**  The editors found, and "custom" when one is set. */
 	editors: () => __TAURI_INVOKE<string[]>("editors"),
 	/**  Saves an exported picture (the canvas, the layer map) where the save dialog said: base64 for a PNG. */
 	saveExport: (path: string, data: string, base64: boolean) => __TAURI_INVOKE<null>("save_export", { path, data, base64 }),
@@ -292,6 +292,8 @@ export const commands = {
 	setOnline: (hostTools: boolean, updateCheck: boolean) => __TAURI_INVOKE<AppSettings>("set_online", { hostTools, updateCheck }),
 	/**  The system's title bar instead of Haunt's own buttons (Windows and Linux); the window changes its frame. */
 	setSystemTitleBar: (on: boolean) => __TAURI_INVOKE<AppSettings>("set_system_title_bar", { on }),
+	/**  The custom editor's command, whether it runs in a terminal, and the terminal's command (empty: found). */
+	setTools: (editorCommand: string, editorInTerminal: boolean, terminalCommand: string) => __TAURI_INVOKE<AppSettings>("set_tools", { editorCommand, editorInTerminal, terminalCommand }),
 	/**  Stops trusting a folder, shown or not. */
 	forgetTrust: (path: string) => __TAURI_INVOKE<AppSettings>("forget_trust", { path }),
 	/**  Removes the kept call graphs; how many there were. */
@@ -335,6 +337,12 @@ export type AppSettings = {
 	updateCheck: boolean,
 	/**  The system's window frame and title bar instead of Haunt's own buttons (Windows and Linux). */
 	systemTitleBar: boolean,
+	/**  The custom editor's command line; empty is HAUNT_EDITOR, $VISUAL or $EDITOR. */
+	editorCommand: string,
+	/**  The custom editor runs inside a terminal. */
+	editorInTerminal: boolean,
+	/**  The terminal's command line; empty is the first usual one found. */
+	terminalCommand: string,
 	trusted: TrustedFolder[],
 	version: string,
 	folders: AppFolders,

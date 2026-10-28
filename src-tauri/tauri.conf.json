@@ -36,6 +36,10 @@
       "../sidecar/": "sidecar/",
       "../shared/": "shared/",
       "bundled/node_modules/": "node_modules/"
+    },
+    "linux": {
+      "deb": { "desktopTemplate": "linux/haunt.desktop" },
+      "rpm": { "desktopTemplate": "linux/haunt.desktop" }
     }
   }
 }

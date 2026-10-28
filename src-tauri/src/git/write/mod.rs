@@ -650,8 +650,25 @@ impl<'a> Writer<'a> {
         if signoff {
             args.push("--signoff");
         }
-        self.git(&args, Some(message.as_bytes()), &[], None)?;
+        self.git(&args, Some(message.as_bytes()), &[], None).map_err(|error| pinentry_help(&error))?;
         Ok(read(self.root, &["rev-parse", "HEAD"])?.trim().to_owned())
+    }
+}
+
+/// gpg's failure to sign because its pinentry needs a terminal (pinentry-curses, pinentry-tty), which Haunt does not
+/// have, said with what to change; any other failure as git said it.
+fn pinentry_help(error: &str) -> String {
+    let needs_terminal = ["Inappropriate ioctl for device", "pinentry", "Screen or window too small"];
+    if error.contains("gpg failed to sign") && needs_terminal.iter().any(|said| error.contains(said)) {
+        said!(
+            "write.pinentry",
+            "gpg could not ask for your key's passphrase: its pinentry needs a terminal, and Haunt has none. Set one with a window in ~/.gnupg/gpg-agent.conf (\"pinentry-program /usr/bin/pinentry-qt\", or pinentry-gnome3), then run \"gpgconf --reload gpg-agent\".
+
+{error}",
+            error = error
+        )
+    } else {
+        error.to_owned()
     }
 }
 
