@@ -26,6 +26,10 @@ jobs:
     container: archlinux:base-devel
     env:
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    # A container's steps run in sh otherwise, which has no arrays and does not source a file from the folder it is in.
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
 
@@ -43,7 +47,7 @@ jobs:
           chown -R builder .
           su builder -c 'updpkgsums'
           # Built and installed once, so a broken package never reaches the release or the AUR.
-          (source PKGBUILD && pacman -S --noconfirm --needed "${depends[@]}")
+          (source ./PKGBUILD && pacman -S --noconfirm --needed "${depends[@]}")
           su builder -c 'makepkg --noconfirm'
           namcap haunt-bin-*.pkg.tar.zst
           pacman -U --noconfirm haunt-bin-*.pkg.tar.zst
