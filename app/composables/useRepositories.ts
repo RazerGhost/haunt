@@ -10,6 +10,8 @@ import type { News } from '~/utils/bridge'
 const info = shallowRef<RootInfo | null>(null)
 /** What is missing on this machine, said at start (then nothing can be scanned). */
 const problems = ref<string[]>([])
+/** The tiling compositor the window is in (Hyprland, Sway…): it places and sizes the window itself. Null elsewhere. */
+const tiling = ref<string | null>(null)
 /** The repository screen is open on request (it also shows when no repository is open). */
 const picking = ref(false)
 /** Counts the 'git' news per part of git (HEAD, refs, the index, the stash), all in this one place. */
@@ -42,7 +44,9 @@ export async function startRepositories(): Promise<void> {
     for (const listener of listeners) listener(news)
   })
   try {
-    problems.value = (await haunt.startup()).problems
+    const started = await haunt.startup()
+    problems.value = started.problems
+    tiling.value = started.tiling
   } catch { /* said again on the first call */ }
   await loadInfo()
 }
@@ -110,7 +114,7 @@ export function useRepositories() {
     return (await chooseRoot(path)) === null
   }
 
-  return { info, repo, problems, picking, closed, gitChanged, chooseRoot, closeTab, reopenClosed, setTrust, rememberRoute, onNews }
+  return { info, repo, problems, tiling, picking, closed, gitChanged, chooseRoot, closeTab, reopenClosed, setTrust, rememberRoute, onNews }
 }
 
 /**

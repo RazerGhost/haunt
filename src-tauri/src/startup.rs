@@ -167,8 +167,61 @@ pub fn hide_console(command: &mut Command) {
 #[cfg(not(windows))]
 pub fn hide_console(_command: &mut Command) {}
 
+/// The tiling compositor or window manager Haunt runs in on Linux, by the variables each sets: these place and size
+/// windows themselves, and ignore a window's own minimise and maximise (Hyprland drops maximise requests by default and
+/// has no minimised state). None elsewhere, and on a desktop that floats windows.
+pub fn tiling() -> Option<String> {
+    if !cfg!(target_os = "linux") {
+        return None;
+    }
+    let vars: Vec<(String, String)> = std::env::vars().collect();
+    tiling_in(&vars)
+}
+
+fn tiling_in(vars: &[(String, String)]) -> Option<String> {
+    let has = |name: &str| vars.iter().any(|(known, value)| known == name && !value.is_empty());
+    let by_socket =
+        [("HYPRLAND_INSTANCE_SIGNATURE", "Hyprland"), ("SWAYSOCK", "Sway"), ("NIRI_SOCKET", "niri"), ("I3SOCK", "i3")];
+    if let Some((_, name)) = by_socket.iter().find(|(variable, _)| has(variable)) {
+        return Some((*name).to_owned());
+    }
+    // XDG_CURRENT_DESKTOP is a list ("Hyprland", "sway:wlroots").
+    let desktop = vars.iter().find(|(name, _)| name == "XDG_CURRENT_DESKTOP").map(|(_, value)| value.to_lowercase())?;
+    let known = [
+        ("hyprland", "Hyprland"),
+        ("sway", "Sway"),
+        ("niri", "niri"),
+        ("river", "river"),
+        ("i3", "i3"),
+        ("bspwm", "bspwm"),
+        ("qtile", "Qtile"),
+        ("awesome", "awesome"),
+        ("dwm", "dwm"),
+        ("xmonad", "xmonad"),
+    ];
+    desktop
+        .split(':')
+        .find_map(|part| known.iter().find(|(id, _)| part.trim() == *id).map(|(_, name)| (*name).to_owned()))
+}
+
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn knows_a_tiling_compositor_by_its_variables() {
+        let vars =
+            |pairs: &[(&str, &str)]| pairs.iter().map(|(a, b)| (a.to_string(), b.to_string())).collect::<Vec<_>>();
+        assert_eq!(tiling_in(&vars(&[("HYPRLAND_INSTANCE_SIGNATURE", "abc_123")])).as_deref(), Some("Hyprland"));
+        assert_eq!(tiling_in(&vars(&[("XDG_CURRENT_DESKTOP", "sway:wlroots")])).as_deref(), Some("Sway"));
+        assert_eq!(tiling_in(&vars(&[("XDG_CURRENT_DESKTOP", "river")])).as_deref(), Some("river"));
+        assert_eq!(tiling_in(&vars(&[("XDG_CURRENT_DESKTOP", "GNOME")])), None);
+        assert_eq!(
+            tiling_in(&vars(&[("XDG_CURRENT_DESKTOP", "KDE"), ("SWAYSOCK", "")])),
+            None,
+            "an empty socket is none"
+        );
+        assert_eq!(tiling_in(&vars(&[])), None);
+    }
     use super::*;
 
     #[test]

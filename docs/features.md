@@ -31,6 +31,9 @@ Everything Haunt does, by part of the window. The [README](../README.md) has the
   new folder (git's progress as it comes, a way to stop it, its questions asked as for a fetch; no hooks or
   submodules run) or make a **New** empty repository (`git init`); either opens when done. `haunt <folder>` opens a
   folder, in the window that is already running if there is one, and a folder dropped on the window opens in its tab.
+- **Window buttons**: Haunt draws its own title bar with minimise, maximise and close on Windows and Linux (macOS keeps
+  its own). In a tiling compositor or window manager (Hyprland, Sway, niri, river, i3 and the like) only close shows:
+  the compositor places and sizes the window.
 - **Git and Code**, the two halves of the window (Ctrl 1 and Ctrl 2). The toolbar has Fetch, Pull and Push (with the
   commits to pull and push, and git's progress with a way to stop it), Branch and Stash, the function search, and the
   scan, trust and settings icons.

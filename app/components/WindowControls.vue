@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { Window } from '@tauri-apps/api/window'
 
-// The desktop window's own buttons (Windows and Linux; the window has no system frame): minimise, maximise, close.
+// The desktop window's own buttons (Windows and Linux; the window has no system frame): minimise, maximise, close. In a
+// tiling compositor (Hyprland, Sway…) only Close: the compositor places and sizes windows, and ignores the others.
+const { tiling } = useRepositories()
 const maximized = ref(false)
 let appWindow: Window | null = null
 let stop: (() => void) | null = null
@@ -21,12 +23,12 @@ const button = 'grid h-10 w-11 place-items-center text-muted transition-colors h
 
 <template>
   <div class="flex self-stretch">
-    <UTooltip :text="t('WindowControls.minimise')">
+    <UTooltip v-if="!tiling" :text="t('WindowControls.minimise')">
       <button type="button" :class="button" :aria-label="t('WindowControls.minimise')" @click="appWindow?.minimize()">
         <UIcon name="i-lucide-minus" class="size-4" />
       </button>
     </UTooltip>
-    <UTooltip :text="maximized ? t('common.restore') : t('WindowControls.maximise')">
+    <UTooltip v-if="!tiling" :text="maximized ? t('common.restore') : t('WindowControls.maximise')">
       <button type="button" :class="button" :aria-label="maximized ? t('common.restore') : t('WindowControls.maximise')" @click="appWindow?.toggleMaximize()">
         <UIcon :name="maximized ? 'i-lucide-copy' : 'i-lucide-square'" class="size-3.5" />
       </button>

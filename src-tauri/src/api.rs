@@ -60,6 +60,9 @@ impl Raw {
 #[derive(Debug, Serialize, Type)]
 pub struct Startup {
     pub problems: Vec<String>,
+    /// The tiling compositor or window manager the window is in (Hyprland, Sway, i3…), which places and sizes windows
+    /// itself: the window shows only Close then. Null elsewhere.
+    pub tiling: Option<String>,
 }
 
 /// What the local changes compare the working tree with.
@@ -120,7 +123,7 @@ commands! {
     /* Tabs, profiles and the repository manager (repos/) */
 
     /// What is missing on this machine (a JavaScript runtime, git), said once at start.
-    fn startup(api) -> Startup { Ok(Startup { problems: api.problems.clone() }) }
+    fn startup(api) -> Startup { Ok(Startup { problems: api.problems.clone(), tiling: crate::startup::tiling() }) }
     fn info(api) -> RootInfo { Ok(api.repos.info()) }
     fn open(api, path: String) -> RootInfo { api.repos.open(&path) }
     fn close(api, path: String) -> RootInfo { Ok(api.repos.close(&path)) }

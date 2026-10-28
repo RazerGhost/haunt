@@ -1362,6 +1362,11 @@ export type Source = {
 
 export type Startup = {
 	problems: string[],
+	/**
+	 *  The tiling compositor or window manager the window is in (Hyprland, Sway, i3…), which places and sizes windows
+	 *  itself: the window shows only Close then. Null elsewhere.
+	 */
+	tiling: string | null,
 };
 
 export type StashRef = {
