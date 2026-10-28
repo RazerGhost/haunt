@@ -1,9 +1,10 @@
-# Puts a published release on the AUR as haunt-bin (packaging/aur/haunt-bin): the version and checksums are set from
-# the release's .deb, the package is built and checked on Arch, and the PKGBUILD and .SRCINFO are pushed. Runs when a
-# release is published (a draft from release.yml made public, pre-releases too), or by hand for a tag.
+# Packages a published release for Arch as haunt-bin (packaging/aur/haunt-bin): the version and checksums are set from
+# the release's .deb, and the package is built, checked and installed on Arch. The package itself is attached to the
+# release (for `pacman -U`), and the PKGBUILD and .SRCINFO are pushed to the AUR. Runs when a release is published (a
+# draft from release.yml made public, pre-releases too), or by hand for a tag.
 #
-# Needs the secret AUR_SSH_KEY: the private half of an SSH key added to the AUR account that maintains haunt-bin.
-# Without it the job says so and stops.
+# The AUR needs the secret AUR_SSH_KEY: the private half of an SSH key added to the AUR account that maintains
+# haunt-bin. Without it the package is still attached to the release, and the AUR step says so and stops.
 name: AUR
 
 on:
@@ -16,27 +17,23 @@ on:
         required: true
 
 permissions:
-  contents: read
+  # To attach the package to the release.
+  contents: write
 
 jobs:
   haunt-bin:
     runs-on: ubuntu-latest
     container: archlinux:base-devel
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build and push haunt-bin
-        env:
-          AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
-          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      - name: Build haunt-bin
         run: |
           set -euo pipefail
-          if [ -z "$AUR_SSH_KEY" ]; then
-            echo "::warning::No AUR_SSH_KEY secret: haunt-bin was not updated."
-            exit 0
-          fi
           version="${TAG#v}"
-          pacman -Syu --noconfirm --needed git openssh pacman-contrib namcap
+          pacman -Syu --noconfirm --needed git openssh pacman-contrib namcap github-cli
 
           # makepkg will not run as root.
           useradd -m builder
@@ -45,13 +42,30 @@ jobs:
           sed -i "s/^_version=.*/_version=${version}/; s/^pkgrel=.*/pkgrel=1/" PKGBUILD
           chown -R builder .
           su builder -c 'updpkgsums'
-          # Built and installed once, so a broken package never reaches the AUR.
+          # Built and installed once, so a broken package never reaches the release or the AUR.
           (source PKGBUILD && pacman -S --noconfirm --needed "${depends[@]}")
           su builder -c 'makepkg --noconfirm'
           namcap haunt-bin-*.pkg.tar.zst
           pacman -U --noconfirm haunt-bin-*.pkg.tar.zst
           if ldd /usr/bin/haunt | grep 'not found'; then exit 1; fi
           su builder -c 'makepkg --printsrcinfo > .SRCINFO'
+
+      - name: Attach the package to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" /home/builder/pkg/haunt-bin-*.pkg.tar.zst --clobber --repo "$GITHUB_REPOSITORY"
+
+      - name: Push to the AUR
+        env:
+          AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "$AUR_SSH_KEY" ]; then
+            echo "::warning::No AUR_SSH_KEY secret: haunt-bin was not pushed to the AUR."
+            exit 0
+          fi
+          version="${TAG#v}"
+          cd /home/builder/pkg
 
           # The AUR's host key, as the Arch wiki publishes it (SHA256:RFzBCUItH9LZS0cKB5UE6ceAYhBD5C8GeOBip8Z11+4).
           # Named outright: in a job's container ssh looks in root's home, not $HOME.

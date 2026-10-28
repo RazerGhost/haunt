@@ -42,11 +42,15 @@ Download the installer for your system from the [releases](https://github.com/ra
 `.exe` for Windows, `.dmg` for macOS, `.deb`, `.rpm` or `.AppImage` for Linux. The builds are not signed yet, so
 Windows and macOS warn the first time you open Haunt.
 
-On Arch and its derivatives (CachyOS, EndeavourOS, Manjaro), install it from the AUR:
+On Arch and its derivatives (CachyOS, EndeavourOS, Manjaro), each release has a package to install with pacman
+(`haunt-bin-<version>-1-x86_64.pkg.tar.zst`, under the release's assets):
 
 ```bash
-paru -S haunt-bin
+sudo pacman -U https://github.com/RazerGhost/haunt/releases/download/v0.2.0/haunt-bin-0.2.0-1-x86_64.pkg.tar.zst
 ```
+
+Or build the same package from this repository with `makepkg -si` in `packaging/aur/haunt-bin`. It is meant for the
+AUR as `haunt-bin` (`paru -S haunt-bin`), which is not up yet.
 
 Haunt uses the git on your machine (2.24 or later) and reads TypeScript with the Node you already have (22.18 or
 later). Without Node it uses Bun or Deno; running a project's tests still needs Node. With none of the three, it still
