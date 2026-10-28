@@ -1,7 +1,7 @@
-import type { Appearance } from '~/bindings'
+import type { Appearance, ThemeFile } from '~/bindings'
 import iconSets from '~~/shared/iconSets.json'
 import { downloadedIconSets, iconComponent } from './useIconSets'
-import { applyLook } from '~~/shared/theme'
+import { applyLook, type Look } from '~~/shared/theme'
 
 /*
  * How the window looks, per profile (src-tauri/src/settings.rs keeps it with each profile): a theme with the profile's
@@ -11,7 +11,9 @@ import { applyLook } from '~~/shared/theme'
  * the text size in Settings scales from. Fonts are not bundled: a theme's font is used when it is installed on the
  * computer, else the system's, or loaded from coolLabs Fonts (fonts.coollabs.io, Google Fonts' fonts without the tracking) while Settings says so (the only time a look goes online;
  * the window's CSP allows those two addresses for fonts only). A profile from before looks were kept takes the light or
- * dark the window had chosen itself.
+ * dark the window had chosen itself. On Linux "system" means the desktop's light or dark, and a main colour can be the
+ * desktop's accent (desktop.rs). theme.json (theme_file.rs) goes over the profile's look: its fields, the colours of
+ * the window's parts, and a see-through background.
  */
 
 /** The theme's root font size in px; Settings' text size is a step either side of it. */
@@ -40,15 +42,19 @@ export function startAppearance(): void {
   })
 
   const downloaded = downloadedIconSets()
-  watch([() => info.value?.appearance, () => colorMode.value, downloaded], ([look]) => {
-    if (!look) return
+  const { desktop, themeFile, transparent } = repositories
+  watch([() => info.value?.appearance, () => colorMode.value, downloaded, desktop, themeFile, transparent], ([own]) => {
+    if (!own) return
+    const look = withThemeFile(own, themeFile.value.theme, transparent.value)
     if (!look.mode) {
       // Kept by the window until now: the profile takes it from here.
-      void haunt.setAppearance({ ...look, mode: colorMode.preference }).then((next) => { info.value = next }).catch(() => {})
+      void haunt.setAppearance({ ...own, mode: colorMode.preference }).then((next) => { info.value = next }).catch(() => {})
       return
     }
-    colorMode.preference = look.mode
-    const applied = applyLook(look)
+    // "System" is the desktop's light or dark where Haunt can read it (Linux: the webview's own follows GTK alone).
+    const system = desktop.value.dark === null ? 'system' : desktop.value.dark ? 'dark' : 'light'
+    colorMode.preference = look.mode === 'system' ? system : look.mode
+    const applied = applyLook(look, desktop.value.accent)
     const dark = colorMode.value === 'dark'
     // Nuxt UI's app config types its colours as the ones configured; any colour name works at runtime.
     Object.assign(appConfig.ui.colors as Record<string, string>, dark ? applied.colors.dark : applied.colors.light)
@@ -65,6 +71,19 @@ export function startAppearance(): void {
     for (const [name, config] of Object.entries(applied.components)) ui[name] = config
     changed = Object.keys(applied.components)
   }, { immediate: true })
+}
+
+/** The profile's look with what theme.json sets on top (each field it leaves empty is the profile's). */
+function withThemeFile(own: Appearance, file: ThemeFile | null, transparent: boolean): Look {
+  if (!file) return own
+  const { roles, opacity, ...fields } = file
+  const set = Object.fromEntries(Object.entries(fields).filter(([, value]) => value))
+  return { ...own, ...set, roles: Object.fromEntries(Object.entries(roles ?? {}).filter(([, value]) => value)), opacity: transparent ? opacity : null }
+}
+
+/** The fields of Appearance theme.json sets, which the profile's own choices do not change while it does. */
+export function themeFileFields(file: ThemeFile | null): Set<string> {
+  return new Set(Object.entries(file ?? {}).filter(([key, value]) => key !== 'roles' && key !== 'opacity' && value).map(([key]) => key))
 }
 
 export function useAppearance() {

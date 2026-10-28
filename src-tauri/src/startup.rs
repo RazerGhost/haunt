@@ -120,7 +120,7 @@ fn from_login_shell(name: &str) -> Option<(PathBuf, String)> {
         .output()
         .ok()?;
     let found = String::from_utf8_lossy(&output.stdout);
-    let path = PathBuf::from(found.lines().map(str::trim).filter(|line| line.starts_with('/')).last()?);
+    let path = PathBuf::from(found.lines().map(str::trim).rfind(|line| line.starts_with('/'))?);
     let version = version_of(&path)?;
     Some((path, version))
 }

@@ -1,15 +1,28 @@
 <script setup lang="ts">
 import { themeOf } from '~~/shared/theme'
+import { themeFileFields } from '~/composables/useAppearance'
 import { FONT_SIZES, FONTS, GROUP_VARIANTS, ICON_SETS, NEUTRAL_COLORS, PRESET_LOOKS, PRIMARY_COLORS, RADIUSES, SIZES, STOCK, presets } from '~~/shared/themes'
 
 /*
  * Settings, Appearance: the profile's look (a theme from shared/themes.ts, light or dark, Nuxt UI's main and neutral
- * colours, the corners, fonts and icons), kept by Rust with each profile (useAppearance). The profile's own choices go
+ * colours, named or any colour (ColourPick), the corners, fonts and icons), kept by Rust with each profile (useAppearance). The profile's own choices go
  * on top of the theme, each "Theme's" when empty.
  */
 const { remoteFonts } = usePreferences()
 const appearance = useAppearance()
-const { info } = useRepositories()
+const { info, desktop, themeFile, systemTitleBar, tiling } = useRepositories()
+const { inApp, mac } = useDesktop()
+const { save } = useAppSettings()
+/** The system's frame and title bar, for the whole app: saved, then the window changes its frame at once. */
+async function chooseTitleBar(on: boolean): Promise<void> {
+  if (!(await save(haunt.setSystemTitleBar(on)))) return
+  systemTitleBar.value = on
+  const { getCurrentWindow } = await import('@tauri-apps/api/window')
+  await getCurrentWindow().setDecorations(on)
+}
+/** What theme.json sets wins over the choices here: those fields say so. */
+const fileSets = computed(() => themeFileFields(themeFile.value.theme))
+const fromFile = (...keys: string[]) => (keys.some(key => fileSets.value.has(key)) ? t('SettingsAppearance.fromThemeFile') : undefined)
 
 const themes = [
   { value: 'system', icon: 'i-lucide-monitor' },
@@ -44,8 +57,9 @@ const withTheme = (label: string, values: { value: string, label: string }[]) =>
 const selected = (value: string | undefined) => value || THEME_VALUE
 const choose = (key: string, value: unknown) => appearance.change({ [key]: value === THEME_VALUE ? '' : String(value) })
 const SEMANTIC = [{ key: 'secondary' }, { key: 'success' }, { key: 'info' }, { key: 'warning' }, { key: 'error' }] as const
+/** The named colours, and the role's own hex when it has one (from the theme file, say). */
 const colorItems = (key: (typeof SEMANTIC)[number]['key']) => withTheme(chosenTheme.value.doc.colors?.[key] ?? STOCK.colors[key],
-  [...PRIMARY_COLORS, ...NEUTRAL_COLORS].map(value => ({ value, label: value })))
+  [...PRIMARY_COLORS, ...NEUTRAL_COLORS, ...[appearance.look.value?.[key]].filter(value => value?.startsWith('#'))].map(value => ({ value: value!, label: value! })))
 const radiusItems = computed(() => withTheme(`${chosenTheme.value.doc.radius ?? STOCK.radius} rem`, RADIUSES.map(value => ({ value: String(value), label: `${value} rem` }))))
 const fontItems = computed(() => withTheme(themeFont(chosenTheme.value.doc), [{ value: 'system', label: t('SettingsAppearance.systemFonts') }, ...FONTS.map(value => ({ value, label: value }))]))
 const sizeItems = computed(() => withTheme(`${chosenTheme.value.doc.fontSize ?? STOCK.fontSize} px`, FONT_SIZES.map(value => ({ value: String(value), label: `${value} px` }))))
@@ -72,8 +86,21 @@ const theme = computed({ get: () => appearance.look.value?.mode || 'system', set
 
 <template>
   <div class="grid content-start gap-5">
+    <UAlert
+      v-if="themeFile.theme || themeFile.problem"
+      icon="i-lucide-file-json"
+      :color="themeFile.problem ? 'warning' : 'neutral'"
+      variant="subtle"
+      :title="t('SettingsAppearance.themeFileTitle')"
+    >
+      <template #description>
+        <p>{{ themeFile.theme ? t('SettingsAppearance.themeFileSets', { path: themeFile.path }) : t('SettingsAppearance.themeFileUnread', { path: themeFile.path }) }}</p>
+        <p v-if="themeFile.problem" class="mt-1">{{ t('SettingsAppearance.themeFileProblem', { problem: themeFile.problem }) }}</p>
+        <p v-if="themeFile.leftOut.length" class="mt-1">{{ t('SettingsAppearance.themeFileLeftOut', { fields: themeFile.leftOut.join(', ') }) }}</p>
+      </template>
+    </UAlert>
     <p class="text-xs text-muted">{{ t('SettingsAppearance.profileBefore') }} <b class="text-highlighted">{{ info?.profile }}</b> {{ t('SettingsAppearance.profileAfter') }}</p>
-    <UFormField :label="t('SettingsAppearance.theme')">
+    <UFormField :label="t('SettingsAppearance.theme')" :hint="fromFile('theme')">
       <div class="grid grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-1.5">
         <button
           v-for="item in THEMES"
@@ -106,7 +133,7 @@ const theme = computed({ get: () => appearance.look.value?.mode || 'system', set
       <span class="flex-1">{{ t('SettingsAppearance.ownChoices', { count: ownChoices, theme: chosenTheme.name }) }}</span>
       <UButton :label="t('SettingsAppearance.backToTheme')" icon="i-lucide-rotate-ccw" size="xs" color="neutral" variant="outline" @click="appearance.pickTheme(chosenTheme.id)" />
     </div>
-    <UFormField :label="t('SettingsAppearance.lightOrDark')">
+    <UFormField :label="t('SettingsAppearance.lightOrDark')" :hint="fromFile('mode')">
       <UFieldGroup>
         <UButton
           v-for="option in themes"
@@ -125,7 +152,7 @@ const theme = computed({ get: () => appearance.look.value?.mode || 'system', set
         <UIcon :name="palette.icon" class="size-3.5" />{{ t(`SettingsAppearance.palette.${palette.mode}`) }}
         <UButton v-if="palette.mode === 'dark'" :label="t('SettingsAppearance.sameAsLight')" size="xs" color="neutral" variant="ghost" class="ml-auto" @click="appearance.change({ darkPrimary: appearance.look.value?.primary, darkNeutral: appearance.look.value?.neutral })" />
       </h3>
-      <UFormField :label="t('SettingsAppearance.mainColour')" :help="palette.mode === 'light' ? t('SettingsAppearance.mainColourLightHelp') : t('SettingsAppearance.mainColourDarkHelp')">
+      <UFormField :label="t('SettingsAppearance.mainColour')" :hint="fromFile(palette.primary)" :help="palette.mode === 'light' ? t('SettingsAppearance.mainColourLightHelp') : t('SettingsAppearance.mainColourDarkHelp')">
         <div class="flex max-w-lg flex-wrap items-center gap-1.5">
           <UButton :label="t('SettingsAppearance.themes')" size="xs" :color="!appearance.look.value?.[palette.primary] ? 'primary' : 'neutral'" :variant="!appearance.look.value?.[palette.primary] ? 'solid' : 'outline'" @click="appearance.change({ [palette.primary]: '' })" />
           <button
@@ -141,10 +168,29 @@ const theme = computed({ get: () => appearance.look.value?.mode || 'system', set
           >
             <span class="size-5 rounded-full border border-default" :style="{ background: swatch }" />
           </button>
+          <UTooltip v-if="desktop.accent || appearance.look.value?.[palette.primary] === 'system'" :text="desktop.accent ? t('SettingsAppearance.systemAccent') : t('SettingsAppearance.systemAccentNone')">
+            <button
+              type="button"
+              class="grid size-7 place-items-center rounded-full border-2"
+              :class="appearance.look.value?.[palette.primary] === 'system' ? 'border-highlighted' : 'border-transparent hover:border-accented'"
+              :aria-label="t('SettingsAppearance.mainColourOf', { palette: t(`SettingsAppearance.palette.${palette.mode}`), colour: t('SettingsAppearance.systemAccent') })"
+              :aria-pressed="appearance.look.value?.[palette.primary] === 'system'"
+              @click="appearance.change({ [palette.primary]: 'system' })"
+            >
+              <span class="grid size-5 place-items-center rounded-full border border-default" :style="{ background: desktop.accent ?? 'transparent' }">
+                <UIcon name="i-lucide-monitor" class="size-3 text-white drop-shadow" />
+              </span>
+            </button>
+          </UTooltip>
+          <ColourPick
+            :value="appearance.look.value?.[palette.primary]"
+            :label="t('SettingsAppearance.anyColourOf', { palette: t(`SettingsAppearance.palette.${palette.mode}`), role: t('SettingsAppearance.mainColour') })"
+            @pick="hex => appearance.change({ [palette.primary]: hex })"
+          />
         </div>
       </UFormField>
-      <UFormField :label="t('SettingsAppearance.greys')" :help="t('SettingsAppearance.greysHelp')">
-        <div class="flex max-w-lg flex-wrap gap-1">
+      <UFormField :label="t('SettingsAppearance.greys')" :hint="fromFile(palette.neutral)" :help="t('SettingsAppearance.greysHelp')">
+        <div class="flex max-w-lg flex-wrap items-center gap-1">
           <UButton :label="t('SettingsAppearance.themes')" size="xs" :color="!appearance.look.value?.[palette.neutral] ? 'primary' : 'neutral'" :variant="!appearance.look.value?.[palette.neutral] ? 'solid' : 'outline'" @click="appearance.change({ [palette.neutral]: '' })" />
           <UButton
             v-for="(swatch, name) in NEUTRAL"
@@ -158,28 +204,40 @@ const theme = computed({ get: () => appearance.look.value?.mode || 'system', set
           >
             <template #leading><span class="size-3 rounded-full" :style="{ background: swatch }" /></template>
           </UButton>
+          <ColourPick
+            :value="appearance.look.value?.[palette.neutral]"
+            :label="t('SettingsAppearance.anyColourOf', { palette: t(`SettingsAppearance.palette.${palette.mode}`), role: t('SettingsAppearance.greys') })"
+            @pick="hex => appearance.change({ [palette.neutral]: hex })"
+          />
         </div>
       </UFormField>
     </section>
+    <USwitch
+      v-if="inApp && !mac"
+      :model-value="systemTitleBar"
+      :label="t('SettingsAppearance.systemTitleBar')"
+      :description="tiling ? t('SettingsAppearance.systemTitleBarTiling', { name: tiling }) : t('SettingsAppearance.systemTitleBarHelp')"
+      @update:model-value="chooseTitleBar"
+    />
     <USwitch v-model="remoteFonts" :label="t('SettingsAppearance.webFonts')" :description="t('SettingsAppearance.webFontsHelp')" />
     <UFormField :label="t('SettingsAppearance.otherColours')" :help="t('SettingsAppearance.otherColoursHelp')">
       <div class="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-2">
-        <UFormField v-for="role in SEMANTIC" :key="role.key" :label="t(`SettingsAppearance.role.${role.key}`)" size="xs">
+        <UFormField v-for="role in SEMANTIC" :key="role.key" :label="t(`SettingsAppearance.role.${role.key}`)" :hint="fromFile(role.key)" size="xs">
           <USelect :model-value="selected(appearance.look.value?.[role.key])" :items="colorItems(role.key)" size="sm" class="w-full capitalize" @update:model-value="value => choose(role.key, value)" />
         </UFormField>
       </div>
     </UFormField>
     <div class="grid grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] gap-3">
-      <UFormField :label="t('SettingsAppearance.corners')">
+      <UFormField :label="t('SettingsAppearance.corners')" :hint="fromFile('radius')">
         <USelect :model-value="selected(appearance.look.value?.radius)" :items="radiusItems" size="sm" class="w-full" @update:model-value="value => choose('radius', value)" />
       </UFormField>
-      <UFormField :label="t('SettingsAppearance.font')" :help="remoteFonts ? t('SettingsAppearance.fontRemoteHelp') : t('SettingsAppearance.fontLocalHelp')">
+      <UFormField :label="t('SettingsAppearance.font')" :hint="fromFile('font')" :help="remoteFonts ? t('SettingsAppearance.fontRemoteHelp') : t('SettingsAppearance.fontLocalHelp')">
         <USelect :model-value="selected(appearance.look.value?.font)" :items="fontItems" size="sm" class="w-full" @update:model-value="value => choose('font', value)" />
       </UFormField>
-      <UFormField :label="t('SettingsAppearance.fontSize')" :help="t('SettingsAppearance.fontSizeHelp')">
+      <UFormField :label="t('SettingsAppearance.fontSize')" :hint="fromFile('fontSize')" :help="t('SettingsAppearance.fontSizeHelp')">
         <USelect :model-value="selected(appearance.look.value?.fontSize)" :items="sizeItems" size="sm" class="w-full" @update:model-value="value => choose('fontSize', value)" />
       </UFormField>
-      <UFormField :label="t('SettingsAppearance.icons')" :help="iconReady(wantedIcons) ? t('SettingsAppearance.iconsHelp') : undefined">
+      <UFormField :label="t('SettingsAppearance.icons')" :hint="fromFile('icons')" :help="iconReady(wantedIcons) ? t('SettingsAppearance.iconsHelp') : undefined">
         <USelect :model-value="selected(appearance.look.value?.icons)" :items="iconItems" size="sm" class="w-full" :loading="!!icons.downloading.value" @update:model-value="chooseIcons" />
         <template v-if="!iconReady(wantedIcons)" #help>
           <span class="flex flex-wrap items-center gap-1.5">
@@ -188,10 +246,10 @@ const theme = computed({ get: () => appearance.look.value?.mode || 'system', set
           </span>
         </template>
       </UFormField>
-      <UFormField v-for="group in GROUPS" :key="group.key" :label="t(`SettingsAppearance.group.${group.key}`)">
+      <UFormField v-for="group in GROUPS" :key="group.key" :label="t(`SettingsAppearance.group.${group.key}`)" :hint="fromFile(group.key)">
         <USelect :model-value="selected(appearance.look.value?.[group.key])" :items="groupItems(group)" size="sm" class="w-full capitalize" @update:model-value="value => choose(group.key, value)" />
       </UFormField>
-      <UFormField :label="t('SettingsAppearance.controlSize')">
+      <UFormField :label="t('SettingsAppearance.controlSize')" :hint="fromFile('size')">
         <USelect :model-value="selected(appearance.look.value?.size)" :items="controlSizes" size="sm" class="w-full" @update:model-value="value => choose('size', value)" />
       </UFormField>
     </div>

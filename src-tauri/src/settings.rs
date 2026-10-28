@@ -57,6 +57,8 @@ pub const PRIMARY: [&str; 18] = [
     "neutral", "red", "orange", "amber", "yellow", "lime", "green", "emerald", "teal", "cyan", "sky", "blue", "indigo",
     "violet", "purple", "fuchsia", "pink", "rose",
 ];
+/// The main colour that is the desktop's accent (Linux), or the theme's where the desktop has none.
+pub const SYSTEM_ACCENT: &str = "system";
 pub const NEUTRAL: [&str; 9] = ["slate", "gray", "zinc", "neutral", "stone", "taupe", "mauve", "mist", "olive"];
 pub const RADIUS: [&str; 8] = ["0", "0.125", "0.25", "0.375", "0.5", "0.625", "0.75", "1"];
 pub const FONT_SIZE: [&str; 5] = ["14", "15", "16", "17", "18"];
@@ -116,15 +118,19 @@ impl Appearance {
     /// The same, with anything unknown left to the theme (empty), and Haunt's own theme where none is named.
     fn checked(self) -> Appearance {
         let pick = |value: String, known: &[&str]| if known.contains(&value.as_str()) { value } else { String::new() };
-        let color = |value: String| pick(value, &[&PRIMARY[..], &NEUTRAL[..]].concat());
+        // A named colour, or any colour as a hex (shared/ramp.ts makes its shades).
+        let named_or_hex = |value: String, known: &[&str]| hex(&value).unwrap_or_else(|| pick(value, known));
+        let color = |value: String| named_or_hex(value, &[&PRIMARY[..], &NEUTRAL[..]].concat());
+        // The main colour may also be the desktop's accent, whatever it is when shown (desktop.rs).
+        let main = [&PRIMARY[..], &[SYSTEM_ACCENT]].concat();
         let theme = pick(self.theme, &THEMES);
         Appearance {
             mode: pick(self.mode, &MODE),
             theme: if theme.is_empty() { THEMES[0].to_owned() } else { theme },
-            primary: pick(self.primary, &PRIMARY),
-            neutral: pick(self.neutral, &NEUTRAL),
-            dark_primary: pick(self.dark_primary, &PRIMARY),
-            dark_neutral: pick(self.dark_neutral, &NEUTRAL),
+            primary: named_or_hex(self.primary, &main),
+            neutral: named_or_hex(self.neutral, &NEUTRAL),
+            dark_primary: named_or_hex(self.dark_primary, &main),
+            dark_neutral: named_or_hex(self.dark_neutral, &NEUTRAL),
             secondary: color(self.secondary),
             success: color(self.success),
             info: color(self.info),
@@ -140,6 +146,37 @@ impl Appearance {
             size: pick(self.size, &SIZES),
         }
     }
+}
+
+/// A look with anything unknown left to the theme (`Appearance::checked`), for the theme file (theme_file.rs).
+pub fn checked(appearance: Appearance) -> Appearance {
+    appearance.checked()
+}
+
+/// Each field of two looks by its name as the window knows it (`darkPrimary`): (name, first's value, second's).
+pub fn fields(first: &Appearance, second: &Appearance) -> Vec<(String, String, String)> {
+    let as_map = |look: &Appearance| match serde_json::to_value(look) {
+        Ok(serde_json::Value::Object(map)) => map,
+        _ => serde_json::Map::new(),
+    };
+    let (first, second) = (as_map(first), as_map(second));
+    let text =
+        |value: Option<&serde_json::Value>| value.and_then(|value| value.as_str()).unwrap_or_default().to_owned();
+    first.keys().map(|name| (name.clone(), text(first.get(name)), text(second.get(name)))).collect()
+}
+
+/// A colour as `#rrggbb` in lower case, from `#rrggbb` or `#rgb`; None when it is not a hex.
+pub fn hex(value: &str) -> Option<String> {
+    let digits = value.trim().strip_prefix('#')?;
+    if !digits.chars().all(|digit| digit.is_ascii_hexdigit()) {
+        return None;
+    }
+    let digits = match digits.len() {
+        6 => digits.to_owned(),
+        3 => digits.chars().flat_map(|digit| [digit, digit]).collect(),
+        _ => return None,
+    };
+    Some(format!("#{}", digits.to_ascii_lowercase()))
 }
 
 /// The colours a tab may have (Tailwind's names, which the window draws).
@@ -188,6 +225,8 @@ pub struct Settings {
     pub host_tools: bool,
     /// Whether Haunt looks for a new version of itself now and then (GitHub's releases). Off by default.
     pub update_check: bool,
+    /// The system's own window frame and title bar instead of Haunt's buttons (Windows and Linux). Off by default.
+    pub system_title_bar: bool,
     /// Pinned and coloured tabs, by folder.
     pub tab_looks: HashMap<String, TabLook>,
     /// The folders the repository manager looks through for repositories, for every profile.
@@ -259,6 +298,7 @@ impl Settings {
             appearance,
             host_tools: read.host_tools,
             update_check: read.update_check,
+            system_title_bar: read.system_title_bar,
             tab_looks,
             repository_folders,
         };
@@ -655,8 +695,27 @@ mod tests {
             theme: "cobalt".into(),
             ..Appearance::default()
         };
+        settings.set_appearance(Appearance { dark_primary: SYSTEM_ACCENT.into(), ..blue.clone() }).unwrap();
+        assert!(
+            settings.set_appearance(Appearance { neutral: SYSTEM_ACCENT.into(), ..blue.clone() }).is_err(),
+            "the accent is a main colour only"
+        );
         settings.set_appearance(blue.clone()).unwrap();
         assert!(settings.set_appearance(Appearance { primary: "chartreuse".into(), ..blue.clone() }).is_err());
+        // Any colour as a hex; kept as `#rrggbb` in lower case, and nothing that only looks like one.
+        let hexes = Appearance {
+            primary: "#2b7fff".into(),
+            dark_neutral: "#141218".into(),
+            error: "#f2b8b5".into(),
+            ..blue.clone()
+        };
+        settings.set_appearance(hexes).unwrap();
+        assert_eq!(hex("#ABC").as_deref(), Some("#aabbcc"));
+        assert_eq!(Appearance { neutral: "#D0BCFF".into(), ..Appearance::default() }.checked().neutral, "#d0bcff");
+        for wrong in ["#12345", "#ggg", "2b7fff", "#2b7fff00"] {
+            assert!(settings.set_appearance(Appearance { primary: wrong.into(), ..blue.clone() }).is_err(), "{wrong}");
+        }
+        settings.set_appearance(blue.clone()).unwrap();
         settings.new_profile("Work").unwrap();
         assert_eq!(settings.appearance, blue, "a new profile starts with the look in use");
         let light = Appearance { mode: "light".into(), primary: "rose".into(), ..blue.clone() };

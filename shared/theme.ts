@@ -1,3 +1,4 @@
+import { contrast, hexOf, rampFrom, rampName } from './ramp.ts'
 import { presets, STOCK, type ColorAlias, type ShadeStop, type ThemeDoc, type VariantGroup } from './themes.ts'
 
 /*
@@ -8,7 +9,8 @@ import { presets, STOCK, type ColorAlias, type ShadeStop, type ThemeDoc, type Va
  * Modelled on Nuxt UI's theme studio (its docs' theme engine), for the parts a theme may set.
  */
 
-/** A profile's look as Rust keeps it (settings.rs `Appearance`); every field empty is the theme's. */
+/** A profile's look as Rust keeps it (settings.rs `Appearance`); every field empty is the theme's. A colour is a
+ * Tailwind name or a hex (`#2b7fff`), whose shades shared/ramp.ts makes. */
 export interface Look {
   mode?: string
   theme?: string
@@ -29,6 +31,36 @@ export interface Look {
   inputs?: string
   panels?: string
   size?: string
+  /** A theme file's colours for the window's own parts (theme_file.rs), each a hex, over the shades. */
+  roles?: Partial<Record<Role, string>>
+  /** A theme file's background opacity, 0 to 1, for the compositor's blur behind a transparent window (Linux). */
+  opacity?: number | null
+}
+
+export type Role = 'background' | 'raised' | 'text' | 'muted' | 'border' | 'primary' | 'onPrimary'
+
+/** Nuxt UI's tokens each role sets: the role's colour, or a mix of it with another role's (`[colour, share, other]`). */
+const ROLE_TOKENS: Record<Role, [string, Role | [Role, number, Role]][]> = {
+  background: [['--ui-bg', 'background']],
+  raised: [['--ui-bg-elevated', 'raised'], ['--ui-bg-muted', ['raised', 50, 'background']], ['--ui-bg-accented', ['raised', 85, 'text']]],
+  text: [['--ui-text', 'text'], ['--ui-text-highlighted', 'text'], ['--ui-bg-inverted', 'text']],
+  muted: [['--ui-text-muted', 'muted'], ['--ui-text-toned', ['muted', 50, 'text']], ['--ui-text-dimmed', ['muted', 70, 'background']]],
+  border: [['--ui-border', 'border'], ['--ui-border-muted', 'border'], ['--ui-border-accented', ['border', 80, 'text']]],
+  primary: [['--ui-primary', 'primary']],
+  onPrimary: [['--ui-text-inverted', 'onPrimary']]
+}
+
+/** The tokens a theme file's roles set; a mix needs both of its roles. */
+function roleTokens(roles: Partial<Record<Role, string>>): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const [role, tokens] of Object.entries(ROLE_TOKENS) as [Role, (typeof ROLE_TOKENS)[Role]][]) {
+    if (!roles[role]) continue
+    for (const [token, from] of tokens) {
+      if (typeof from === 'string') out[token] = roles[from]!
+      else if (roles[from[2]]) out[token] = `color-mix(in oklab, ${roles[from[0]]} ${from[1]}%, ${roles[from[2]]})`
+    }
+  }
+  return out
 }
 
 export interface Applied {
@@ -110,8 +142,11 @@ function defaultsOf(doc: ThemeDoc, look: Look): Record<string, Record<string, un
   return out
 }
 
-export function applyLook(look: Look): Applied {
+/** `accent` is the desktop's (desktop.rs), for a main colour of "system"; without one that is the theme's. */
+export function applyLook(look: Look, accent?: string | null): Applied {
   const doc = themeOf(look.theme).doc
+  const system = (value: string | undefined) => (value === 'system' ? accent ?? '' : value)
+  look = { ...look, primary: system(look.primary), darkPrimary: system(look.darkPrimary) }
   const plain = {
     light: look.primary ? look.primary === 'neutral' : !!doc.blackAsPrimary,
     dark: look.darkPrimary ? look.darkPrimary === 'neutral' : !!doc.blackAsPrimary
@@ -125,14 +160,25 @@ export function applyLook(look: Look): Applied {
     if (neutral) out.neutral = neutral
     // A plain main colour still needs a ramp for its tints: the greys'.
     if (dark ? plain.dark : plain.light) out.primary = 'neutral'
+    // A hex is named by its shades (below).
+    for (const alias of Object.keys(out) as ColorAlias[]) {
+      const hex = hexOf(out[alias])
+      if (hex) out[alias] = rampName(hex)
+    }
     return out
   }
+  const colors = { light: roles(false), dark: roles(true) }
 
   const css: string[] = []
   // Custom ramps, as the `--color-*` Nuxt UI's colours point at.
   const ramps: Record<string, string> = {}
   for (const [name, palette] of Object.entries(doc.palettes ?? {})) {
     for (const [step, value] of Object.entries(palette.shades)) ramps[`--color-${name}-${step}`] = value
+  }
+  // And one for each hex the look names.
+  for (const name of new Set([...Object.values(colors.light), ...Object.values(colors.dark)])) {
+    if (!name.startsWith('hex-')) continue
+    for (const [step, value] of Object.entries(rampFrom(`#${name.slice(4)}`))) ramps[`--color-${name}-${step}`] = value
   }
   css.push(block(':root', ramps))
   // The semantic tokens per mode: the theme's shades, then its raw values, then a plain main colour. Higher than Nuxt
@@ -146,6 +192,19 @@ export function applyLook(look: Look): Applied {
   Object.assign(tokens.dark, doc.tokens?.dark)
   if (plain.light) tokens.light['--ui-primary'] = 'black'
   if (plain.dark) tokens.dark['--ui-primary'] = 'white'
+  // A main colour given as a hex is the main colour itself, not the shade beside it, where it reads on the page (3:1).
+  for (const [mode, chosen, page] of [['light', look.primary, '#ffffff'], ['dark', look.darkPrimary, '#171717']] as const) {
+    const hex = hexOf(chosen ?? '')
+    if (hex && contrast(hex, page) >= 3) tokens[mode]['--ui-primary'] = hex
+  }
+  // A theme file's roles, the same in both modes (a tool writes one at a time), then its opacity.
+  Object.assign(tokens.light, roleTokens(look.roles ?? {}))
+  Object.assign(tokens.dark, roleTokens(look.roles ?? {}))
+  if (look.opacity != null && look.opacity < 1) {
+    const share = `${Math.round(look.opacity * 100)}%`
+    tokens.light['--ui-bg'] = `color-mix(in srgb, ${tokens.light['--ui-bg'] ?? '#fff'} ${share}, transparent)`
+    tokens.dark['--ui-bg'] = `color-mix(in srgb, ${tokens.dark['--ui-bg'] ?? 'var(--ui-color-neutral-900)'} ${share}, transparent)`
+  }
   css.push(block('html:root:not(.dark)', tokens.light), block('html:root.dark', tokens.dark))
 
   // Corners and fonts.
@@ -167,7 +226,7 @@ export function applyLook(look: Look): Applied {
   for (const [name, fragment] of Object.entries(doc.components ?? {})) components = { ...components, [name]: merge(components[name] ?? {}, fragment) }
 
   return {
-    colors: { light: roles(false), dark: roles(true) },
+    colors,
     plain,
     css: css.filter(Boolean).join('\n'),
     fontSize: Number(look.fontSize) || doc.fontSize || STOCK.fontSize,

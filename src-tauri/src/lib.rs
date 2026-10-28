@@ -14,6 +14,7 @@ mod appimage;
 mod askpass;
 mod code;
 #[cfg(debug_assertions)]
+mod desktop;
 mod devbridge;
 mod editor;
 mod events;
@@ -29,6 +30,7 @@ mod settings;
 mod sidecar;
 mod startup;
 mod testrun;
+mod theme_file;
 mod tryit;
 mod watch;
 
@@ -129,6 +131,12 @@ pub fn run() {
             }));
             // git's questions during a fetch, pull or push, asked in the window.
             askpass::start(events.clone())?;
+            // The desktop's light or dark, accent and window buttons, followed (Linux).
+            desktop::start(events.clone());
+            // theme.json, which a wallpaper tool may write; read before the window is made (its opacity).
+            if let Ok(config_root) = app.path().config_dir() {
+                theme_file::start(&paths::plain(config_root), events.clone());
+            }
             let log = (!cfg!(debug_assertions)).then(|| logs.join("scanner.log"));
             let cache = app.path().app_cache_dir().ok().map(paths::plain).map(|dir| dir.join("calls"));
             if let Some(cache) = &cache {
@@ -143,6 +151,7 @@ pub fn run() {
             app.manage(api.clone());
             // Fetches the repository shown now and then, when Settings asks for it.
             api::fetch_in_background(api.clone());
+            let system_title_bar = api.repos.system_title_bar();
             #[cfg(debug_assertions)]
             devbridge::start(api, events);
             #[cfg(not(debug_assertions))]
@@ -158,12 +167,17 @@ pub fn run() {
             let builder = builder.title_bar_style(tauri::TitleBarStyle::Overlay).hidden_title(true);
             #[cfg(not(target_os = "macos"))]
             let builder = builder.decorations(false).shadow(true);
+            // A theme file's opacity below 1 lets the compositor's blur through the window's background (Linux): the
+            // window has to be made transparent for that, so it is read here, once.
+            #[cfg(target_os = "linux")]
+            let builder = builder.transparent(theme_file::transparent_window());
             let window = builder.build()?;
-            // Again once built, after the window-state plugin has restored what it keeps.
+            // Again once built, after the window-state plugin has restored what it keeps; the system's frame when
+            // Settings asks for it.
             #[cfg(not(target_os = "macos"))]
-            window.set_decorations(false)?;
+            window.set_decorations(system_title_bar)?;
             #[cfg(target_os = "macos")]
-            let _ = window;
+            let _ = (window, system_title_bar);
 
             // The folder named on the command line (`haunt .`), or else the repository shown last time, starts
             // scanning while the window loads.

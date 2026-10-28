@@ -7,7 +7,7 @@
  * manager or open a terminal there. With more than one profile, the profile in use is first in the row: a menu to switch, add,
  * rename or delete them (settings.rs keeps each profile's tabs).
  */
-const { info, picking, closed, chooseRoot, closeTab, reopenClosed } = useRepositories()
+const { info, picking, closed, systemTitleBar, chooseRoot, closeTab, reopenClosed } = useRepositories()
 const dialog = useDialog()
 const failure = useFailure()
 
@@ -163,6 +163,7 @@ function show(path: string): void {
 
 <template>
   <div data-tauri-drag-region class="flex h-10 shrink-0 items-stretch border-b border-default bg-elevated/40 select-none" :class="inApp && mac ? 'pl-20' : 'pl-2'">
+    <WindowControls v-if="inApp && !mac && !systemTitleBar" side="left" class="-ml-2 mr-1" />
     <UDropdownMenu v-if="others.length" :items="profileMenu" :content="{ align: 'start' }">
       <button
         type="button"
@@ -226,6 +227,6 @@ function show(path: string): void {
       </UDropdownMenu>
     </nav>
     <div data-tauri-drag-region class="min-w-8 flex-1" />
-    <WindowControls v-if="inApp && !mac" />
+    <WindowControls v-if="inApp && !mac && !systemTitleBar" side="right" />
   </div>
 </template>

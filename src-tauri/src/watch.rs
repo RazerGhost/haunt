@@ -259,6 +259,20 @@ pub fn git(dir: &Path, on: impl Fn(Change) + Send + Sync + Clone + 'static) -> V
     vec![watched]
 }
 
+/// One file, by watching its folder alone (an editor or a tool may write a new file in its place): `on` after each
+/// change to it.
+pub fn file(file: &Path, on: impl Fn() + Send + Sync + 'static) -> Option<Watcher> {
+    let folder = file.parent()?;
+    let name = file.file_name()?.to_owned();
+    watcher(
+        Duration::from_millis(200),
+        folder,
+        RecursiveMode::NonRecursive,
+        move |path| (path.file_name() == Some(name.as_os_str())).then(|| Change::Scan(String::new())),
+        move |_| on(),
+    )
+}
+
 /// The scanner's own code, while Haunt itself is worked on: a change needs a new scanner process.
 #[cfg(debug_assertions)]
 pub fn sidecar(dir: &Path, on: impl Fn(Change) + Send + Sync + 'static) -> Option<Watcher> {

@@ -64,11 +64,17 @@ Everything Haunt does, by part of the window. The [README](../README.md) has the
 - **Profiles**: groups of repositories (work, your own, a client's), each with its own tabs, recent list and look,
   switched from the title bar. Trusted folders and the other settings are shared.
 - **Appearance**, per profile: Haunt's theme or one of Nuxt UI's twelve, then your own choices on top (light, dark or
-  the system's; the main colour and the greys, apart for light and for dark; the other colours; corners, font, text
-  size, icons, buttons, fields, panels and control size). Fonts are not bundled: a theme's font shows when it is
-  installed, and can be loaded from coolLabs Fonts if you switch that on. Lucide icons come with Haunt; another set
-  (Bootstrap, Phosphor, Tabler, Remix, Material, Heroicons, Iconoir) is downloaded once when you pick it, checked, and
-  kept on your computer.
+  the system's; the main colour and the greys, apart for light and for dark, a named colour or any colour from the
+  picker; the other colours; corners, font, text size, icons, buttons, fields, panels and control size). Fonts are not
+  bundled: a theme's font shows when it is installed, and can be loaded from coolLabs Fonts if you switch that on.
+  Lucide icons come with Haunt; another set (Bootstrap, Phosphor, Tabler, Remix, Material, Heroicons, Iconoir) is
+  downloaded once when you pick it, checked, and kept on your computer.
+- **On Linux, the desktop's look**: light or dark and the accent colour from the desktop's settings portal (followed as
+  they change; `gsettings` without a portal), the accent as a main colour choice, and the window buttons your desktop
+  asks for (`button-layout`), on its side. **theme.json** lets a wallpaper tool (matugen, pywal, wallust) colour Haunt
+  with the rest of the desktop, down to the background and text, with a see-through background for the compositor's
+  blur: see [theming.md](theming.md). **The system's title bar** instead of Haunt's buttons is a setting, on Windows
+  and Linux.
 - **Settings**: the language (English or Dutch; it starts as the system's), test files shown or not, the editor,
   diffs (wrapping, tab width, whitespace), commit times and order, what a pull does when the branches went apart,
   fetching in the background, sign-off by default, pull request status, the update check, and the trusted folders.

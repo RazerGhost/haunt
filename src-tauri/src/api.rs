@@ -58,11 +58,21 @@ impl Raw {
 }
 
 #[derive(Debug, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct Startup {
     pub problems: Vec<String>,
     /// The tiling compositor or window manager the window is in (Hyprland, Sway, i3…), which places and sizes windows
     /// itself: the window shows only Close then. Null elsewhere.
     pub tiling: Option<String>,
+    /// The desktop's light or dark, accent and window buttons as far as read yet (Linux); the news `desktop` says
+    /// when they change.
+    pub desktop: crate::desktop::Desktop,
+    /// theme.json as read at start; the news `themeFile` says when it changes.
+    pub theme_file: crate::theme_file::ThemeFileState,
+    /// The window has the system's frame and title bar, not Haunt's buttons (Settings, Appearance).
+    pub system_title_bar: bool,
+    /// The window is see-through, so theme.json's opacity applies (Linux, as the file was at start).
+    pub transparent: bool,
 }
 
 /// What the local changes compare the working tree with.
@@ -123,7 +133,7 @@ commands! {
     /* Tabs, profiles and the repository manager (repos/) */
 
     /// What is missing on this machine (a JavaScript runtime, git), said once at start.
-    fn startup(api) -> Startup { Ok(Startup { problems: api.problems.clone(), tiling: crate::startup::tiling() }) }
+    fn startup(api) -> Startup { Ok(Startup { problems: api.problems.clone(), tiling: crate::startup::tiling(), desktop: crate::desktop::current(), theme_file: crate::theme_file::current(), system_title_bar: api.repos.system_title_bar(), transparent: crate::theme_file::transparent_window() }) }
     fn info(api) -> RootInfo { Ok(api.repos.info()) }
     fn open(api, path: String) -> RootInfo { api.repos.open(&path) }
     fn close(api, path: String) -> RootInfo { Ok(api.repos.close(&path)) }
@@ -656,6 +666,8 @@ commands! {
     fn set_git_settings(api, pull: PullChoice, fetch_every: u32) -> AppSettings { api.repos.set_git(pull, fetch_every) }
     /// Pull request status through the host's tool, and the update check: both off by default.
     fn set_online(api, host_tools: bool, update_check: bool) -> AppSettings { Ok(api.repos.set_online(host_tools, update_check)) }
+    /// The system's title bar instead of Haunt's own buttons (Windows and Linux); the window changes its frame.
+    fn set_system_title_bar(api, on: bool) -> AppSettings { Ok(api.repos.set_system_title_bar(on)) }
     /// Stops trusting a folder, shown or not.
     fn forget_trust(api, path: String) -> AppSettings { Ok(api.repos.forget_trust(&path)) }
     /// Removes the kept call graphs; how many there were.

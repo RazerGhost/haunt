@@ -1,4 +1,5 @@
-import type { GitPart, RootInfo } from '~~/shared/types'
+import type { DesktopLook, GitPart, RootInfo } from '~~/shared/types'
+import type { ThemeFileState } from '~/bindings'
 import type { News } from '~/utils/bridge'
 
 /*
@@ -12,6 +13,15 @@ const info = shallowRef<RootInfo | null>(null)
 const problems = ref<string[]>([])
 /** The tiling compositor the window is in (Hyprland, Sway…): it places and sizes the window itself. Null elsewhere. */
 const tiling = ref<string | null>(null)
+/** The desktop's light or dark, accent and window buttons (Linux; all null elsewhere), followed as they change. */
+const desktop = shallowRef<DesktopLook>({ dark: null, accent: null, buttons: null })
+/** theme.json (theme_file.rs): what it sets wins over the profile's own look. */
+const themeFile = shallowRef<ThemeFileState>({ path: '', theme: null, problem: null, leftOut: [] })
+let themeFileHeard = false
+/** The window has the system's frame and title bar (Settings, Appearance), so Haunt draws no window buttons. */
+const systemTitleBar = ref(false)
+/** The window is see-through (Linux, theme.json's opacity at start): only then does that opacity apply. */
+const transparent = ref(false)
 /** The repository screen is open on request (it also shows when no repository is open). */
 const picking = ref(false)
 /** Counts the 'git' news per part of git (HEAD, refs, the index, the stash), all in this one place. */
@@ -41,12 +51,22 @@ export async function startRepositories(): Promise<void> {
     if (news.repo !== null && news.repo !== repo.value && news.type !== 'root') return
     if (news.type === 'git') for (const part of news.parts) git[part]++
     if (news.type === 'root' || news.type === 'trust') void loadInfo()
+    if (news.type === 'desktop') desktop.value = news.desktop
+    if (news.type === 'themeFile') {
+      themeFile.value = news.state as ThemeFileState
+      themeFileHeard = true
+    }
     for (const listener of listeners) listener(news)
   })
   try {
     const started = await haunt.startup()
     problems.value = started.problems
     tiling.value = started.tiling
+    // The news may have come first.
+    if (desktop.value.dark === null && desktop.value.accent === null && desktop.value.buttons === null) desktop.value = started.desktop
+    if (!themeFileHeard) themeFile.value = started.themeFile
+    systemTitleBar.value = started.systemTitleBar
+    transparent.value = started.transparent
   } catch { /* said again on the first call */ }
   await loadInfo()
 }
@@ -114,11 +134,11 @@ export function useRepositories() {
     return (await chooseRoot(path)) === null
   }
 
-  return { info, repo, problems, tiling, picking, closed, gitChanged, chooseRoot, closeTab, reopenClosed, setTrust, rememberRoute, onNews }
+  return { info, repo, problems, tiling, desktop, themeFile, systemTitleBar, picking, closed, gitChanged, chooseRoot, closeTab, reopenClosed, setTrust, rememberRoute, onNews }
 }
 
 /**
  * The state without the router, for what starts before the window (the plugin, the composables' start functions).
  * Last in the file: Nuxt's export scanner (mlly) misses an exported function that follows a one-line exported object.
  */
-export const repositories = { info, repo, problems, picking, gitChanged, onNews }
+export const repositories = { info, repo, problems, desktop, themeFile, transparent, picking, gitChanged, onNews }

@@ -41,6 +41,11 @@ tree-sitter-python = "=0.25.0"
 tree-sitter-ruby = "=0.23.1"
 tree-sitter-rust = "=0.24.2"
 
+# The desktop's look on Linux, from the settings portal over D-Bus (desktop.rs); in the tree already (the notification
+# and single-instance plugins).
+[target.'cfg(target_os = "linux")'.dependencies]
+zbus = "=5.19.0"
+
 [profile.release]
 codegen-units = 1
 lto = true

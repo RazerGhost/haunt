@@ -19,6 +19,8 @@ pub struct AppSettings {
     pub host_tools: bool,
     /// Looking for a new version of Haunt now and then; off by default.
     pub update_check: bool,
+    /// The system's window frame and title bar instead of Haunt's own buttons (Windows and Linux).
+    pub system_title_bar: bool,
     pub trusted: Vec<TrustedFolder>,
     pub version: String,
     pub folders: AppFolders,
@@ -58,6 +60,7 @@ impl Repos {
             fetch_every: inner.settings.fetch_every,
             host_tools: inner.settings.host_tools,
             update_check: inner.settings.update_check,
+            system_title_bar: inner.settings.system_title_bar,
             trusted: inner
                 .settings
                 .trusted
@@ -101,6 +104,20 @@ impl Repos {
             inner.settings.save(&self.context.settings);
         }
         self.app_settings()
+    }
+
+    /// The system's title bar or Haunt's own; the window changes its frame itself.
+    pub fn set_system_title_bar(&self, on: bool) -> AppSettings {
+        {
+            let mut inner = self.inner.lock();
+            inner.settings.system_title_bar = on;
+            inner.settings.save(&self.context.settings);
+        }
+        self.app_settings()
+    }
+
+    pub fn system_title_bar(&self) -> bool {
+        self.inner.lock().settings.system_title_bar
     }
 
     pub fn host_tools(&self) -> bool {

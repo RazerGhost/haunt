@@ -2637,6 +2637,7 @@ dependencies = [
  "tree-sitter-python",
  "tree-sitter-ruby",
  "tree-sitter-rust",
+ "zbus",
 ]
 
 [[package]]

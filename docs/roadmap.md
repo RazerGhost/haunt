@@ -45,57 +45,21 @@ show, indexer use (`order[1]`), and operator uses in C++.
 
 ## 7. Fit in on Linux
 
-On Windows and macOS Haunt's own themes fit; on Linux people theme the whole desktop (GTK and Qt themes, an accent
-colour, wallpaper tools such as pywal, matugen and wallust), and a fixed look stands out. Haunt follows the desktop by
-default, takes a theme file for those who generate their colours, and can use the system's title bar. In this order:
+Built, not yet tried on Linux: any colour as a hex with its shades (shared/ramp.ts) and a colour picker in Appearance;
+the desktop's light or dark, accent and window buttons from the settings portal or gsettings (src-tauri/src/desktop.rs);
+theme.json with roles, mode, font and opacity, watched (src-tauri/src/theme_file.rs, docs/theming.md); and "Use the
+system's title bar". In a Debian container the Linux code passes clippy and its own tests; what the container cannot
+show (a portal, a compositor, WebKitGTK drawing) is left, on a real machine:
 
-1. **Any colour, not only the palette's.** Needed by 2 and 3: a desktop accent or a pywal colour is any colour, and
-   Appearance takes palette names only (`PRIMARY` and `NEUTRAL` in settings.rs). Let each colour be a hex as well as a
-   name; shared/theme.ts makes its 50–950 ramp in OKLCH, spaced the way Tailwind's palettes are, for light and dark;
-   settings.rs `Appearance::checked` accepts a valid hex. Appearance gets a colour picker beside the named colours.
-   Tests: the ramp of a known colour, contrast between the steps the window uses for text and backgrounds, and that a
-   palette name gives the same as today.
-2. **Follow the desktop** (Linux).
-   - Light or dark, and the accent, from the freedesktop settings portal: `ReadOne` on `org.freedesktop.appearance`
-     (`color-scheme`: 0 no preference, 1 dark, 2 light; `accent-color`: red, green, blue from 0 to 1, out of range
-     meaning none), and `SettingChanged` to follow a change. zbus 5.19 is in the dependency tree already (the
-     notification plugin): add it at that version and use its blocking API on a thread of its own. Rust sends what it
-     reads as news.
-   - Mode "system" uses the portal's answer, not the webview's `prefers-color-scheme`: WebKitGTK follows only GTK's
-     own setting, which Hyprland and Sway often leave unset. Without a portal (a bare window manager): `gsettings get
-     org.gnome.desktop.interface color-scheme`, then the webview.
-   - A main-colour choice "System accent", shown when the portal has one. On Hyprland the GTK portal answers from
-     gsettings, whose `accent-color` is one of GNOME's nine names and not what a wallpaper tool made; the theme file
-     (3) is what follows those.
-   - The window buttons: `button-layout` (`org.gnome.desktop.wm.preferences`, through the portal or gsettings) says
-     which buttons and on which side, as GTK apps draw them. The tiling guess (only Close) stays for when it is unset.
-   - Font: check first what `system-ui` gives in WebKitGTK (fontconfig's default sans); only if it is not the
-     desktop's font, read `font-name` from the same gsettings schema.
-3. **A theme file.** `theme.json` in the folder Haunt keeps its settings in (`$XDG_CONFIG_HOME/haunt` on Linux),
-   with the fields Appearance has, all optional. It wins over the profile's own choices, and Appearance marks each
-   field it sets ("from theme.json") so a choice that seems to do nothing is explained. The settings folder is watched
-   (watch.rs, the folder alone), and a change applies at once; a file that does not read keeps the last good one and
-   says why, once. Applies on every system, though it is mostly for Linux.
-   - Besides the two colours Haunt makes its shades from, the file can name the roles outright: background, raised
-     (cards, menus), text, muted text, border, the main colour and the text on it, and error. A wallpaper tool gives
-     exact surfaces (matugen's `surface`, `surface_container`, `on_surface`, `outline_variant`, ...), and a shade
-     made from one colour would come out close but not the same as the rest of the desktop. A role it names wins over
-     its shade; one it leaves out comes from the shades.
-   - `mode` (light or dark) and `font` too, since a wallpaper tool knows the first and a rice usually sets the second.
-   - `opacity` (Linux): the window's background lets the compositor's blur through, as bars and launchers do on
-     Hyprland. Needs a transparent window from the start (Tauri's `transparent`), so it is read at startup; try
-     WebKitGTK on NVIDIA and AMD before keeping it.
-   - docs/theming.md gives the fields and a template each for pywal, matugen and wallust. The matugen one is a
-     `[templates.haunt]` entry writing `~/.config/haunt/theme.json`, with no `post_hook`: Haunt sees the file change.
-4. **The system's title bar** (Windows and Linux): Settings, Appearance, "Use the system's title bar", for the whole
-   app. The window takes the system's frame (`set_decorations(true)`, live), Haunt's minimise, maximise and close go,
-   and the tabs stay as a bar under it. Off by default; the help says a tiling compositor draws no title bar either way.
+- **Hyprland** (CachyOS with Quickshell, xdg-desktop-portal-hyprland and -gtk): dark from gsettings through the
+  portal, `button-layout` `appmenu:maximize,close`, theme.json from matugen on each wallpaper change, and `opacity`
+  (a transparent WebKitGTK window on the AMD iGPU and under `prime-run`).
+- **GNOME** (the accent, followed as it changes) and **KDE** (the accent, the system's title bar).
+- **The font**: what `system-ui` gives in WebKitGTK (fontconfig's default sans); if it is not the desktop's, read
+  `font-name` from `org.gnome.desktop.interface`. theme.json's `font` covers it meanwhile.
 
-Each step is tried on a real Linux machine before the next: GNOME (portal, accent), KDE (portal, server-side title
-bar), and Hyprland (CachyOS with Quickshell: portal from xdg-desktop-portal-hyprland and -gtk, dark from
-gsettings, a theme file from matugen on each wallpaper change, button-layout `appmenu:maximize,close`). Left out: reading a
-GTK or Qt theme's own widget colours and shapes, which differs per theme; the portal and a theme file cover what
-people use.
+Left out: reading a GTK or Qt theme's own widget colours and shapes, which differs per theme; the portal and a theme
+file cover what people use.
 
 ## 8. Signed installers and updates
 

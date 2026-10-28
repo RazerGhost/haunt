@@ -290,6 +290,8 @@ export const commands = {
 	setGitSettings: (pull: PullChoice, fetchEvery: number) => __TAURI_INVOKE<AppSettings>("set_git_settings", { pull, fetchEvery }),
 	/**  Pull request status through the host's tool, and the update check: both off by default. */
 	setOnline: (hostTools: boolean, updateCheck: boolean) => __TAURI_INVOKE<AppSettings>("set_online", { hostTools, updateCheck }),
+	/**  The system's title bar instead of Haunt's own buttons (Windows and Linux); the window changes its frame. */
+	setSystemTitleBar: (on: boolean) => __TAURI_INVOKE<AppSettings>("set_system_title_bar", { on }),
 	/**  Stops trusting a folder, shown or not. */
 	forgetTrust: (path: string) => __TAURI_INVOKE<AppSettings>("forget_trust", { path }),
 	/**  Removes the kept call graphs; how many there were. */
@@ -331,6 +333,8 @@ export type AppSettings = {
 	hostTools: boolean,
 	/**  Looking for a new version of Haunt now and then; off by default. */
 	updateCheck: boolean,
+	/**  The system's window frame and title bar instead of Haunt's own buttons (Windows and Linux). */
+	systemTitleBar: boolean,
 	trusted: TrustedFolder[],
 	version: string,
 	folders: AppFolders,
@@ -455,6 +459,11 @@ export type BranchRef = {
 	gone: boolean,
 	subject: string,
 	time: number,
+};
+
+export type Buttons = {
+	left: string[],
+	right: string[],
 };
 
 export type ChangedFile = {
@@ -593,6 +602,16 @@ export type Decoration = {
 };
 
 export type DecorationKind = "head" | "branch" | "remote" | "tag";
+
+/**  What the desktop says; each field null when it says nothing. */
+export type Desktop = {
+	/**  Dark (true) or light (false). */
+	dark: boolean | null,
+	/**  The accent colour, `#rrggbb`. */
+	accent: string | null,
+	/**  The window buttons in order on each side: "minimize", "maximize", "close". */
+	buttons: Buttons | null,
+};
 
 export type DiffHunk = {
 	oldStart: number,
@@ -1288,6 +1307,22 @@ export type ResetMode =
 /**  The branch and your files move; your local changes are saved first. */
 "hard";
 
+/**  The colours of the window's own parts, each a hex: they win over the shades made from the main colour and greys. */
+export type Roles = {
+	/**  The page. */
+	background?: string,
+	/**  Cards, menus, the title bar. */
+	raised?: string,
+	text?: string,
+	/**  Less important text. */
+	muted?: string,
+	border?: string,
+	/**  The main colour exactly (buttons, links, what is chosen). */
+	primary?: string,
+	/**  Text on the main colour. */
+	onPrimary?: string,
+};
+
 /**  The repository shown, the open tabs, the recent ones, whether its own code may run and what it would run. */
 export type RootInfo = {
 	root: string | null,
@@ -1367,6 +1402,17 @@ export type Startup = {
 	 *  itself: the window shows only Close then. Null elsewhere.
 	 */
 	tiling: string | null,
+	/**
+	 *  The desktop's light or dark, accent and window buttons as far as read yet (Linux); the news `desktop` says
+	 *  when they change.
+	 */
+	desktop: Desktop,
+	/**  theme.json as read at start; the news `themeFile` says when it changes. */
+	themeFile: ThemeFileState,
+	/**  The window has the system's frame and title bar, not Haunt's buttons (Settings, Appearance). */
+	systemTitleBar: boolean,
+	/**  The window is see-through, so theme.json's opacity applies (Linux, as the file was at start). */
+	transparent: boolean,
 };
 
 export type StashRef = {
@@ -1445,6 +1491,24 @@ export type TestRun = {
 export type TestToRun = {
 	path: string,
 	title: string,
+};
+
+/**  What the file sets; each empty field (or one it leaves out) is the profile's. */
+export type ThemeFile = {
+	roles?: Roles,
+	/**  The window's background from 0 (clear) to 1 (solid), for the compositor's blur behind it (Linux, read at start). */
+	opacity?: number | null,
+} & Appearance;
+
+/**  The file as the window gets it. */
+export type ThemeFileState = {
+	path: string,
+	/**  What applies: the file's last good reading; null when there is no file. */
+	theme: ThemeFile | null,
+	/**  Why the file does not read now (the last good reading still applies). */
+	problem: string | null,
+	/**  The fields of a file that reads that were left out, by name (`primary`, `roles.text`). */
+	leftOut: string[],
 };
 
 export type TrustedFolder = {

@@ -141,6 +141,17 @@ export type ScanEvent =
   | { type: 'done', title: string, undo: string }
   /** A background search found a different list of repositories in a repository folder (folders.rs). */
   | { type: 'folders' }
+  /** The desktop's light or dark, accent or window buttons changed (desktop.rs, Linux). */
+  | { type: 'desktop', desktop: DesktopLook }
+  /** theme.json changed, or stopped reading (theme_file.rs); its fields are app/bindings.ts `ThemeFileState`. */
+  | { type: 'themeFile', state: { path: string, theme: Record<string, unknown> | null, problem: string | null, leftOut: string[] } }
+
+/** What the desktop says about its look (desktop.rs), each null when it says nothing. */
+export interface DesktopLook {
+  dark: boolean | null
+  accent: string | null
+  buttons: { left: string[], right: string[] } | null
+}
 
 /** A part of git; each view reads again only for the parts it shows. */
 export type GitPart = 'head' | 'refs' | 'index' | 'stash'
