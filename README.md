@@ -42,11 +42,13 @@ Download the installer for your system from the [releases](https://github.com/ra
 `.exe` for Windows, `.dmg` for macOS, `.deb`, `.rpm` or `.AppImage` for Linux. The builds are not signed yet, so
 Windows and macOS warn the first time you open Haunt.
 
-On Arch and its derivatives (CachyOS, EndeavourOS, Manjaro), each release has a package to install with pacman
-(`haunt-bin-<version>-1-x86_64.pkg.tar.zst`, under the release's assets):
+On Arch and its derivatives (CachyOS, EndeavourOS, Manjaro), each release has a package for pacman
+(`haunt-bin-<version>-1-x86_64.pkg.tar.zst`, under the release's assets). It is not signed, and pacman installs an
+unsigned package only from a file it has, so download it first:
 
 ```bash
-sudo pacman -U https://github.com/RazerGhost/haunt/releases/download/v0.2.0/haunt-bin-0.2.0-1-x86_64.pkg.tar.zst
+curl -LO https://github.com/RazerGhost/haunt/releases/download/v0.2.0/haunt-bin-0.2.0-1-x86_64.pkg.tar.zst
+sudo pacman -U haunt-bin-0.2.0-1-x86_64.pkg.tar.zst
 ```
 
 Or build the same package from this repository with `makepkg -si` in `packaging/aur/haunt-bin`. It is meant for the
