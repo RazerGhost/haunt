@@ -3,7 +3,7 @@
 //! open). The file must be one the scan found (repos.rs checks), so the window cannot make this open anything else.
 
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 
 type Args = fn(&str, &str, u32, u32) -> Vec<String>;
 
@@ -36,7 +36,7 @@ pub fn reveal(folder: &Path) -> Result<(), String> {
     } else {
         "xdg-open"
     };
-    Command::new(program)
+    crate::process::command(program)
         .arg(folder)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
@@ -54,7 +54,7 @@ pub fn terminal(folder: &Path) -> Result<(), String> {
         return Err(said!("editor.notThere", "{folder} is not there.", folder = folder.display()));
     }
     let start = |program: &str, args: &[&str]| {
-        Command::new(program)
+        crate::process::command(program)
             .args(args)
             .current_dir(folder)
             .stdin(Stdio::null())
@@ -101,11 +101,11 @@ pub fn open_url(url: &str) -> Result<(), String> {
     }
     let mut command = if cfg!(windows) {
         // Through the shell's URL handler: `start` would read & and ^ in the address as its own.
-        let mut command = Command::new("rundll32");
+        let mut command = crate::process::command("rundll32");
         command.args(["url.dll,FileProtocolHandler", url]);
         command
     } else {
-        let mut command = Command::new(if cfg!(target_os = "macos") { "open" } else { "xdg-open" });
+        let mut command = crate::process::command(if cfg!(target_os = "macos") { "open" } else { "xdg-open" });
         command.arg(url);
         command
     };
@@ -120,7 +120,7 @@ pub fn open_url(url: &str) -> Result<(), String> {
 
 /// A command's path on the PATH, as `where` (Windows) or `which` finds it.
 fn locate(command: &str) -> Option<PathBuf> {
-    let mut finder = Command::new(if cfg!(windows) { "where" } else { "which" });
+    let mut finder = crate::process::command(if cfg!(windows) { "where" } else { "which" });
     finder.arg(command).stdin(Stdio::null());
     crate::startup::hide_console(&mut finder);
     let output = finder.output().ok()?;
@@ -197,11 +197,11 @@ pub fn open(editor: &str, root: &str, file: &Path, line: u32, column: u32) -> Re
                 "That path has characters the Windows launcher cannot pass on safely."
             ));
         }
-        let mut shell = Command::new("cmd");
+        let mut shell = crate::process::command("cmd");
         shell.arg("/C").arg(all.iter().map(|arg| format!("\"{arg}\"")).collect::<Vec<_>>().join(" "));
         shell
     } else {
-        let mut direct = Command::new(&found);
+        let mut direct = crate::process::command(&found);
         direct.args(&args);
         direct
     };

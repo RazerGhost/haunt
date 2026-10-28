@@ -5,7 +5,7 @@
 //! command line, so nothing of the repository (its config, its hooks) runs; it uses the account you signed in with.
 //! A new pull request is made the same way, when asked for (`create_pull`), whether or not the status is switched on.
 
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 use std::time::Duration;
 
 use serde::Serialize;
@@ -76,7 +76,7 @@ fn run(program: &str, args: &[&str]) -> Option<Result<String, Failed>> {
 }
 
 fn run_for(program: &str, args: &[&str], timeout: Duration) -> Option<Result<String, Failed>> {
-    let mut command = Command::new(program);
+    let mut command = crate::process::command(program);
     command
         .args(args)
         .current_dir(std::env::temp_dir())

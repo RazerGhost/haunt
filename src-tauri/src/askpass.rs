@@ -82,10 +82,10 @@ pub fn start(events: Arc<Events>) -> std::io::Result<()> {
 /// What git needs to ask through Haunt, for the repository `repo`; nothing when Haunt is not listening (in tests): git
 /// then cannot ask, and stops with its own message.
 pub fn env(repo: &str) -> Vec<(String, String)> {
-    let (Some(asker), Ok(program)) = (ASKER.get(), std::env::current_exe()) else {
+    // Haunt's own program; in an AppImage, a script that gives it the libraries git's environment no longer has.
+    let (Some(asker), Some(program)) = (ASKER.get(), crate::appimage::own_program()) else {
         return Vec::new();
     };
-    let program = program.to_string_lossy().replace('\\', "/");
     vec![
         ("GIT_ASKPASS".into(), program.clone()),
         ("SSH_ASKPASS".into(), program),

@@ -9,6 +9,14 @@ use std::process::{Child, Command, ExitStatus, Stdio};
 use std::sync::{mpsc, Arc};
 use std::time::{Duration, Instant};
 
+/// A program to start that is not Haunt itself: in an AppImage, with the environment from before the AppImage's
+/// runtime changed it (appimage.rs). Every program Haunt starts goes through here.
+pub fn command(program: impl AsRef<std::ffi::OsStr>) -> Command {
+    let mut command = Command::new(program);
+    crate::appimage::outside(&mut command);
+    command
+}
+
 /// What a program left when it finished.
 pub struct Finished {
     pub status: ExitStatus,
@@ -144,13 +152,13 @@ pub fn kill_tree(pid: u32) -> bool {
     let job = false;
     #[cfg(windows)]
     let mut kill = {
-        let mut command = Command::new("taskkill");
+        let mut command = command("taskkill");
         command.args(["/T", "/F", "/PID", &pid.to_string()]);
         command
     };
     #[cfg(not(windows))]
     let mut kill = {
-        let mut command = Command::new("kill");
+        let mut command = command("kill");
         command.args(["-TERM", &format!("-{pid}")]);
         command
     };

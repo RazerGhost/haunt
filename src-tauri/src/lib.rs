@@ -10,6 +10,7 @@
 mod said;
 mod alerts;
 mod api;
+mod appimage;
 mod askpass;
 mod code;
 #[cfg(debug_assertions)]

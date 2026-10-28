@@ -31,7 +31,7 @@ impl Runtime {
     /// the project's architecture script), and finds Haunt's own TypeScript in `node_modules` as Node does, without a
     /// package.json or deno.json (the installed app has neither).
     pub fn command(&self, script: &Path) -> Command {
-        let mut command = Command::new(&self.path);
+        let mut command = crate::process::command(&self.path);
         if self.kind == RuntimeKind::Deno {
             command.args(["run", "--allow-all", "--quiet", "--no-lock", "--no-config", "--node-modules-dir=manual"]);
         }
@@ -114,8 +114,11 @@ fn from_login_shell(name: &str) -> Option<(PathBuf, String)> {
             "/bin/sh".into()
         }
     });
-    let output =
-        Command::new(shell).args(["-ilc", &format!("command -v {name}")]).stdin(Stdio::null()).output().ok()?;
+    let output = crate::process::command(shell)
+        .args(["-ilc", &format!("command -v {name}")])
+        .stdin(Stdio::null())
+        .output()
+        .ok()?;
     let found = String::from_utf8_lossy(&output.stdout);
     let path = PathBuf::from(found.lines().map(str::trim).filter(|line| line.starts_with('/')).last()?);
     let version = version_of(&path)?;
@@ -128,7 +131,7 @@ fn from_login_shell(_name: &str) -> Option<(PathBuf, String)> {
 }
 
 fn version_of(program: &Path) -> Option<String> {
-    let mut command = Command::new(program);
+    let mut command = crate::process::command(program);
     command.arg("--version").stdin(Stdio::null());
     hide_console(&mut command);
     let output = command.output().ok()?;

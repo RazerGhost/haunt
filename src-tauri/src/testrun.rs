@@ -6,7 +6,7 @@
 use parking_lot::Mutex;
 use std::io::Read;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -227,7 +227,7 @@ fn pattern_of(titles: &[&str]) -> String {
 }
 
 fn execute(node: &Path, folder: &Path, args: &[String], stop: &AtomicBool) -> Result<(bool, String), String> {
-    let mut command = Command::new(node);
+    let mut command = crate::process::command(node);
     command
         .args(args)
         .current_dir(folder)

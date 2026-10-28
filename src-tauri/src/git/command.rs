@@ -63,7 +63,7 @@ pub(crate) fn read(root: &str, filters: &[String], command: &str, rest: &[&str])
     args.push(command.to_owned());
     args.extend(safe_flags(command).iter().filter(|flag| !rest.contains(flag)).map(|flag| flag.to_string()));
     args.extend(rest.iter().map(|part| part.to_string()));
-    let mut git = Command::new("git");
+    let mut git = crate::process::command("git");
     git.args(args)
         .current_dir(root)
         .env("GIT_OPTIONAL_LOCKS", "0")
@@ -100,7 +100,7 @@ fn write_config(trusted: bool) -> Vec<String> {
 
 /// A writing git in `cwd`, its own code run only when `trusted`; the command's arguments come after.
 pub(crate) fn write(cwd: &str, trusted: bool) -> Command {
-    let mut git = Command::new("git");
+    let mut git = crate::process::command("git");
     git.args(write_config(trusted))
         .current_dir(cwd)
         .env("GIT_TERMINAL_PROMPT", "0")
