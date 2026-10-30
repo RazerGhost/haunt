@@ -62,7 +62,7 @@ const STATUS: Record<string, string> = { added: 'text-success', removed: 'text-e
         </p>
         <p v-else-if="!loading && !problem" class="text-ui text-muted">{{ t('pages.incoming.noUpstream') }}</p>
       </div>
-      <UButton v-if="incoming?.commits.length" :label="t('pages.incoming.pull')" icon="i-lucide-arrow-down-to-line" :disabled="!network.trusted.value || !!network.running.value" @click="network.pull()" />
+      <UButton v-if="incoming?.commits.length" :label="t('pages.incoming.pull')" icon="i-lucide-arrow-down-to-line" :disabled="!!network.running.value" @click="network.pull()" />
     </div>
     <UAlert v-if="problem" color="error" variant="subtle" icon="i-lucide-circle-alert" :description="problem" />
     <div v-if="loading && !incoming" class="grid justify-items-center py-6"><UIcon name="i-lucide-loader-circle" class="size-5 animate-spin text-muted" /></div>

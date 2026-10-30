@@ -148,6 +148,7 @@ async function submit(): Promise<void> {
     <p v-for="note in notes" :key="note" class="flex items-start gap-1.5 text-xs text-warning">
       <UIcon name="i-lucide-shield-alert" class="mt-0.5 size-3.5 shrink-0" />{{ note }}
     </p>
+    <UButton v-if="notes.length" :label="t('CommitBox.trust')" icon="i-lucide-shield-check" size="xs" color="neutral" variant="link" class="justify-self-start px-0" @click="failure.trustFirst()" />
     <div class="flex flex-wrap items-center gap-4">
       <UCheckbox v-model="amend" :label="t('CommitBox.amend')" size="sm" :disabled="!commitBox?.lastMessage" />
       <UCheckbox v-model="signoff" :label="t('CommitBox.signOff')" size="sm" />

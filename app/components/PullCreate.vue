@@ -99,7 +99,7 @@ async function create(): Promise<void> {
         </div>
         <UAlert v-if="draft && !draft.pushed" color="warning" variant="subtle" icon="i-lucide-cloud-upload" :description="t('PullCreate.pushFirst', { branch, remote: draft.remote })">
           <template #actions>
-            <UButton :label="t('PullCreate.push')" size="xs" color="neutral" variant="outline" :loading="!!network.running.value" :disabled="!network.trusted.value || branch !== current?.name" @click="network.push(draft.remote)" />
+            <UButton :label="t('PullCreate.push')" size="xs" color="neutral" variant="outline" :loading="!!network.running.value" :disabled="branch !== current?.name" @click="network.push(draft.remote)" />
           </template>
         </UAlert>
         <p v-if="draft && !draft.pushed && branch !== current?.name" class="text-xs text-muted">{{ t('PullCreate.pushOther') }}</p>

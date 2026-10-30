@@ -6,7 +6,7 @@
   "copyAddress": "Copy its address",
   "title": "Submodules",
   "updateHelp": "Check out all at their recorded commits, cloning missing ones",
-  "trustFirst": "Updating clones from .gitmodules: trust this folder first",
+  "trustFirst": "Updating clones from .gitmodules, so it asks to trust this folder first",
   "update": "Update the submodules",
   "state": {
     "current": "at the recorded commit",

@@ -180,7 +180,7 @@ const active = (path: string) => route.path === path ? 'bg-elevated font-medium 
         </button>
         <ul v-if="!shut.tags" class="grid grid-cols-[minmax(0,1fr)]">
           <li v-for="tag in shown.tags" :key="tag.name">
-            <UContextMenu :items="[[{ label: t('AppSidebar.newBranch'), icon: 'i-lucide-git-branch-plus', onSelect: () => actions.newBranch({ rev: tag.name, label: tag.name }) }, { label: t('AppSidebar.pushTag'), icon: 'i-lucide-arrow-up-from-line', disabled: !network.trusted.value || !!network.running.value, onSelect: () => network.pushTag(tag.name) }, { label: t('AppSidebar.releaseNotesTo'), icon: 'i-lucide-scroll-text', onSelect: () => navigateTo({ path: '/release', query: { to: tag.name } }) }], [{ label: t('AppSidebar.delete'), icon: 'i-lucide-trash-2', color: 'error', onSelect: () => actions.deleteTag(tag.name) }]]">
+            <UContextMenu :items="[[{ label: t('AppSidebar.newBranch'), icon: 'i-lucide-git-branch-plus', onSelect: () => actions.newBranch({ rev: tag.name, label: tag.name }) }, { label: t('AppSidebar.pushTag'), icon: 'i-lucide-arrow-up-from-line', disabled: !!network.running.value, onSelect: () => network.pushTag(tag.name) }, { label: t('AppSidebar.releaseNotesTo'), icon: 'i-lucide-scroll-text', onSelect: () => navigateTo({ path: '/release', query: { to: tag.name } }) }], [{ label: t('AppSidebar.delete'), icon: 'i-lucide-trash-2', color: 'error', onSelect: () => actions.deleteTag(tag.name) }]]">
             <NuxtLink
               :to="{ path: '/commits', query: { from: tag.name } }"
               class="flex items-center gap-1.5 rounded py-1 pr-2 pl-5 text-ui hover:bg-elevated"

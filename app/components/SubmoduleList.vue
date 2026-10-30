@@ -38,7 +38,7 @@ const STATE = {
 const folderOf = (item: Submodule) => `${repo.value}${repo.value?.includes('\\') ? '\\' : '/'}${item.path.replaceAll('/', repo.value?.includes('\\') ? '\\' : '/')}`
 async function update(paths: string[]): Promise<void> {
   const at = repo.value
-  if (!at || network.running.value) return
+  if (!at || network.running.value || !(await failure.trustFirst())) return
   try {
     await haunt.updateSubmodules(at, paths)
     await load()
@@ -49,7 +49,7 @@ async function update(paths: string[]): Promise<void> {
 function menu(item: Submodule) {
   return [[
     { label: t('SubmoduleList.open'), icon: 'i-lucide-folder-git-2', disabled: item.state === 'missing', onSelect: () => chooseRoot(folderOf(item)) },
-    { label: item.state === 'missing' ? t('SubmoduleList.clone') : t('SubmoduleList.checkOut'), icon: 'i-lucide-refresh-cw', disabled: !trusted.value || item.state === 'current', onSelect: () => update([item.path]) }
+    { label: item.state === 'missing' ? t('SubmoduleList.clone') : t('SubmoduleList.checkOut'), icon: 'i-lucide-refresh-cw', disabled: item.state === 'current', onSelect: () => update([item.path]) }
   ], [
     { label: t('SubmoduleList.copyAddress'), icon: 'i-lucide-copy', disabled: !item.url, onSelect: () => navigator.clipboard?.writeText(item.url) }
   ]]
@@ -62,7 +62,7 @@ function menu(item: Submodule) {
       <UIcon name="i-lucide-chevron-right" class="size-3 transition" :class="{ 'rotate-90': !props.shut }" />
       {{ t('SubmoduleList.title') }} <span class="ml-auto font-normal tabular-nums">{{ list.length }}</span>
       <UTooltip v-if="behind" :text="trusted ? t('SubmoduleList.updateHelp') : t('SubmoduleList.trustFirst')">
-        <span role="button" tabindex="0" class="-mr-1 grid size-5 place-items-center rounded normal-case hover:bg-elevated hover:text-highlighted" :class="{ 'opacity-50': !trusted }" :aria-label="t('SubmoduleList.update')" @click.stop="trusted && update([])" @keydown.enter.stop="trusted && update([])">
+        <span role="button" tabindex="0" class="-mr-1 grid size-5 place-items-center rounded normal-case hover:bg-elevated hover:text-highlighted" :aria-label="t('SubmoduleList.update')" @click.stop="update([])" @keydown.enter.stop="update([])">
           <UIcon name="i-lucide-refresh-cw" class="size-3.5" />
         </span>
       </UTooltip>
@@ -74,7 +74,7 @@ function menu(item: Submodule) {
             type="button"
             class="flex w-full items-center gap-1.5 rounded py-1 pr-2 pl-5 text-left text-ui hover:bg-elevated"
             :title="`${item.path}: ${t(`SubmoduleList.state.${item.state}`)}${item.url ? `\n${t('SubmoduleList.from', { url: item.url })}` : ''}`"
-            @click="item.state === 'missing' ? (trusted && update([item.path])) : chooseRoot(folderOf(item))"
+            @click="item.state === 'missing' ? update([item.path]) : chooseRoot(folderOf(item))"
           >
             <UIcon :name="STATE[item.state].icon" class="size-3.5 shrink-0" :class="item.state === 'current' ? 'text-dimmed' : 'text-warning'" />
             <span class="min-w-0 flex-1 truncate">{{ item.path }}</span>

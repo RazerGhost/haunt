@@ -30,5 +30,6 @@
     "one": "{count} bestand committen",
     "other": "{count} bestanden committen"
   },
-  "commit": "Committen"
+  "commit": "Committen",
+  "trust": "Deze map vertrouwen…"
 }

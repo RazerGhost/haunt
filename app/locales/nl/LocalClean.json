@@ -25,7 +25,7 @@
   "noUpstream": "Deze branch heeft nog geen upstream.",
   "pushSet": "Pushen en upstream instellen",
   "noRemote": "Deze repository heeft geen remote.",
-  "untrusted": "Pull en push werken alleen in een vertrouwde map.",
+  "untrusted": "Pull en push voeren de hooks en filters van de repository uit, dus vragen eerst om deze map te vertrouwen.",
   "lastCommit": "Laatste commit",
   "amend": "Aanpassen",
   "amendHelp": "Herschrijf de laatste commit, of voeg er bestanden aan toe zodra ze gestaged zijn",

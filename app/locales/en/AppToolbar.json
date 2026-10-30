@@ -5,7 +5,7 @@
   "tracksNothing": "{name} tracks no remote branch",
   "upstreamGone": "{name} tracked {upstream}, which is gone",
   "tracking": "{name} · {ahead} to push, {behind} to pull ({upstream})",
-  "untrusted": "Runs only in a trusted folder, since it runs the repository's hooks and filters",
+  "untrusted": "Runs the repository's hooks and filters, so it asks to trust this folder first",
   "fetch": "Fetch",
   "fetchTip": "Fetch every remote: new commits and remote branches; your branches and files stay as they are.",
   "pull": "Pull",

@@ -5,7 +5,7 @@
   "tracksNothing": "{name} volgt geen remote branch",
   "upstreamGone": "{name} volgde {upstream}, maar die is weg",
   "tracking": "{name} · {ahead} te pushen, {behind} te pullen ({upstream})",
-  "untrusted": "Werkt alleen in een vertrouwde map, omdat het de hooks en filters van de repository uitvoert",
+  "untrusted": "Voert de hooks en filters van de repository uit, dus vraagt eerst om deze map te vertrouwen",
   "fetch": "Fetch",
   "fetchTip": "Alle remotes fetchen: nieuwe commits en remote branches; je eigen branches en bestanden blijven zoals ze zijn.",
   "pull": "Pull",

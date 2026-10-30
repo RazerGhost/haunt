@@ -6,7 +6,7 @@
   "copyAddress": "Adres kopiëren",
   "title": "Submodules",
   "updateHelp": "Alle op hun vastgelegde commit uitchecken, ontbrekende clonen",
-  "trustFirst": "Bijwerken cloont vanaf .gitmodules: vertrouw eerst deze map",
+  "trustFirst": "Bijwerken cloont vanaf .gitmodules, dus vraagt eerst om deze map te vertrouwen",
   "update": "Submodules bijwerken",
   "state": {
     "current": "op de vastgelegde commit",

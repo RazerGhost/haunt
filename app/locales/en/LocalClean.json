@@ -25,7 +25,7 @@
   "noUpstream": "This branch has no upstream yet.",
   "pushSet": "Push and set upstream",
   "noRemote": "This repository has no remote.",
-  "untrusted": "Pull and push run only in a trusted folder.",
+  "untrusted": "Pull and push run the repository's hooks and filters, so they ask to trust this folder first.",
   "lastCommit": "Last commit",
   "amend": "Amend",
   "amendHelp": "Reword the last commit, or add files to it once they are staged",

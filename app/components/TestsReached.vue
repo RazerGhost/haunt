@@ -34,7 +34,7 @@ const running = ref(false)
 const run = shallowRef<TestRun | null>(null)
 const shown = ref(false)
 async function start(): Promise<void> {
-  if (!repo.value || running.value) return
+  if (!repo.value || running.value || !(await failure.trustFirst())) return
   running.value = true
   run.value = null
   try {
@@ -61,7 +61,7 @@ const stop = () => void haunt.stopTests()
           icon="i-lucide-play"
           size="xs"
           :loading="running"
-          :disabled="!trusted || running"
+          :disabled="running"
           :title="trusted ? t('TestsReached.runHelp') : t('TestsReached.trustFirst')"
           @click="start"
         />

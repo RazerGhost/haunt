@@ -23,21 +23,22 @@ const branchTip = computed(() => {
 const actions = computed(() => {
   const at = current.value
   const upstream = at?.upstream
-  // Pull and push run only in a trusted folder (they run its hooks and filters); fetch runs anywhere.
+  // Pull and push run only in a trusted folder (they run its hooks and filters), and ask to trust it first; fetch runs
+  // anywhere.
   const untrusted = t('AppToolbar.untrusted')
   return [
     { label: t('AppToolbar.fetch'), op: 'fetch', icon: 'i-lucide-refresh-cw', count: 0, run: () => network.fetch(), tip: `${t('AppToolbar.fetchTip')}${fetchedTip.value}`, kbds: ['F5'] },
     {
       label: t('AppToolbar.pull'), op: 'pull', icon: 'i-lucide-arrow-down-to-line', count: at?.behind ?? 0,
-      run: network.trusted.value && upstream ? () => network.pull() : null,
-      tip: !network.trusted.value ? untrusted : upstream ? t('AppToolbar.pullTip', { upstream, name: at!.name }) : t('AppToolbar.pullNoUpstream'),
-      kbds: network.trusted.value && upstream ? ['meta', 'shift', 'P'] : []
+      run: upstream ? () => network.pull() : null,
+      tip: !upstream ? t('AppToolbar.pullNoUpstream') : !network.trusted.value ? untrusted : t('AppToolbar.pullTip', { upstream, name: at!.name }),
+      kbds: upstream ? ['meta', 'shift', 'P'] : []
     },
     {
       label: t('AppToolbar.push'), op: 'push', icon: 'i-lucide-arrow-up-from-line', count: at?.ahead ?? 0,
-      run: network.trusted.value && at ? () => network.push() : null,
-      tip: !network.trusted.value ? untrusted : !at ? t('AppToolbar.noBranch') : upstream ? t('AppToolbar.pushTip', { name: at.name, upstream }) : t('AppToolbar.pushTrackTip', { name: at.name }),
-      kbds: network.trusted.value && at ? ['meta', 'shift', 'U'] : []
+      run: at ? () => network.push() : null,
+      tip: !at ? t('AppToolbar.noBranch') : !network.trusted.value ? untrusted : upstream ? t('AppToolbar.pushTip', { name: at.name, upstream }) : t('AppToolbar.pushTrackTip', { name: at.name }),
+      kbds: at ? ['meta', 'shift', 'U'] : []
     },
     { label: t('AppToolbar.branch'), op: null, icon: 'i-lucide-git-branch-plus', count: 0, run: () => refActions.newBranch(), tip: t('AppToolbar.branchTip'), kbds: [] },
     { label: t('AppToolbar.stash'), op: null, icon: 'i-lucide-archive', count: 0, run: () => refActions.stash(), tip: t('AppToolbar.stashTip'), kbds: [] }
@@ -66,8 +67,8 @@ defineShortcuts({
   meta_f: () => searchInput.value?.inputRef?.focus(),
   // F5 fetches, Ctrl+Shift+P pulls and Ctrl+Shift+U pushes (with their questions); Alt+← and Alt+→ go back and forward.
   f5: () => { if (!busy.value) void network.fetch() },
-  meta_shift_p: () => { if (!busy.value && network.trusted.value && current.value?.upstream) void network.pull() },
-  meta_shift_u: () => { if (!busy.value && network.trusted.value && current.value) void network.push() },
+  meta_shift_p: () => { if (!busy.value && current.value?.upstream) void network.pull() },
+  meta_shift_u: () => { if (!busy.value && current.value) void network.push() },
   alt_arrowleft: () => router.back(),
   alt_arrowright: () => router.forward(),
   // Ctrl+1 for Git, Ctrl+2 for Code (⌘ on macOS).

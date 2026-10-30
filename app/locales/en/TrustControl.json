@@ -1,7 +1,7 @@
 {
   "trusted": "Trusted folder",
   "untrusted": "Folder not trusted",
-  "nothing": "Nothing in this folder would run",
+  "nothing": "It has no hooks or scripts of its own to run.",
   "runs": "This folder's own code runs in Haunt",
   "reads": "Haunt only reads this folder",
   "itRuns": "It runs:",
@@ -9,5 +9,7 @@
   "its": "Its {label}",
   "see": "See what they run…",
   "stop": "Stop trusting this folder",
-  "ask": "Trust this folder…"
+  "allows": "Haunt pulls, pushes, updates submodules and runs tests here, with the repository's own git settings (hooks, filters, signing).",
+  "wouldAllow": "Trusted, Haunt can also pull, push, update submodules and run tests here, with the repository's own git settings (hooks, filters, signing).",
+  "trust": "Trust this folder"
 }

@@ -1,7 +1,7 @@
 {
   "trusted": "Vertrouwde map",
   "untrusted": "Map niet vertrouwd",
-  "nothing": "Niets in deze map zou draaien",
+  "nothing": "Hij heeft geen eigen hooks of scripts om te draaien.",
   "runs": "De eigen code van deze map draait in Haunt",
   "reads": "Haunt leest deze map alleen",
   "itRuns": "Hij draait:",
@@ -9,5 +9,7 @@
   "its": "Zijn {label}",
   "see": "Bekijk wat ze uitvoeren…",
   "stop": "Deze map niet meer vertrouwen",
-  "ask": "Deze map vertrouwen…"
+  "allows": "Haunt pullt, pusht, werkt submodules bij en draait tests hier, met de eigen git-instellingen van de repository (hooks, filters, ondertekenen).",
+  "wouldAllow": "Vertrouwd kan Haunt hier ook pullen, pushen, submodules bijwerken en tests draaien, met de eigen git-instellingen van de repository (hooks, filters, ondertekenen).",
+  "trust": "Deze map vertrouwen"
 }

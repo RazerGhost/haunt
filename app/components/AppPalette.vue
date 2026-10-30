@@ -80,9 +80,9 @@ const groups = computed(() => {
         ...undo.last.value ? [{ label: t('AppPalette.undo', { title: said(undo.last.value.title) }), suffix: said(undo.last.value.undo), icon: 'i-lucide-undo-2', onSelect: () => run(() => undo.undo()) }] : [],
         { label: t('AppPalette.fetch'), icon: 'i-lucide-refresh-cw', kbds: ['F5'], onSelect: () => run(() => network.fetch()) },
         ...info.value?.root ? [{ label: t('AppPalette.terminal'), icon: 'i-lucide-square-terminal', onSelect: () => run(() => openTerminal(info.value!.root!)) }] : [],
-        ...network.trusted.value && branch?.upstream ? [{ label: t('AppPalette.pull', { upstream: branch.upstream }), icon: 'i-lucide-arrow-down-to-line', kbds: ['meta', 'shift', 'p'], onSelect: () => run(() => network.pull()) }] : [],
+        ...branch?.upstream ? [{ label: t('AppPalette.pull', { upstream: branch.upstream }), icon: 'i-lucide-arrow-down-to-line', kbds: ['meta', 'shift', 'p'], onSelect: () => run(() => network.pull()) }] : [],
         ...branch?.behind ? [{ label: t('AppPalette.incoming'), suffix: t('AppPalette.incomingHelp'), icon: 'i-lucide-eye', onSelect: () => run(() => router.push('/incoming')) }] : [],
-        ...network.trusted.value && branch ? [{ label: t('AppPalette.push', { name: branch.name }), icon: 'i-lucide-arrow-up-from-line', kbds: ['meta', 'shift', 'u'], onSelect: () => run(() => network.push()) }] : [],
+        ...branch ? [{ label: t('AppPalette.push', { name: branch.name }), icon: 'i-lucide-arrow-up-from-line', kbds: ['meta', 'shift', 'u'], onSelect: () => run(() => network.push()) }] : [],
         // The commit box is on Local changes.
         ...staged ? [{ label: t('AppPalette.commitStaged'), suffix: t('AppPalette.commitStagedHelp', { count: staged }), icon: 'i-lucide-git-commit-horizontal', onSelect: () => run(() => router.push('/local')) }] : [],
         { label: t('AppPalette.newBranch'), icon: 'i-lucide-git-branch-plus', onSelect: () => run(() => refActions.newBranch()) },

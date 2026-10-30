@@ -16,9 +16,9 @@ const lastSubject = computed(() => (commitBox.value?.lastMessage ?? '').split('\
 const lastSha = computed(() => current.value?.sha ?? refs.value?.sha ?? null)
 const stashes = computed(() => refs.value?.stashes ?? [])
 const hasRemote = computed(() => !!refs.value?.remotes.length)
-// Pull and push run only in a trusted folder; the buttons say so.
+// Pull and push run only in a trusted folder, and ask to trust it first; the buttons say so.
 const networkTitle = computed(() => (network.trusted.value ? undefined : t('LocalClean.untrusted')))
-const networkOff = computed(() => !network.trusted.value || !!network.running.value)
+const networkOff = computed(() => !!network.running.value)
 
 const ago = (seconds: number) => {
   if (times.value === 'date') return new Date(seconds * 1000).toLocaleString(locale(), { dateStyle: 'short', timeStyle: 'short' })

@@ -109,7 +109,7 @@ export function useNetwork() {
   const toast = useToast()
   const trusted = computed(() => info.value?.trusted ?? false)
 
-  const { failed } = useFailure()
+  const { failed, trustFirst } = useFailure()
 
   async function fetch(): Promise<void> {
     const at = repo.value
@@ -123,7 +123,7 @@ export function useNetwork() {
 
   async function pull(mode: PullMode = 'fastForward'): Promise<void> {
     const at = repo.value
-    if (!at || running.value) return
+    if (!at || running.value || !(await trustFirst())) return
     try {
       const pulled = await haunt.pull(at, mode)
       if (pulled === 'conflicts') {
@@ -151,7 +151,7 @@ export function useNetwork() {
   /** Pushes the current branch; `remote` and `force` come from the questions it may ask. */
   async function push(remote: string | null = null, force = false): Promise<void> {
     const at = repo.value
-    if (!at || running.value) return
+    if (!at || running.value || !(await trustFirst())) return
     try {
       const pushed = await haunt.push(at, remote, force)
       if (pushed.kind === 'chooseRemote') {
@@ -178,7 +178,7 @@ export function useNetwork() {
 
   async function pushTag(name: string, remote: string | null = null): Promise<void> {
     const at = repo.value
-    if (!at || running.value) return
+    if (!at || running.value || !(await trustFirst())) return
     try {
       const pushed = await haunt.pushTag(at, name, remote)
       if (pushed.kind === 'chooseRemote') {

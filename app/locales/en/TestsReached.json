@@ -15,7 +15,7 @@
     "other": "Run these {count}"
   },
   "runHelp": "Runs these tests with the project's test runner",
-  "trustFirst": "Tests run the project's code: trust this folder first",
+  "trustFirst": "Tests run the project's code, so this asks to trust this folder first",
   "passedOutput": "Passed: see the output",
   "failedOutput": "Failed: see the output",
   "waiting": "Waiting for the scan.",

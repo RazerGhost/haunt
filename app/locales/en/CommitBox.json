@@ -30,5 +30,6 @@
     "one": "Commit {count} file",
     "other": "Commit {count} files"
   },
-  "commit": "Commit"
+  "commit": "Commit",
+  "trust": "Trust this folder…"
 }

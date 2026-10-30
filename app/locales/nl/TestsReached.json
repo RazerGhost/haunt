@@ -15,7 +15,7 @@
     "other": "Deze {count} uitvoeren"
   },
   "runHelp": "Voert deze tests uit met de testrunner van het project",
-  "trustFirst": "Tests draaien de code van het project: vertrouw eerst deze map",
+  "trustFirst": "Tests draaien de code van het project, dus dit vraagt eerst om deze map te vertrouwen",
   "passedOutput": "Geslaagd: bekijk de uitvoer",
   "failedOutput": "Mislukt: bekijk de uitvoer",
   "waiting": "Wachten op de scan.",
