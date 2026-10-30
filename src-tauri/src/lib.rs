@@ -13,8 +13,8 @@ mod api;
 mod appimage;
 mod askpass;
 mod code;
-#[cfg(debug_assertions)]
 mod desktop;
+#[cfg(debug_assertions)]
 mod devbridge;
 mod editor;
 mod events;
