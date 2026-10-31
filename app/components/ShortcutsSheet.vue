@@ -33,7 +33,8 @@ const GROUPS: { id: string, items: { id: string, keys: string[][] }[] }[] = [
       { id: 'gitMode', keys: [['meta', '1']] },
       { id: 'fetch', keys: [['f5']] },
       { id: 'pull', keys: [['meta', 'shift', 'p']] },
-      { id: 'push', keys: [['meta', 'shift', 'u']] }
+      { id: 'push', keys: [['meta', 'shift', 'u']] },
+      { id: 'openIn', keys: [['meta', 'shift', 'a']] }
     ]
   },
   {

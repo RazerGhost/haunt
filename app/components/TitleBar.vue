@@ -121,11 +121,13 @@ function tabMenu(path: string) {
       ...others.value.length
         ? [{ label: t('TitleBar.moveToProfile'), icon: 'i-lucide-user-round', children: others.value.map(name => ({ label: name, onSelect: () => profiles(() => haunt.moveTab(path, name), t('TitleBar.tabNotMoved')) })) }]
         : [],
+      { label: openIn.label.value, icon: 'i-lucide-square-arrow-out-up-right', kbds: ['meta', 'shift', 'a'], onSelect: () => openIn.open(path) },
       { label: t('TitleBar.reveal'), icon: 'i-lucide-folder-open', onSelect: () => reveal(path) },
       { label: t('TitleBar.terminal'), icon: 'i-lucide-square-terminal', onSelect: () => openTerminal(path) }
     ]
   ]
 }
+const openIn = useOpenIn()
 async function openTerminal(path: string): Promise<void> {
   try {
     await haunt.terminalTab(path)

@@ -27,6 +27,7 @@
     "fetch": "Fetch",
     "pull": "Pull",
     "push": "Push",
+    "openIn": "Open the repository in your editor",
     "localMove": "Move through the files",
     "stage": "Stage or unstage the picked file",
     "commit": "Commit (in the commit box)",

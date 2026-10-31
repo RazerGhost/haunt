@@ -7,9 +7,6 @@ const { app, save } = useAppSettings()
 const language = useLanguage()
 const languages = LANGUAGES.map(value => ({ value, label: LANGUAGE_NAMES[value] }))
 
-const editorLabels = computed<Record<Editor, string>>(() => ({
-  vscode: 'VS Code', vscodium: 'VSCodium', cursor: 'Cursor', windsurf: 'Windsurf', zed: 'Zed', webstorm: 'WebStorm', sublime: 'Sublime Text', kate: 'Kate', custom: t('SettingsGeneral.customEditor')
-}))
 // Installed editors first; the others stay pickable (their tool may be installed later).
 const installed = ref<Editor[]>([])
 async function findEditors(): Promise<void> {
@@ -38,7 +35,7 @@ const placeholders = { file: '{file}', line: '{line}', column: '{column}', root:
 const editors = computed(() => EDITORS
   .map(value => ({
     value,
-    label: installed.value.includes(value) ? editorLabels.value[value] : t('SettingsGeneral.notFound', { editor: editorLabels.value[value] }),
+    label: installed.value.includes(value) ? editorName(value) : t('SettingsGeneral.notFound', { editor: editorName(value) }),
     found: installed.value.includes(value)
   }))
   .sort((a, b) => Number(b.found) - Number(a.found)))

@@ -1,6 +1,7 @@
 //! Opening a file at a line in the editor of your choice, through the editor's own command line tool, inside its
 //! project: the project's folder goes along, so the editor shows the whole project (and reuses a window that has it
 //! open). The file must be one the scan found (repos.rs checks), so the window cannot make this open anything else.
+//! A project's folder opens on its own too (Open in, in the toolbar), as an open tab's folder only.
 //! Also the file manager, a terminal in a folder, and web pages in the browser.
 //!
 //! Programs are found on the PATH by Haunt itself, not through `which` (a separate package on Arch), and on macOS and
@@ -356,15 +357,11 @@ pub fn installed(tools: &Tools) -> Vec<String> {
     found
 }
 
+/// Where an editor opens: a file at a line and column, or None for the project's folder alone.
+type At<'a> = Option<(&'a str, u32, u32)>;
+
 /// The command and its arguments for an editor, and whether it runs inside a terminal.
-fn launch(
-    tools: &Tools,
-    editor: &str,
-    root: &str,
-    file: &str,
-    line: u32,
-    column: u32,
-) -> Result<(String, Vec<String>, bool), String> {
+fn launch(tools: &Tools, editor: &str, root: &str, at: At) -> Result<(String, Vec<String>, bool), String> {
     if editor == "custom" {
         let (template, terminal) = custom(tools).ok_or_else(|| {
             said!(
@@ -376,7 +373,7 @@ fn launch(
         let mut parts = words(&template);
         let command = parts.remove(0);
         // A bare editor ($EDITOR=nvim) gets the file and line the way it takes them.
-        if !parts.iter().any(|part| part.contains("{file}")) {
+        if !parts.iter().any(|part| part.contains("{file}")) && at.is_some() {
             match name_of(&command) {
                 "vi" | "vim" | "nvim" | "nano" | "micro" | "kak" | "emacs" | "emacsclient" | "gvim" | "neovide" => {
                     parts.extend(["+{line}".into(), "{file}".into()])
@@ -385,15 +382,29 @@ fn launch(
                 _ => parts.push("{file}".into()),
             }
         }
-        let args = parts
-            .iter()
-            .map(|arg| {
-                arg.replace("{root}", root)
-                    .replace("{file}", file)
-                    .replace("{line}", &line.to_string())
-                    .replace("{column}", &column.to_string())
-            })
-            .collect();
+        let args = match at {
+            Some((file, line, column)) => parts
+                .iter()
+                .map(|arg| {
+                    arg.replace("{root}", root)
+                        .replace("{file}", file)
+                        .replace("{line}", &line.to_string())
+                        .replace("{column}", &column.to_string())
+                })
+                .collect(),
+            // The folder alone: in place of the file (`{file}:{line}` too), with what is only about a line left out.
+            None => {
+                let mut args: Vec<String> = parts
+                    .iter()
+                    .filter(|arg| arg.contains("{file}") || !(arg.contains("{line}") || arg.contains("{column}")))
+                    .map(|arg| if arg.contains("{file}") { root.to_owned() } else { arg.replace("{root}", root) })
+                    .collect();
+                if !args.iter().any(|arg| arg == root) {
+                    args.push(root.to_owned());
+                }
+                args
+            }
+        };
         return Ok((command, args, terminal));
     }
     let (_, commands, args) = EDITORS
@@ -401,7 +412,12 @@ fn launch(
         .find(|(name, _, _)| *name == editor)
         .ok_or_else(|| said!("editor.unknown", "Haunt does not know the editor \"{editor}\".", editor = editor))?;
     let command = commands.iter().find(|command| locate(command).is_some()).unwrap_or(&commands[0]);
-    Ok((command.to_string(), args(root, file, line, column), false))
+    let args = match at {
+        Some((file, line, column)) => args(root, file, line, column),
+        // Every editor Haunt knows opens a folder given alone as a project.
+        None => vec![root.to_owned()],
+    };
+    Ok((command.to_string(), args, false))
 }
 
 /// Quotes a command for cmd.exe, refusing what it would read as its own.
@@ -412,9 +428,22 @@ fn cmd_quoted(all: &[String]) -> Result<String, String> {
     Ok(all.iter().map(|arg| format!("\"{arg}\"")).collect::<Vec<_>>().join(" "))
 }
 
+/// Opens a file at a line in the editor, with its project's folder.
 pub fn open(tools: &Tools, editor: &str, root: &str, file: &Path, line: u32, column: u32) -> Result<(), String> {
     let file = file.to_string_lossy();
-    let (command, args, terminal) = launch(tools, editor, root, &file, line, column)?;
+    start(tools, editor, root, Some((&file, line, column)))
+}
+
+/// Opens a project's folder in the editor.
+pub fn open_folder(tools: &Tools, editor: &str, folder: &Path) -> Result<(), String> {
+    if !folder.is_dir() {
+        return Err(said!("editor.notThere", "{folder} is not there.", folder = folder.display()));
+    }
+    start(tools, editor, &folder.to_string_lossy(), None)
+}
+
+fn start(tools: &Tools, editor: &str, root: &str, at: At) -> Result<(), String> {
+    let (command, args, terminal) = launch(tools, editor, root, at)?;
     let found = locate(&command).ok_or_else(|| {
         said!(
             "editor.notOnPath",
@@ -456,33 +485,46 @@ mod tests {
     #[test]
     fn builds_each_editors_arguments() {
         let tools = Tools::default();
-        let (_, args, terminal) = launch(&tools, "vscode", "C:/repo", "C:/repo/a.ts", 3, 1).unwrap();
+        let (_, args, terminal) = launch(&tools, "vscode", "C:/repo", Some(("C:/repo/a.ts", 3, 1))).unwrap();
         assert_eq!(args, ["C:/repo", "-g", "C:/repo/a.ts:3:1"]);
         assert!(!terminal);
-        let (_, args, _) = launch(&tools, "webstorm", "/r", "/r/a.ts", 7, 2).unwrap();
+        let (_, args, _) = launch(&tools, "webstorm", "/r", Some(("/r/a.ts", 7, 2))).unwrap();
         assert_eq!(args, ["/r", "--line", "7", "--column", "2", "/r/a.ts"]);
-        let (_, args, _) = launch(&tools, "kate", "/r", "/r/a.ts", 7, 2).unwrap();
+        let (_, args, _) = launch(&tools, "kate", "/r", Some(("/r/a.ts", 7, 2))).unwrap();
         assert_eq!(args, ["--line", "7", "/r/a.ts"]);
-        assert!(launch(&tools, "notepad", "/r", "/r/a.ts", 1, 1).is_err());
+        assert!(launch(&tools, "notepad", "/r", Some(("/r/a.ts", 1, 1))).is_err());
+        // The folder alone.
+        assert_eq!(launch(&tools, "zed", "/r", None).unwrap().1, ["/r"]);
+        assert_eq!(launch(&tools, "webstorm", "/r", None).unwrap().1, ["/r"]);
     }
 
     #[test]
     fn fills_in_the_custom_editor_and_completes_a_bare_one() {
         let tools =
             |editor: &str, terminal| Tools { editor: editor.into(), editor_in_terminal: terminal, ..Tools::default() };
-        let (command, args, terminal) =
-            launch(&tools("'/opt/My Editor/ed' --goto {file}:{line}", false), "custom", "/r", "/r/a b.ts", 4, 1)
-                .unwrap();
+        let (command, args, terminal) = launch(
+            &tools("'/opt/My Editor/ed' --goto {file}:{line}", false),
+            "custom",
+            "/r",
+            Some(("/r/a b.ts", 4, 1)),
+        )
+        .unwrap();
         assert_eq!(command, "/opt/My Editor/ed");
         assert_eq!(args, ["--goto", "/r/a b.ts:4"]);
         assert!(!terminal);
-        let (_, args, terminal) = launch(&tools("nvim", true), "custom", "/r", "/r/a.ts", 9, 3).unwrap();
+        let (_, args, terminal) = launch(&tools("nvim", true), "custom", "/r", Some(("/r/a.ts", 9, 3))).unwrap();
         assert_eq!(args, ["+9", "/r/a.ts"]);
         assert!(terminal);
-        let (_, args, _) = launch(&tools("hx", true), "custom", "/r", "/r/a.ts", 9, 3).unwrap();
+        let (_, args, _) = launch(&tools("hx", true), "custom", "/r", Some(("/r/a.ts", 9, 3))).unwrap();
         assert_eq!(args, ["/r/a.ts:9:3"]);
-        let (_, args, _) = launch(&tools("gedit", false), "custom", "/r", "/r/a.ts", 9, 3).unwrap();
+        let (_, args, _) = launch(&tools("gedit", false), "custom", "/r", Some(("/r/a.ts", 9, 3))).unwrap();
         assert_eq!(args, ["/r/a.ts"]);
+        // The folder alone: in place of the file, what is only about a line left out.
+        let folder = |command: &str| launch(&tools(command, false), "custom", "/r", None).unwrap().1;
+        assert_eq!(folder("nvim"), ["/r"]);
+        assert_eq!(folder("nvim-qt +{line} {file}"), ["/r"]);
+        assert_eq!(folder("code -g {file}:{line}:{column}"), ["-g", "/r"]);
+        assert_eq!(folder("ed --project {root} --open {file}"), ["--project", "/r", "--open", "/r"]);
     }
 
     #[test]

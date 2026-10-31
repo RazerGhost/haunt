@@ -300,6 +300,10 @@ commands! {
         let file = api.repos.scanned(&repo, &path)?;
         crate::editor::open(&api.repos.tools(), &editor, &repo, &file, line.max(1), 1)
     }
+    /// Opens an open tab's folder in your editor.
+    fn open_folder_tab(api, path: String, editor: String) -> () {
+        crate::editor::open_folder(&api.repos.tools(), &editor, &api.repos.tab_folder(&path)?)
+    }
     /// The editors found, and "custom" when one is set.
     fn editors(api) -> Vec<String> { Ok(crate::editor::installed(&api.repos.tools())) }
     /// Saves an exported picture (the canvas, the layer map) where the save dialog said: base64 for a PNG.

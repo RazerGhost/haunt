@@ -46,8 +46,8 @@ Everything Haunt does, by part of the window. The [README](../README.md) has the
   the open repositories and the functions by name. A sha typed there goes to its commit.
 - **The function panel**: a function's code, where it is written, what it calls and what calls it, and its history.
   Pin a function to keep it a click away. In a diff, the function a hunk is in opens in the panel.
-- **Open in your editor**: every function and file opens at its line, with the project's folder, so the editor shows
-  the whole project. VS Code, VSCodium, Cursor, Windsurf, Zed, WebStorm, Sublime Text and Kate work through their
+- **Open in your editor**: the repository itself (Open in, in the toolbar, a tab's menu or the palette; Ctrl Shift A),
+  and every function and file at its line, with the project's folder, so the editor shows the whole project. VS Code, VSCodium, Cursor, Windsurf, Zed, WebStorm, Sublime Text and Kate work through their
   command line tools, found on the PATH, the login shell's PATH, `~/.local/bin`, JetBrains Toolbox's scripts and
   Flatpak's exported commands (Arch's `zeditor` and `code-oss` too). For anything else, Settings, General takes a
   command, such as `nvim-qt +{line} {file}` (`{root}` is the project's folder); one that "runs in a terminal"

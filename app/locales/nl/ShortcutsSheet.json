@@ -27,6 +27,7 @@
     "fetch": "Fetch",
     "pull": "Pull",
     "push": "Push",
+    "openIn": "De repository in je editor openen",
     "localMove": "Door de bestanden gaan",
     "stage": "Het gekozen bestand stagen of unstagen",
     "commit": "Committen (in het commitvak)",

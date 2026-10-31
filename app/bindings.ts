@@ -93,6 +93,8 @@ export const commands = {
 	source: (repo: string, path: string, start: number, end: number) => __TAURI_INVOKE<Source>("source", { repo, path, start, end }),
 	/**  Opens a scanned file at a line in your editor. */
 	openFile: (repo: string, editor: string, path: string, line: number) => __TAURI_INVOKE<null>("open_file", { repo, editor, path, line }),
+	/**  Opens an open tab's folder in your editor. */
+	openFolderTab: (path: string, editor: string) => __TAURI_INVOKE<null>("open_folder_tab", { path, editor }),
 	/**  The editors found, and "custom" when one is set. */
 	editors: () => __TAURI_INVOKE<string[]>("editors"),
 	/**  Saves an exported picture (the canvas, the layer map) where the save dialog said: base64 for a PNG. */

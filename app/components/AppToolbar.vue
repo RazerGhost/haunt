@@ -60,6 +60,9 @@ const fetchedTip = computed(() => {
 })
 const fetchFailed = computed(() => network.lastFetch.value?.ok === false)
 
+const openIn = useOpenIn()
+const { info } = useRepositories()
+
 const searchInput = useTemplateRef<{ inputRef: HTMLInputElement | null }>('searchInput')
 // Ctrl+K opens the command palette (AppPalette); Ctrl+F finds a function in the code views.
 const router = useRouter()
@@ -69,6 +72,7 @@ defineShortcuts({
   f5: () => { if (!busy.value) void network.fetch() },
   meta_shift_p: () => { if (!busy.value && current.value?.upstream) void network.pull() },
   meta_shift_u: () => { if (!busy.value && current.value) void network.push() },
+  meta_shift_a: () => { if (info.value?.root) void openIn.open(info.value.root) },
   alt_arrowleft: () => router.back(),
   alt_arrowright: () => router.forward(),
   // Ctrl+1 for Git, Ctrl+2 for Code (⌘ on macOS).
@@ -129,6 +133,10 @@ defineShortcuts({
 
     <UTooltip v-if="branch" :text="branchTip">
       <UButton to="/local" color="neutral" variant="ghost" size="sm" icon="i-lucide-git-branch" class="max-w-56 min-w-0 font-mono text-xs" :label="branch" :ui="{ label: 'truncate' }" />
+    </UTooltip>
+
+    <UTooltip v-if="info?.root" :text="openIn.label.value" :kbds="['meta', 'shift', 'A']">
+      <UButton icon="i-lucide-square-arrow-out-up-right" :label="openIn.label.value" :aria-label="openIn.label.value" color="neutral" variant="ghost" size="sm" :ui="{ label: 'hidden xl:inline' }" @click="openIn.open(info.root)" />
     </UTooltip>
 
     <div class="min-w-2 flex-1" />
