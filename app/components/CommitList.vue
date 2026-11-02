@@ -22,6 +22,15 @@ const problem = ref('')
 let layout = new GraphLayout()
 const ask = latest(repo)
 const { loading } = ask
+// The spinner under the list, only once a read has taken a moment: a quick refresh (a commit, a fetch) would flash it.
+const slow = ref(false)
+let slowTimer: ReturnType<typeof setTimeout> | undefined
+watch(loading, (now) => {
+  clearTimeout(slowTimer)
+  if (now) slowTimer = setTimeout(() => { slow.value = true }, 400)
+  else slow.value = false
+})
+onBeforeUnmount(() => clearTimeout(slowTimer))
 // How times show and in what order commits are listed (Settings, General).
 const { times, order } = usePreferences()
 
@@ -207,7 +216,7 @@ function when(seconds: number): string {
           <span class="w-16 shrink-0 text-right font-mono text-dimmed">{{ commits[at]!.sha.slice(0, 7) }}</span>
         </div>
       </div>
-      <div v-if="loading" class="sticky bottom-0 flex justify-center bg-default/80 py-1 text-xs text-muted">
+      <div v-if="slow" class="sticky bottom-0 flex justify-center bg-default/80 py-1 text-xs text-muted">
         <UIcon name="i-lucide-loader-circle" class="size-3.5 animate-spin" />
       </div>
     </div>

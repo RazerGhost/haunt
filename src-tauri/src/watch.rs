@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
+use notify::event::{AccessKind, AccessMode, EventKind, ModifyKind};
 use notify::RecursiveMode;
 use notify_debouncer_full::{new_debouncer_opt, DebounceEventResult, Debouncer, NoCache};
 
@@ -96,6 +97,18 @@ impl GitPart {
     }
 }
 
+/// Whether an event is something changing, not something being read. On Linux inotify also reports a file or folder
+/// being opened, and its access time being set: the scanner reading the files would otherwise start the next scan,
+/// over and over, and git reading its folder would announce news every second.
+fn changes_something(kind: &EventKind) -> bool {
+    match kind {
+        EventKind::Access(AccessKind::Close(AccessMode::Write)) => true,
+        EventKind::Access(_) => false,
+        EventKind::Modify(ModifyKind::Metadata(_)) => false,
+        _ => true,
+    }
+}
+
 fn watcher(
     delay: Duration,
     path: &Path,
@@ -106,7 +119,7 @@ fn watcher(
     let handle = move |result: DebounceEventResult| {
         let Ok(events) = result else { return };
         let mut wanted: Vec<Change> = Vec::new();
-        for event in &events {
+        for event in events.iter().filter(|event| changes_something(&event.kind)) {
             for path in &event.paths {
                 if let Some(change) = classify(path) {
                     // Git's parts of one burst gather into one change.
@@ -339,6 +352,45 @@ mod tests {
             "one scan for both writes, none for the notes"
         );
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn reading_files_and_folders_is_not_a_change() {
+        let dir = std::env::temp_dir().join(format!("haunt-watch-read-{}", std::process::id()));
+        let src = dir.join("src");
+        std::fs::create_dir_all(src.join("inner")).unwrap();
+        std::fs::write(src.join("a.ts"), "export const a = 1\n").unwrap();
+        let root = crate::paths::plain(std::fs::canonicalize(&dir).unwrap());
+        let (sender, receiver) = channel();
+        let sender = std::sync::Arc::new(parking_lot::Mutex::new(sender));
+        let _watchers = folders(&root, &["src".into()], vec![], move |change: Change| {
+            let _ = sender.lock().send(change);
+        });
+        std::thread::sleep(Duration::from_millis(200));
+        // What a scan does: list the folders and read the files.
+        for _ in 0..3 {
+            let _ = std::fs::read_dir(&src).unwrap().count();
+            let _ = std::fs::read_dir(src.join("inner")).unwrap().count();
+            let _ = std::fs::read_to_string(src.join("a.ts")).unwrap();
+        }
+        assert!(receiver.recv_timeout(Duration::from_millis(1000)).is_err(), "reading started a scan");
+        // A write still does.
+        std::fs::write(src.join("a.ts"), "export const a = 2\n").unwrap();
+        assert_eq!(receiver.recv_timeout(Duration::from_secs(5)).expect("a change"), Change::Scan("src/a.ts".into()));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn tells_a_change_from_a_read() {
+        use notify::event::{AccessKind, CreateKind, DataChange, MetadataKind, ModifyKind, RemoveKind};
+        assert!(!changes_something(&EventKind::Access(AccessKind::Open(AccessMode::Any))));
+        assert!(!changes_something(&EventKind::Access(AccessKind::Close(AccessMode::Read))));
+        assert!(!changes_something(&EventKind::Modify(ModifyKind::Metadata(MetadataKind::AccessTime))));
+        assert!(changes_something(&EventKind::Access(AccessKind::Close(AccessMode::Write))));
+        assert!(changes_something(&EventKind::Modify(ModifyKind::Data(DataChange::Any))));
+        assert!(changes_something(&EventKind::Create(CreateKind::Folder)));
+        assert!(changes_something(&EventKind::Remove(RemoveKind::File)));
+        assert!(changes_something(&EventKind::Any));
     }
 
     #[test]
