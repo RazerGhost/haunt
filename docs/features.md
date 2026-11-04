@@ -56,7 +56,8 @@ Everything Haunt does, by part of the window. The [README](../README.md) has the
   terminal for pinentry-curses, and says so when a signed commit fails for it.
 - **When something fails**, the message says what git said, with Copy, and offers to trust the folder when its trust
   was the reason; it stays until you close it. After a discard, a dropped stash, an undone commit or a reset, Undo shows for a few seconds; the
-  Recently discarded and Recently dropped lists keep them for 30 days either way. Further back, the **Reflog** (More,
+  Recently discarded and Recently dropped lists keep them for 30 days either way (Ctrl- and Shift-click pick several to
+  restore together). Further back, the **Reflog** (More,
   or the palette) lists where HEAD or a branch pointed, newest first, with what moved it, and marks the commits only
   the reflog still keeps (left behind by a reset, a rebase or an amend, or by a deleted branch); right-click one to see
   it, put a new branch on it, reset the current branch to it or cherry-pick it.
@@ -93,7 +94,8 @@ Haunt reads git, and writes only what you ask for.
   none. Pages load as you scroll. Click a commit to see it below; Ctrl-click a second one to compare the two. A Local
   changes row above the history leads to the work not committed yet.
 - **Local changes**: unstaged files above, staged files below, the diff beside them and the commit box under them.
-  Stage, unstage or discard whole files or single lines; the functions the changes are in show above the diff, and a
+  Stage, unstage or discard whole files or single lines; Ctrl-click and Shift-click (or Shift ↑ ↓) select several files
+  of a list (Ctrl A all of it), which staging, unstaging, discarding and stashing then take together; the functions the changes are in show above the diff, and a
   click picks all of a function's lines. A discard is saved first and can be brought back for 30 days. The commit box
   has amend and sign-off, keeps a draft per branch, counts the subject's length, offers recent subjects, and says when
   hooks or signing will not run because the folder is not trusted, or when amending rewrites a commit that is on a
@@ -105,8 +107,8 @@ Haunt reads git, and writes only what you ask for.
   changed, it shows the branch against its upstream (Pull, Push, Fetch), the last commit (Amend) and the stashes.
 - **Branches, stashes and tags**: create a branch anywhere and switch to it (taking your changes along or stashing
   them), check out a remote branch, rename and delete (saying when commits would be lost), stash with or without
-  untracked files (or only the files you pick, from Local changes), apply, pop and drop, and create, delete and push
-  tags.
+  untracked files (or only the files you pick, from Local changes), apply, pop and drop (Ctrl- and Shift-click pick
+  several stashes to drop together), and create, delete and push tags.
 - **Fetch, pull and push**: fetch every remote; pull with fast-forward, merge or rebase (Haunt asks when the branches
   went apart); push to the tracked branch or a new one, and overwrite only if the remote branch is still where your
   last fetch saw it. **Before pulling**, the incoming commits can be read by function, with the functions you changed

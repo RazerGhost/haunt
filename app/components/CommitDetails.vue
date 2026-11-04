@@ -191,7 +191,7 @@ async function copy(text: string): Promise<void> {
   <div class="flex min-h-0 flex-col">
     <UAlert v-if="problem" class="m-3" color="error" variant="subtle" icon="i-lucide-circle-alert" :description="problem" />
     <template v-else-if="detail && span">
-      <header class="grid max-h-40 shrink-0 gap-1 overflow-auto border-b border-default px-4 py-2">
+      <header data-select-all="text" class="grid max-h-40 shrink-0 gap-1 overflow-auto border-b border-default px-4 py-2">
         <template v-if="other">
           <p class="text-sm font-medium text-highlighted">
             {{ t('CommitDetails.comparing') }} <span class="font-mono">{{ span.from?.slice(0, 7) }}</span> → <span class="font-mono">{{ span.to.slice(0, 7) }}</span>

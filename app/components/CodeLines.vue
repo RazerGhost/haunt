@@ -15,5 +15,5 @@ watch(() => [props.path, props.text], async () => {
 </script>
 
 <template>
-  <pre class="overflow-x-auto font-mono text-xs whitespace-pre"><template v-for="(line, at) in lines" :key="at"><span v-if="tokens?.[at]?.length"><span v-for="(token, index) in tokens[at]" :key="index" class="code-token" :style="token.htmlStyle as Record<string, string>">{{ token.content }}</span></span><span v-else>{{ line }}</span>{{ at < lines.length - 1 ? '\n' : '' }}</template></pre>
+  <pre data-select-all="text" class="overflow-x-auto font-mono text-xs whitespace-pre"><template v-for="(line, at) in lines" :key="at"><span v-if="tokens?.[at]?.length"><span v-for="(token, index) in tokens[at]" :key="index" class="code-token" :style="token.htmlStyle as Record<string, string>">{{ token.content }}</span></span><span v-else>{{ line }}</span>{{ at < lines.length - 1 ? '\n' : '' }}</template></pre>
 </template>

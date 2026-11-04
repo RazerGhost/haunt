@@ -51,5 +51,18 @@
   "deleteTagTitle": "Tag {name} verwijderen?",
   "deleteTagHelp": "Alleen hier: een tag die al gepusht is, blijft op de remote.",
   "deleteTag": "Tag verwijderen",
-  "tagNotDeleted": "De tag is niet verwijderd"
+  "tagNotDeleted": "De tag is niet verwijderd",
+  "dropSeveralTitle": {
+    "one": "{count} stash droppen?",
+    "other": "{count} stashes droppen?"
+  },
+  "dropSeveralHelp": {
+    "one": "Hij wordt 30 dagen bewaard en is terug te halen via Stashes.",
+    "other": "Ze worden 30 dagen bewaard en zijn terug te halen via Stashes."
+  },
+  "droppedSeveral": {
+    "one": "{count} stash gedropt",
+    "other": "{count} stashes gedropt"
+  },
+  "droppedSeveralHelp": "30 dagen bewaard."
 }

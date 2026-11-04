@@ -124,7 +124,31 @@ export function useRefActions() {
     }
   }
 
+  /** Drops several stashes after one question; the highest index first, so the others keep theirs until dropped. */
+  async function dropStashes(stashes: { index: number, message: string }[]): Promise<void> {
+    if (stashes.length === 1) return dropStash(stashes[0]!.index, stashes[0]!.message)
+    const count = stashes.length
+    const ok = await dialog.confirm({ title: t('composables.useRefActions.dropSeveralTitle', { count }), description: t('composables.useRefActions.dropSeveralHelp', { count }), confirm: t('composables.useRefActions.drop'), danger: true })
+    const indices = stashes.map(stash => stash.index).sort((a, b) => b - a)
+    if (!ok || !await run(t('composables.useRefActions.notDropped'), async (where) => {
+      for (const index of indices) await haunt.dropStash(where, index)
+    })) return
+    const at = repo.value
+    const kept = at ? await haunt.droppedStashes(at).then(list => list.slice(0, count)).catch(() => []) : []
+    toast.add({
+      title: t('composables.useRefActions.droppedSeveral', { count }),
+      description: t('composables.useRefActions.droppedSeveralHelp'),
+      icon: 'i-lucide-archive-x',
+      duration: 12000,
+      actions: kept.length === count ? [{ label: t('common.undo'), color: 'neutral', variant: 'outline', onClick: () => { void restoreStashes(kept.map(entry => entry.id)) } }] : []
+    })
+  }
+
   const restoreStash = (id: string) => run(t('composables.useRefActions.notRestored'), where => haunt.restoreStash(where, id))
+  /** Brings several dropped stashes back, the one dropped first first, so they come back in their order. */
+  const restoreStashes = (ids: string[]) => run(t('composables.useRefActions.notRestored'), async (where) => {
+    for (const id of [...ids].reverse()) await haunt.restoreStash(where, id)
+  })
 
   async function newTag(at: { rev: string, label: string } | null = null): Promise<void> {
     const answer = await dialog.prompt({
@@ -142,5 +166,5 @@ export function useRefActions() {
     if (ok) await run(t('composables.useRefActions.tagNotDeleted'), where => haunt.deleteTag(where, name))
   }
 
-  return { busy, dropped, loadDropped, newBranch, switchTo, renameBranch, deleteBranch, stash, applyStash, dropStash, restoreStash, newTag, deleteTag }
+  return { busy, dropped, loadDropped, newBranch, switchTo, renameBranch, deleteBranch, stash, applyStash, dropStash, dropStashes, restoreStash, restoreStashes, newTag, deleteTag }
 }

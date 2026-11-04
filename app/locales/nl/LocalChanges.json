@@ -34,5 +34,25 @@
     "one": "{count} bestand stashen",
     "other": "{count} bestanden stashen"
   },
-  "untracked": "nieuw"
+  "untracked": "nieuw",
+  "stageSelected": {
+    "one": "{count} bestand stagen",
+    "other": "{count} bestanden stagen"
+  },
+  "unstageSelected": {
+    "one": "{count} bestand unstagen",
+    "other": "{count} bestanden unstagen"
+  },
+  "stashSelected": {
+    "one": "{count} bestand stashen",
+    "other": "{count} bestanden stashen"
+  },
+  "discardSelected": {
+    "one": "{count} bestand weggooien",
+    "other": "{count} bestanden weggooien"
+  },
+  "restoreSeveral": {
+    "one": "{count} terugzetten",
+    "other": "{count} terugzetten"
+  }
 }

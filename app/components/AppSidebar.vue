@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import type { StashRef } from '~/bindings'
+
 /*
  * The sidebar. In Git: the local changes and the commits, the repository's branches, its worktrees
- * (WorktreeList), remotes, tags and stashes. Click a branch, remote branch or tag to list its commits, a stash to see what it saved; a right click acts on
+ * (WorktreeList), remotes, tags and stashes. Click a branch, remote branch or tag to list its commits, a stash to see what it saved
+ * (Ctrl- and Shift-click pick several stashes, to drop or restore together: useMultiSelect); a right click acts on
  * it (useRefActions). Remotes always show, with a + to add one; a right click on one copies or changes its URL, renames
  * or removes it (useRemotes). In Code, the views of the code and the project's parts instead (CodeSidebar); one width for both.
  */
@@ -16,6 +19,18 @@ watch([repo, gitChanged('stash')], () => void actions.loadDropped(), { immediate
 // The remotes with their URLs, for the ones with no remote branches yet.
 watch(repo, () => void remotes.load(), { immediate: true })
 const when = (seconds: number) => new Date(seconds * 1000).toLocaleString(locale())
+// Several stashes, or several dropped ones, picked to drop or bring back together.
+const stashPick = useMultiSelect(() => refs.value?.stashes ?? [], stash => stash.sha, 'stashes')
+const droppedPick = useMultiSelect(() => actions.dropped.value, entry => entry.id, 'dropped')
+function stashMenu(stash: StashRef) {
+  const stashes = stashPick.covering(stash)
+  if (stashes.length > 1) return [[{ label: t('AppSidebar.dropSeveral', { count: stashes.length }), icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: () => actions.dropStashes(stashes) }]]
+  return [[{ label: t('AppSidebar.apply'), icon: 'i-lucide-archive-restore', onSelect: () => actions.applyStash(stash.index, false) }, { label: t('AppSidebar.pop'), icon: 'i-lucide-package-open', onSelect: () => actions.applyStash(stash.index, true) }], [{ label: t('AppSidebar.drop'), icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: () => actions.dropStash(stash.index, stash.message) }]]
+}
+// A Ctrl- or Shift-click picks, without opening the stash.
+function clickStash(stash: StashRef, event: MouseEvent): void {
+  if (stashPick.click(stash, event)) event.preventDefault()
+}
 
 const shut = usePersisted<Record<string, boolean>>('sidebar-shut', {}, value => !!value && typeof value === 'object' && !Array.isArray(value))
 /** The Git screens without a place of their own in the sidebar. */
@@ -200,14 +215,21 @@ const active = (path: string) => route.path === path ? 'bg-elevated font-medium 
           <UIcon name="i-lucide-chevron-right" class="size-3 transition" :class="{ 'rotate-90': !shut.stashes }" />
           {{ t('AppSidebar.stashes') }} <span class="ml-auto font-normal tabular-nums">{{ shown.stashes.length }}</span>
         </button>
-        <ul v-if="!shut.stashes" class="grid grid-cols-[minmax(0,1fr)]">
+        <div v-if="!shut.stashes && stashPick.several.value" class="flex items-center gap-1 pr-2 pl-5 text-label text-muted">
+          <span class="flex-1">{{ t('AppSidebar.picked', { count: stashPick.chosen.value.length }) }}</span>
+          <UButton :label="t('AppSidebar.dropSeveral', { count: stashPick.chosen.value.length })" size="xs" color="error" variant="ghost" @click="actions.dropStashes(stashPick.chosen.value)" />
+          <UButton icon="i-lucide-x" size="xs" color="neutral" variant="ghost" :aria-label="t('AppSidebar.unpick')" :title="t('AppSidebar.unpick')" @click="stashPick.clear()" />
+        </div>
+        <ul v-if="!shut.stashes" data-select-all="stashes" class="grid grid-cols-[minmax(0,1fr)] select-none">
           <li v-for="stash in shown.stashes" :key="stash.sha">
-            <UContextMenu :items="[[{ label: t('AppSidebar.apply'), icon: 'i-lucide-archive-restore', onSelect: () => actions.applyStash(stash.index, false) }, { label: t('AppSidebar.pop'), icon: 'i-lucide-package-open', onSelect: () => actions.applyStash(stash.index, true) }], [{ label: t('AppSidebar.drop'), icon: 'i-lucide-trash-2', color: 'error', onSelect: () => actions.dropStash(stash.index, stash.message) }]]">
+            <UContextMenu :items="stashMenu(stash)">
               <NuxtLink
                 :to="{ path: '/commits', query: { commit: stash.sha } }"
                 class="flex items-center gap-1.5 rounded py-1 pr-2 pl-5 text-ui hover:bg-elevated"
-                :class="{ 'bg-elevated text-highlighted': route.path === '/commits' && route.query.commit === stash.sha }"
+                :class="{ 'bg-elevated text-highlighted': stashPick.several.value ? stashPick.isPicked(stash) : route.path === '/commits' && route.query.commit === stash.sha }"
+                :aria-selected="stashPick.several.value ? stashPick.isPicked(stash) : undefined"
                 :title="t('AppSidebar.stashTitle', { message: stash.message, when: when(stash.time) })"
+                @click="clickStash(stash, $event)"
               >
                 <UIcon name="i-lucide-archive" class="size-3.5 shrink-0 text-dimmed" />
                 <span class="min-w-0 truncate">{{ stash.message }}</span>
@@ -217,10 +239,17 @@ const active = (path: string) => route.path === path ? 'bg-elevated font-medium 
         </ul>
         <details v-if="!shut.stashes && actions.dropped.value.length" class="pr-2 pl-5 text-ui">
           <summary class="cursor-pointer py-1 text-muted">{{ t('AppSidebar.recentlyDropped') }} <span class="tabular-nums">{{ actions.dropped.value.length }}</span></summary>
-          <ul class="grid grid-cols-[minmax(0,1fr)] gap-1">
-            <li v-for="entry in actions.dropped.value" :key="entry.id" class="flex items-center gap-1.5">
+          <ul data-select-all="dropped" class="grid grid-cols-[minmax(0,1fr)] gap-1 select-none">
+            <li
+              v-for="entry in actions.dropped.value"
+              :key="entry.id"
+              class="flex cursor-default items-center gap-1.5 rounded pl-1"
+              :class="droppedPick.isPicked(entry) && droppedPick.several.value ? 'bg-elevated text-highlighted' : ''"
+              :aria-selected="droppedPick.several.value ? droppedPick.isPicked(entry) : undefined"
+              @click="droppedPick.click(entry, $event)"
+            >
               <span class="min-w-0 flex-1 truncate text-muted" :title="t('AppSidebar.droppedTitle', { message: entry.message, when: when(entry.at) })">{{ entry.message }}</span>
-              <UButton :label="t('common.restore')" size="xs" color="neutral" variant="ghost" @click="actions.restoreStash(entry.id)" />
+              <UButton :label="droppedPick.covering(entry).length > 1 ? t('AppSidebar.restoreSeveral', { count: droppedPick.covering(entry).length }) : t('common.restore')" size="xs" color="neutral" variant="ghost" @click.stop="actions.restoreStashes(droppedPick.covering(entry).map(item => item.id))" />
             </li>
           </ul>
         </details>

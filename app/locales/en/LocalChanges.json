@@ -34,5 +34,25 @@
     "one": "Stash {count} file",
     "other": "Stash {count} files"
   },
-  "untracked": "new"
+  "untracked": "new",
+  "stageSelected": {
+    "one": "Stage {count} file",
+    "other": "Stage {count} files"
+  },
+  "unstageSelected": {
+    "one": "Unstage {count} file",
+    "other": "Unstage {count} files"
+  },
+  "stashSelected": {
+    "one": "Stash {count} file",
+    "other": "Stash {count} files"
+  },
+  "discardSelected": {
+    "one": "Discard {count} file",
+    "other": "Discard {count} files"
+  },
+  "restoreSeveral": {
+    "one": "Restore {count}",
+    "other": "Restore {count}"
+  }
 }

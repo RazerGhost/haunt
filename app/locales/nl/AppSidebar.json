@@ -39,5 +39,18 @@
   "resize": "Sleep om de zijbalk breder of smaller te maken",
   "resizeHelp": "Slepen om de breedte te wijzigen · dubbelklikken om te herstellen",
   "reflog": "Reflog",
-  "grep": "Bestanden doorzoeken"
+  "grep": "Bestanden doorzoeken",
+  "dropSeveral": {
+    "one": "{count} stash droppen",
+    "other": "{count} stashes droppen"
+  },
+  "restoreSeveral": {
+    "one": "{count} terugzetten",
+    "other": "{count} terugzetten"
+  },
+  "picked": {
+    "one": "{count} gekozen",
+    "other": "{count} gekozen"
+  },
+  "unpick": "Niets kiezen"
 }

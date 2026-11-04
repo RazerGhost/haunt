@@ -61,7 +61,7 @@ const when = (seconds: number) => times.value === 'date'
     </div>
     <p v-else-if="problem" class="p-3 text-ui text-error">{{ problem }}</p>
     <div v-else-if="!blame" class="grid justify-items-center py-10"><UIcon name="i-lucide-loader-circle" class="size-5 animate-spin text-muted" /></div>
-    <div v-else class="min-h-0 flex-1 overflow-auto">
+    <div v-else data-select-all="text" class="min-h-0 flex-1 overflow-auto">
       <table class="w-full border-collapse font-mono text-xs">
         <tbody>
           <tr v-for="(line, index) in blame.lines" :key="index" :class="index > 0 && blame.lines[index - 1]!.sha !== line.sha ? 'border-t border-default/60' : ''">

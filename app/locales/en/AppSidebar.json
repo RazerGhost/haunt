@@ -39,5 +39,18 @@
   "resize": "Drag to resize the sidebar",
   "resizeHelp": "Drag to resize · double-click to reset",
   "reflog": "Reflog",
-  "grep": "Search files"
+  "grep": "Search files",
+  "dropSeveral": {
+    "one": "Drop {count} stash",
+    "other": "Drop {count} stashes"
+  },
+  "restoreSeveral": {
+    "one": "Restore {count}",
+    "other": "Restore {count}"
+  },
+  "picked": {
+    "one": "{count} picked",
+    "other": "{count} picked"
+  },
+  "unpick": "Pick none"
 }

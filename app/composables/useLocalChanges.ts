@@ -121,6 +121,12 @@ export function useLocalChanges() {
       : run(at => haunt.lines(at, path, picked, action)),
     discard: (paths: string[]) => discardWithUndo(paths.length === 1 ? t('composables.useLocalChanges.discardedFile', { path: paths[0]! }) : t('composables.useLocalChanges.discardedFiles', { count: paths.length }), at => haunt.discard(at, paths)),
     restore: (id: string) => run(at => haunt.restore(at, id)),
+    /** Brings several discards back, the oldest first, so a file discarded twice ends as it was before the later one. */
+    restoreAll: (ids: string[]) => run(async (at) => {
+      let answer: unknown = null
+      for (const id of [...ids].reverse()) answer = await haunt.restore(at, id)
+      return answer
+    }),
     /** Adds patterns to the repository's .gitignore; the lists follow on the git news. */
     ignore: (patterns: string[]) => run(at => haunt.ignore(at, patterns)),
     /** Stashes only these files (untracked ones too when any is untracked). */

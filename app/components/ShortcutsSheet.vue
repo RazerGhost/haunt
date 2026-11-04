@@ -41,6 +41,8 @@ const GROUPS: { id: string, items: { id: string, keys: string[][] }[] }[] = [
     id: 'local',
     items: [
       { id: 'localMove', keys: [['arrowup'], ['arrowdown']] },
+      { id: 'localSelect', keys: [['shift', 'arrowup'], ['shift', 'arrowdown']] },
+      { id: 'localSelectAll', keys: [['meta', 'a']] },
       { id: 'stage', keys: [['space']] },
       { id: 'commit', keys: [['meta', 'enter']] }
     ]

@@ -51,5 +51,18 @@
   "deleteTagTitle": "Delete the tag {name}?",
   "deleteTagHelp": "Only here: a tag already pushed stays on the remote.",
   "deleteTag": "Delete tag",
-  "tagNotDeleted": "The tag was not deleted"
+  "tagNotDeleted": "The tag was not deleted",
+  "dropSeveralTitle": {
+    "one": "Drop {count} stash?",
+    "other": "Drop {count} stashes?"
+  },
+  "dropSeveralHelp": {
+    "one": "It is kept for 30 days and can be restored from Stashes.",
+    "other": "They are kept for 30 days and can be restored from Stashes."
+  },
+  "droppedSeveral": {
+    "one": "{count} stash dropped",
+    "other": "{count} stashes dropped"
+  },
+  "droppedSeveralHelp": "Kept for 30 days."
 }

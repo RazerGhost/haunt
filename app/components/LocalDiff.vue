@@ -214,7 +214,7 @@ const SIGN = { add: '+', del: '−', context: ' ' } as const
     <p v-else-if="diff?.binary" class="p-3 text-sm text-muted">{{ t('LocalDiff.binary') }}</p>
     <p v-else-if="diff && !diff.hunks.length" class="p-3 text-sm text-muted">{{ t('LocalDiff.noLines') }}</p>
 
-    <div v-else-if="diff" class="min-h-0 flex-1 overflow-auto font-mono text-xs leading-[1.6]">
+    <div v-else-if="diff" data-select-all="text" class="min-h-0 flex-1 overflow-auto font-mono text-xs leading-[1.6]">
       <table v-if="!split" class="w-full border-collapse">
         <tbody v-for="({ hunk, lines }, index) in shown" :key="index">
           <tr class="bg-elevated/60 text-muted">
