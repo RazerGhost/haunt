@@ -93,6 +93,10 @@ export const commands = {
 	source: (repo: string, path: string, start: number, end: number) => __TAURI_INVOKE<Source>("source", { repo, path, start, end }),
 	/**  Opens a scanned file at a line in your editor. */
 	openFile: (repo: string, editor: string, path: string, line: number) => __TAURI_INVOKE<null>("open_file", { repo, editor, path, line }),
+	/**  Opens any file of the shown repository at a line in your editor (a changed file the scan does not read too). */
+	openRepoFile: (repo: string, editor: string, path: string, line: number) => __TAURI_INVOKE<null>("open_repo_file", { repo, editor, path, line }),
+	/**  Shows a file of the shown repository in the file manager, picked where the file manager can (Windows, macOS). */
+	revealRepoFile: (repo: string, path: string) => __TAURI_INVOKE<null>("reveal_repo_file", { repo, path }),
 	/**  Opens an open tab's folder in your editor. */
 	openFolderTab: (path: string, editor: string) => __TAURI_INVOKE<null>("open_folder_tab", { path, editor }),
 	/**  The editors found, and "custom" when one is set. */
@@ -233,6 +237,10 @@ export const commands = {
 	pull: (repo: string, mode: PullMode) => __TAURI_INVOKE<PullResult>("pull", { repo, mode }),
 	/**  Pushes the current branch (to `remote` the first time, when there are several); `force` overwrites with a lease. */
 	push: (repo: string, remote: string | null, force: boolean) => __TAURI_INVOKE<PushResult>("push", { repo, remote, force }),
+	/**  Pushes a branch you are not on to the branch it tracks (or, the first time, a new one of its name). */
+	pushBranch: (repo: string, name: string, remote: string | null) => __TAURI_INVOKE<PushResult>("push_branch", { repo, name, remote }),
+	/**  Fast-forwards a branch you are not on to the remote branch it tracks. */
+	fastForward: (repo: string, name: string) => __TAURI_INVOKE<null>("fast_forward", { repo, name }),
 	pushTag: (repo: string, name: string, remote: string | null) => __TAURI_INVOKE<PushResult>("push_tag", { repo, name, remote }),
 	/**
 	 *  Stops the fetch, pull or push running in `repo`.

@@ -15,6 +15,8 @@ const listChanged = gitChanged('head', 'refs')
 
 const ROW = 26
 const PAGE = 300
+/** Where each commit list was scrolled (by repository and filter), for the window's whole run. */
+const scrolled = new Map<string, number>()
 const commits = shallowRef<LogCommit[]>([])
 const rows = shallowRef<GraphRow[]>([])
 const more = ref(false)
@@ -100,12 +102,21 @@ async function page(fresh: boolean, limit = PAGE): Promise<void> {
     problem.value = errorMessage(error, t('CommitList.readError'))
   }
 }
-watch(() => [props.from, props.author, props.message, props.path, props.changed, props.merges, repo.value, order.value], () => {
+// Where each list was scrolled, by repository and filter, so going back to a tab finds its place.
+const place = computed(() => JSON.stringify([repo.value, props.from, props.author, props.message, props.path, props.changed, props.merges, order.value]))
+watch(place, async (now) => {
   commits.value = []
   rows.value = []
   scrollTop.value = 0
   if (list.value) list.value.scrollTop = 0
-  void page(true)
+  const kept = scrolled.get(now) ?? 0
+  // Enough rows to reach the place kept, then scrolled back to it.
+  await page(true, Math.max(PAGE, Math.ceil((kept + height.value) / ROW) + 60))
+  if (kept && place.value === now) {
+    await nextTick()
+    if (list.value) list.value.scrollTop = kept
+    scrollTop.value = list.value?.scrollTop ?? 0
+  }
 }, { immediate: true })
 // A commit, fetch or branch switch: read the list again, as many rows as were loaded, so the place stays.
 watch(listChanged, () => void page(true, Math.max(PAGE, commits.value.length)))
@@ -119,6 +130,7 @@ onBeforeUnmount(() => observer?.disconnect())
 
 function onScroll(): void {
   scrollTop.value = list.value?.scrollTop ?? 0
+  scrolled.set(place.value, scrollTop.value)
   // Near the end: the next page.
   if (more.value && !loading.value && scrollTop.value + height.value > (commits.value.length - 60) * ROW) void page(false)
 }
@@ -134,6 +146,14 @@ const lanesOf = (at: number) => Math.min(100, Math.max(1, rows.value[at]?.width 
 
 function choose(commit: LogCommit, event: MouseEvent): void {
   emit('select', commit.sha, event.ctrlKey || event.metaKey)
+}
+
+/** Ctrl C (⌘C) with nothing selected as text: the picked commit's sha. */
+function copyPicked(event: KeyboardEvent): void {
+  if (!props.selected || window.getSelection()?.toString()) return
+  event.preventDefault()
+  void navigator.clipboard?.writeText(props.selected)
+  useToast().add({ title: t('CommitList.shaCopied', { sha: props.selected.slice(0, 7) }), icon: 'i-lucide-copy', duration: 2000 })
 }
 
 function move(step: number): void {
@@ -182,6 +202,8 @@ function when(seconds: number): string {
       @scroll.passive="onScroll"
       @keydown.down.prevent="move(1)"
       @keydown.up.prevent="move(-1)"
+      @keydown.ctrl.c="copyPicked"
+      @keydown.meta.c="copyPicked"
     >
       <div :style="{ height: `${commits.length * ROW}px` }" class="relative">
         <div

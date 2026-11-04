@@ -31,5 +31,7 @@
     "other": "Commit {count} files"
   },
   "commit": "Commit",
-  "trust": "Trust this folder…"
+  "trust": "Trust this folder…",
+  "commitAndPush": "Commit and push",
+  "commitAndPushHelp": "Commits, then pushes the branch (Ctrl Shift Enter)"
 }

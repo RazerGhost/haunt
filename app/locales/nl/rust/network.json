@@ -18,5 +18,9 @@
   "pushStopped": "Het pushen is gestopt.",
   "stale": "{remote}/{target} is veranderd sinds deze repository hem voor het laatst fetchte, dus hij is niet overschreven. Fetch en kijk eerst wat er staat.",
   "noTag": "Er is geen tag {name}.",
-  "tagThere": "{remote} heeft al een tag {name} op een andere commit; die is gelaten zoals hij is."
+  "tagThere": "{remote} heeft al een tag {name} op een andere commit; die is gelaten zoals hij is.",
+  "noBranch": "Er is geen branch {name}.",
+  "forwardCurrent": "{name} is de branch waar je op staat: pull die in plaats daarvan.",
+  "forwardNoUpstream": "{name} volgt geen remote branch.",
+  "forwardApart": "{name} en {remote}/{branch} zijn uit elkaar gegaan, dus {name} is gelaten zoals hij was. Schakel ernaar over en pull om te mergen of te rebasen."
 }

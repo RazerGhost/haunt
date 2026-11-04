@@ -90,6 +90,29 @@ pub fn reveal(folder: &Path) -> Result<(), String> {
         .map_err(|error| said!("editor.fileManager", "The file manager could not start: {error}", error = error))
 }
 
+/// Shows a file in the system's file manager: picked in Explorer and Finder, its folder elsewhere.
+pub fn reveal_file(file: &Path) -> Result<(), String> {
+    if cfg!(target_os = "linux") {
+        return reveal(file.parent().unwrap_or(file));
+    }
+    #[cfg(windows)]
+    let mut command = {
+        let mut command = crate::process::command("explorer");
+        // One argument as Explorer reads it, `/select,"C:\a b\c.txt"`: quoted as a whole, it would not find the file.
+        std::os::windows::process::CommandExt::raw_arg(&mut command, format!("/select,\"{}\"", file.display()));
+        command
+    };
+    #[cfg(not(windows))]
+    let mut command = {
+        let mut command = crate::process::command("open");
+        command.arg("-R").arg(file);
+        command
+    };
+    command.stdin(Stdio::null());
+    detached(command)
+        .map_err(|error| said!("editor.fileManager", "The file manager could not start: {error}", error = error))
+}
+
 /// Opens a terminal in a folder: the one Settings names, else HAUNT_TERMINAL, else $TERMINAL, else Windows Terminal or
 /// PowerShell on Windows, Terminal on macOS, and the first of the usual terminals found on Linux.
 pub fn terminal(tools: &Tools, folder: &Path) -> Result<(), String> {

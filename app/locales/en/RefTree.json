@@ -17,5 +17,15 @@
   "gone": "gone",
   "toPush": "{count} to push",
   "toPull": "{count} to pull",
-  "pullTitle": "{pull}. Click to open it on the web."
+  "pullTitle": "{pull}. Click to open it on the web.",
+  "compare": "Compare with {name}",
+  "fastForward": {
+    "one": "Update from {upstream} ({count} commit)",
+    "other": "Update from {upstream} ({count} commits)"
+  },
+  "pushBranch": "Push {name}",
+  "deleteSeveral": {
+    "one": "Delete {count} branch",
+    "other": "Delete {count} branches"
+  }
 }

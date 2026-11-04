@@ -54,5 +54,7 @@
   "restoreSeveral": {
     "one": "Restore {count}",
     "other": "Restore {count}"
-  }
+  },
+  "resize": "Drag to resize the file lists",
+  "resizeHelp": "Drag to resize · double-click to reset"
 }

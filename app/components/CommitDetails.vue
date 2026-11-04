@@ -14,6 +14,8 @@ const props = defineProps<{ sha: string, compare: string | null, alone?: boolean
 const emit = defineEmits<{ select: [sha: string] }>()
 const { scan, index, select } = useCode()
 const { repo } = useRepositories()
+// A file's menu: open it in the editor, show it in its folder, copy its path.
+const openIn = useOpenIn()
 const colorMode = useColorMode()
 const router = useRouter()
 
@@ -248,7 +250,8 @@ async function copy(text: string): Promise<void> {
       <!-- Files -->
       <div v-if="lens === 'files'" class="grid min-h-0 flex-1 grid-cols-[18rem_minmax(0,1fr)]">
         <ul class="min-h-0 overflow-auto border-r border-default py-1">
-          <li v-for="item in span.files" :key="item.path">
+          <UContextMenu v-for="item in span.files" :key="item.path" :items="[openIn.fileItems(item.path, item.status !== 'deleted')]">
+          <li>
             <button
               type="button"
               class="flex w-full items-center gap-1.5 px-2 py-0.5 text-left text-xs"
@@ -261,6 +264,7 @@ async function copy(text: string): Promise<void> {
               <span class="font-mono text-label tabular-nums"><span class="text-success">+{{ item.added }}</span> <span class="text-error">−{{ item.removed }}</span></span>
             </button>
           </li>
+          </UContextMenu>
         </ul>
         <DiffView v-if="file" :key="`${span.from}:${span.to}:${file.path}`" :from="span.from" :to="span.to" :path="file.path" :old-path="file.oldPath" class="min-h-0" />
         <p v-else class="p-4 text-sm text-muted">{{ t('CommitDetails.noFiles') }}</p>

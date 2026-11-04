@@ -33,5 +33,21 @@
   "useOurs": "Use yours",
   "useTheirs": "Use theirs",
   "useBoth": "Use both",
-  "markAsResolved": "Mark as resolved"
+  "markAsResolved": "Mark as resolved",
+  "picked": {
+    "one": "{count} file picked",
+    "other": "{count} files picked"
+  },
+  "takeOursSeveral": {
+    "one": "Take all of yours ({name}) for {count} file",
+    "other": "Take all of yours ({name}) for {count} files"
+  },
+  "takeTheirsSeveral": {
+    "one": "Take all of theirs ({name}) for {count} file",
+    "other": "Take all of theirs ({name}) for {count} files"
+  },
+  "resolvedSeveral": {
+    "one": "{count} file resolved",
+    "other": "{count} files resolved"
+  }
 }

@@ -4,7 +4,8 @@
  * system's, at the left). Drag the empty space to move the window, double-click it to maximise. Drag a tab to move it;
  * right-click one to pin it (first in the row, its name hidden, no close button) or give it a colour, to close it, the
  * others or those to its right (never a pinned one), to move it to another profile, or to show its folder in the file
- * manager or open a terminal there. With more than one profile, the profile in use is first in the row: a menu to switch, add,
+ * manager or open a terminal there. Ctrl Tab and Ctrl Shift Tab go to the next and previous tab, Ctrl W (⌘W) closes the
+ * one shown (not a pinned one) and Alt 1 to 9 show the tab at that place (9 the last). With more than one profile, the profile in use is first in the row: a menu to switch, add,
  * rename or delete them (settings.rs keeps each profile's tabs).
  */
 const { info, picking, closed, systemTitleBar, chooseRoot, closeTab, reopenClosed } = useRepositories()
@@ -47,8 +48,26 @@ const profileMenu = computed(() => [
     ...others.value.length ? [{ label: t('TitleBar.deleteProfile'), icon: 'i-lucide-trash-2', children: others.value.map(name => ({ label: name, color: 'error' as const, onSelect: () => deleteProfile(name) })) }] : []
   ]
 ])
-// Ctrl+O (⌘O) opens the repository manager; Ctrl+Shift+T reopens the tab closed last.
-defineShortcuts({ meta_shift_t: () => { void reopenClosed() }, meta_o: () => { picking.value = true } })
+// Ctrl+O (⌘O) opens the repository manager; Ctrl+Shift+T reopens the tab closed last; the tab keys go between tabs.
+function stepTab(step: number): void {
+  const all = info.value?.tabs ?? []
+  if (!all.length) return
+  const at = all.indexOf(info.value?.root ?? '')
+  show(all[(Math.max(at, 0) + step + all.length) % all.length]!)
+}
+function nthTab(place: number): void {
+  const all = info.value?.tabs ?? []
+  const path = place === 9 ? all.at(-1) : all[place - 1]
+  if (path) show(path)
+}
+defineShortcuts({
+  meta_shift_t: () => { void reopenClosed() },
+  meta_o: () => { picking.value = true },
+  ctrl_tab: () => stepTab(1),
+  ctrl_shift_tab: () => stepTab(-1),
+  meta_w: () => { if (info.value?.root && !picking.value && !pinned(info.value.root)) void closeTab(info.value.root) },
+  ...Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8, 9].map(place => [`alt_${place}`, () => nthTab(place)]))
+})
 /** The + menu: a repository to open, the recent ones not open, and the tab closed last. */
 const openMenu = computed(() => {
   const name = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path

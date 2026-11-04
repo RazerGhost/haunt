@@ -47,5 +47,19 @@
   "tagWhichRemote": "Push {name} to which remote?",
   "severalRemotes": "This repository has several remotes.",
   "tagPushed": "Pushed {name}",
-  "tagNotPushed": "{name} was not pushed"
+  "tagNotPushed": "{name} was not pushed",
+  "branchPushed": "Pushed {name}",
+  "branchRejected": "{name} was not pushed",
+  "branchRejectedHelp": "The remote branch has commits {name} does not. Switch to it and pull first.",
+  "forwarded": "{name} is up to date",
+  "forwardFailed": "{name} was not updated",
+  "tagsWhichRemote": {
+    "one": "Push {count} tag to which remote?",
+    "other": "Push {count} tags to which remote?"
+  },
+  "tagsPushed": {
+    "one": "{count} tag pushed",
+    "other": "{count} tags pushed"
+  },
+  "tagsNotPushed": "Not every tag was pushed"
 }

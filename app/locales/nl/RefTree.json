@@ -17,5 +17,15 @@
   "gone": "weg",
   "toPush": "{count} te pushen",
   "toPull": "{count} te pullen",
-  "pullTitle": "{pull}. Klik om hem op het web te openen."
+  "pullTitle": "{pull}. Klik om hem op het web te openen.",
+  "compare": "Vergelijken met {name}",
+  "fastForward": {
+    "one": "Bijwerken vanaf {upstream} ({count} commit)",
+    "other": "Bijwerken vanaf {upstream} ({count} commits)"
+  },
+  "pushBranch": "{name} pushen",
+  "deleteSeveral": {
+    "one": "{count} branch verwijderen",
+    "other": "{count} branches verwijderen"
+  }
 }

@@ -33,5 +33,21 @@
   "useOurs": "Jouwe gebruiken",
   "useTheirs": "Hunne gebruiken",
   "useBoth": "Beide gebruiken",
-  "markAsResolved": "Als opgelost markeren"
+  "markAsResolved": "Als opgelost markeren",
+  "picked": {
+    "one": "{count} bestand gekozen",
+    "other": "{count} bestanden gekozen"
+  },
+  "takeOursSeveral": {
+    "one": "Alles van jou nemen ({name}) voor {count} bestand",
+    "other": "Alles van jou nemen ({name}) voor {count} bestanden"
+  },
+  "takeTheirsSeveral": {
+    "one": "Alles van hen nemen ({name}) voor {count} bestand",
+    "other": "Alles van hen nemen ({name}) voor {count} bestanden"
+  },
+  "resolvedSeveral": {
+    "one": "{count} bestand opgelost",
+    "other": "{count} bestanden opgelost"
+  }
 }

@@ -54,5 +54,7 @@
   "restoreSeveral": {
     "one": "{count} terugzetten",
     "other": "{count} terugzetten"
-  }
+  },
+  "resize": "Sleep om de bestandslijsten breder of smaller te maken",
+  "resizeHelp": "Slepen om de breedte te wijzigen · dubbelklikken om te herstellen"
 }

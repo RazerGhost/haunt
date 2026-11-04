@@ -67,7 +67,12 @@ const searchInput = useTemplateRef<{ inputRef: HTMLInputElement | null }>('searc
 // Ctrl+K opens the command palette (AppPalette); Ctrl+F finds a function in the code views.
 const router = useRouter()
 defineShortcuts({
-  meta_f: () => searchInput.value?.inputRef?.focus(),
+  // In a diff, code or a message (where you clicked last), Ctrl F finds in that text (TextFind); elsewhere, a function.
+  meta_f: () => {
+    const place = placeOf('[data-select-all="text"]')
+    if (place) window.dispatchEvent(new CustomEvent('haunt:find', { detail: place }))
+    else searchInput.value?.inputRef?.focus()
+  },
   // F5 fetches, Ctrl+Shift+P pulls and Ctrl+Shift+U pushes (with their questions); Alt+← and Alt+→ go back and forward.
   f5: () => { if (!busy.value) void network.fetch() },
   meta_shift_p: () => { if (!busy.value && current.value?.upstream) void network.pull() },

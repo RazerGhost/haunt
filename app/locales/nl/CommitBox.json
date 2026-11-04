@@ -31,5 +31,7 @@
     "other": "{count} bestanden committen"
   },
   "commit": "Committen",
-  "trust": "Deze map vertrouwen…"
+  "trust": "Deze map vertrouwen…",
+  "commitAndPush": "Committen en pushen",
+  "commitAndPushHelp": "Commit, en pusht dan de branch (Ctrl Shift Enter)"
 }

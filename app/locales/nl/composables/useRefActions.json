@@ -64,5 +64,22 @@
     "one": "{count} stash gedropt",
     "other": "{count} stashes gedropt"
   },
-  "droppedSeveralHelp": "30 dagen bewaard."
+  "droppedSeveralHelp": "30 dagen bewaard.",
+  "deleteSeveralTitle": {
+    "one": "{count} branch verwijderen?",
+    "other": "{count} branches verwijderen?"
+  },
+  "severalLost": {
+    "one": "Eén ervan heeft commits die op geen andere branch of tag staan. Git bewaart ze nog een tijd in zijn reflog, maar Haunt kan ze hierna niet meer tonen.",
+    "other": "{count} ervan hebben commits die op geen andere branch of tag staan. Git bewaart ze nog een tijd in zijn reflog, maar Haunt kan ze hierna niet meer tonen."
+  },
+  "nothingLostSeveral": "Hun commits staan ook op andere branches: er gaat niets verloren.",
+  "deleteSeveral": {
+    "one": "{count} verwijderen",
+    "other": "{count} verwijderen"
+  },
+  "deleteTagsTitle": {
+    "one": "{count} tag verwijderen?",
+    "other": "{count} tags verwijderen?"
+  }
 }

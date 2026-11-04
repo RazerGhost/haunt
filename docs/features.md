@@ -64,8 +64,11 @@ Everything Haunt does, by part of the window. The [README](../README.md) has the
 - **Notifications**: a fetch, pull, push or test run that finishes while Haunt is in the background says so through
   the system.
 - **Keyboard**: Ctrl K the palette, Ctrl O the repositories, Ctrl F the function search, F5 fetch, Ctrl Shift P pull,
-  Ctrl Shift U push, Alt ← and → back and forward, Ctrl Enter commit; in Local changes ↑ ↓ move through the files and
-  Space stages or unstages. **?** lists them all. ⌘ takes the place of Ctrl on macOS. Buttons with only an icon say
+  Ctrl Shift U push, Alt ← and → back and forward, Ctrl Enter commit (Ctrl Shift Enter commits and pushes); Ctrl Tab
+  and Ctrl Shift Tab the next and previous tab, Alt 1 to 9 a tab by its place, Ctrl W closes the tab; in Local changes
+  ↑ ↓ move through the files, Space stages or unstages, Delete discards (asked first) and Enter opens the file in your
+  editor; Ctrl C on a picked commit copies its sha. In a diff, code or a commit's message, Ctrl F finds in that text;
+  elsewhere it is the function search. **?** lists them all. ⌘ takes the place of Ctrl on macOS. Buttons with only an icon say
   what they do, and their shortcut, on hover and on keyboard focus.
 - **Profiles**: groups of repositories (work, your own, a client's), each with its own tabs, recent list and look,
   switched from the title bar. Trusted folders and the other settings are shared.
@@ -91,8 +94,9 @@ Haunt reads git, and writes only what you ask for.
 
 - **The commit list** (the home screen): every branch, remote branch and tag with the graph, newest first, by topology
   or by date. Filter by branch, message, author or file, by text added or removed (`git log -S`), or merges only or
-  none. Pages load as you scroll. Click a commit to see it below; Ctrl-click a second one to compare the two. A Local
-  changes row above the history leads to the work not committed yet.
+  none. Pages load as you scroll, and each tab keeps its place in the list. Click a commit to see it below; Ctrl-click
+  a second one to compare the two. A Local changes row above the history leads to the work not committed yet. A
+  commit's files have Open in editor, Show in folder and Copy path on a right click.
 - **Local changes**: unstaged files above, staged files below, the diff beside them and the commit box under them.
   Stage, unstage or discard whole files or single lines; Ctrl-click and Shift-click (or Shift ↑ ↓) select several files
   of a list (Ctrl A all of it), which staging, unstaging, discarding and stashing then take together; the functions the changes are in show above the diff, and a
@@ -102,13 +106,15 @@ Haunt reads git, and writes only what you ask for.
   remote already. **Draft** writes a message from what is staged, by function, such as "Entries: adds resolveSlug;
   changes createEntry; 2 callers in Api", worked out on your machine without AI. Activity lists every git command Haunt
   ran to write. The diff is unified or side by side (one choice for every diff), and lines are picked in either.
-  Right-click a file to stash just it, or, for an untracked one, to ignore it, every file with its extension or its
+  Drag files from one list onto the other to stage or unstage them, and drag the file column's edge to widen it.
+  Right-click a file to open it in your editor, show it in its folder, copy its path or stash just it, or, for an untracked one, to ignore it, every file with its extension or its
   folder (added to the repository's `.gitignore`); **Stash some files** stashes the files you tick. With nothing
   changed, it shows the branch against its upstream (Pull, Push, Fetch), the last commit (Amend) and the stashes.
 - **Branches, stashes and tags**: create a branch anywhere and switch to it (taking your changes along or stashing
-  them), check out a remote branch, rename and delete (saying when commits would be lost), stash with or without
-  untracked files (or only the files you pick, from Local changes), apply, pop and drop (Ctrl- and Shift-click pick
-  several stashes to drop together), and create, delete and push tags.
+  them), check out a remote branch, rename and delete (saying when commits would be lost), compare a branch with
+  yours, push a branch you are not on or bring it up to its remote branch (a fast-forward only), stash with or without
+  untracked files (or only the files you pick, from Local changes), apply, pop and drop, and create, delete and push
+  tags. Ctrl- and Shift-click pick several branches, stashes or tags to delete, drop or push together.
 - **Fetch, pull and push**: fetch every remote; pull with fast-forward, merge or rebase (Haunt asks when the branches
   went apart); push to the tracked branch or a new one, and overwrite only if the remote branch is still where your
   last fetch saw it. **Before pulling**, the incoming commits can be read by function, with the functions you changed
@@ -127,7 +133,7 @@ Haunt reads git, and writes only what you ask for.
   nothing has moved since.
 - **Conflicts**: a merge, revert, cherry-pick, pull or rebase that stops on conflicts shows a banner with Continue and
   Abort. The conflict view shows your lines and theirs side by side per block, to take yours, theirs or both, or edit
-  the result.
+  the result; Ctrl- and Shift-click pick several files to take one side for all of them.
 - **Pull requests**, reviewed without switching your branch: fetched from the remote as refs (GitHub, GitLab and Gitea
   offer them), with no account, and read with every lens of the commit list. With pull request status switched on,
   each branch shows its pull request and checks through `gh`, `glab` or `tea` (Gitea is untested so far). **New pull

@@ -114,6 +114,17 @@ impl Repos {
         paths::inside(repo, path).ok_or_else(|| said!("repos.fileOutside", "That file is not in the repository."))
     }
 
+    /// Any file of the shown repository that is there, the scan's or not (a changed README): never one in its git
+    /// folder, nor one a link leads out of the repository.
+    pub fn repo_file(&self, repo: &str, path: &str) -> Result<PathBuf, String> {
+        self.require(repo)?;
+        let outside = || said!("repos.fileOutside", "That file is not in the repository.");
+        if Path::new(path).components().next().is_some_and(|first| first.as_os_str() == ".git") {
+            return Err(outside());
+        }
+        paths::inside(repo, path).filter(|file| file.is_file()).ok_or_else(outside)
+    }
+
     /// Shows `root`: the shown repository's scan is kept, `root`'s kept scan (if any) shows at once, and a scanner
     /// and watchers start for it.
     pub(super) fn show(&self, inner: &mut Inner, root: &str) {

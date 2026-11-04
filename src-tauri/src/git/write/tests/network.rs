@@ -72,6 +72,58 @@ fn pushes_sets_the_upstream_and_overwrites_only_with_a_lease() {
 }
 
 #[test]
+fn pushes_and_fast_forwards_a_branch_you_are_not_on() {
+    let (_dir, remote) = bare();
+    let a = repo();
+    a.sh(&["remote", "add", "origin", &remote]);
+    let writer = Writer::new(&a.root, true);
+    writer.push(None, false, &quiet).unwrap();
+    // A second branch, pushed while main stays checked out.
+    a.sh(&["branch", "-q", "feature"]);
+    a.sh(&["checkout", "-q", "feature"]);
+    commit(
+        &a, "f.txt", "one
+", "F1",
+    );
+    a.sh(&["checkout", "-q", "main"]);
+    assert_eq!(writer.push_branch("feature", None, &quiet).unwrap(), PushResult::Pushed);
+    assert_eq!(remote_sha(&remote, "feature"), a.sh(&["rev-parse", "feature"]).trim());
+    assert_eq!(a.sh(&["config", "branch.feature.remote"]).trim(), "origin", "the first push sets the upstream");
+    assert!(writer.push_branch("nope", None, &quiet).is_err());
+
+    // Someone else moves feature on: it comes forward without switching to it.
+    let b = clone(&remote);
+    b.sh(&["checkout", "-q", "-b", "feature", "origin/feature"]);
+    commit(
+        &b, "f.txt", "two
+", "F2",
+    );
+    b.sh(&["push", "-q", "origin", "feature"]);
+    writer.fast_forward("feature", &quiet).unwrap();
+    assert_eq!(a.sh(&["rev-parse", "feature"]).trim(), remote_sha(&remote, "feature"));
+    assert_eq!(a.sh(&["symbolic-ref", "--short", "HEAD"]).trim(), "main", "still on main");
+
+    // Gone apart: left as it is, and said so.
+    a.sh(&["checkout", "-q", "feature"]);
+    commit(
+        &a, "g.txt", "mine
+", "Mine",
+    );
+    a.sh(&["checkout", "-q", "main"]);
+    commit(
+        &b, "h.txt", "theirs
+", "Theirs",
+    );
+    b.sh(&["push", "-q", "origin", "feature"]);
+    let mine = a.sh(&["rev-parse", "feature"]).trim().to_owned();
+    let apart = writer.fast_forward("feature", &quiet).unwrap_err();
+    assert!(apart.contains("went apart"), "{apart}");
+    assert_eq!(a.sh(&["rev-parse", "feature"]).trim(), mine);
+    // The branch you are on is pulled instead.
+    assert!(writer.fast_forward("main", &quiet).unwrap_err().contains("pull it instead"));
+}
+
+#[test]
 fn asks_which_remote_when_there_are_several() {
     let (_one, first) = bare();
     let (_two, second) = bare();

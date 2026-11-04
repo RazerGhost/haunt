@@ -52,5 +52,17 @@
     "one": "{count} picked",
     "other": "{count} picked"
   },
-  "unpick": "Pick none"
+  "unpick": "Pick none",
+  "deleteBranches": {
+    "one": "Delete {count} branch",
+    "other": "Delete {count} branches"
+  },
+  "deleteTags": {
+    "one": "Delete {count} tag",
+    "other": "Delete {count} tags"
+  },
+  "pushTags": {
+    "one": "Push {count} tag",
+    "other": "Push {count} tags"
+  }
 }

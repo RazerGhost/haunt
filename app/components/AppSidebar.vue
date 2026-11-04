@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { StashRef } from '~/bindings'
+import type { BranchRef, StashRef, TagRef } from '~/bindings'
 
 /*
  * The sidebar. In Git: the local changes and the commits, the repository's branches, its worktrees
@@ -19,6 +19,24 @@ watch([repo, gitChanged('stash')], () => void actions.loadDropped(), { immediate
 // The remotes with their URLs, for the ones with no remote branches yet.
 watch(repo, () => void remotes.load(), { immediate: true })
 const when = (seconds: number) => new Date(seconds * 1000).toLocaleString(locale())
+// Several branches (picked in RefTree, which shares this) or tags, picked to delete or push together.
+const branchPick = useMultiSelect<BranchRef>(() => refs.value?.branches ?? [], branch => branch.name, 'branches')
+provide('branchPick', branchPick)
+// The branch you are on is never deleted with the others.
+const branchesToDelete = computed(() => branchPick.chosen.value.filter(branch => !branch.current).map(branch => branch.name))
+const tagPick = useMultiSelect<TagRef>(() => refs.value?.tags ?? [], tag => tag.name, 'tags')
+function tagMenu(tag: TagRef) {
+  const tags = tagPick.covering(tag)
+  if (tags.length > 1) {
+    const names = tags.map(one => one.name)
+    return [[{ label: t('AppSidebar.pushTags', { count: names.length }), icon: 'i-lucide-arrow-up-from-line', disabled: !!network.running.value, onSelect: () => network.pushTags(names) }], [{ label: t('AppSidebar.deleteTags', { count: names.length }), icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: () => actions.deleteTags(names) }]]
+  }
+  return [[{ label: t('AppSidebar.newBranch'), icon: 'i-lucide-git-branch-plus', onSelect: () => actions.newBranch({ rev: tag.name, label: tag.name }) }, { label: t('AppSidebar.pushTag'), icon: 'i-lucide-arrow-up-from-line', disabled: !!network.running.value, onSelect: () => network.pushTag(tag.name) }, { label: t('AppSidebar.releaseNotesTo'), icon: 'i-lucide-scroll-text', onSelect: () => navigateTo({ path: '/release', query: { to: tag.name } }) }], [{ label: t('AppSidebar.delete'), icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: () => actions.deleteTag(tag.name) }]]
+}
+function clickTag(tag: TagRef, event: MouseEvent): void {
+  if (tagPick.click(tag, event)) event.preventDefault()
+}
+
 // Several stashes, or several dropped ones, picked to drop or bring back together.
 const stashPick = useMultiSelect(() => refs.value?.stashes ?? [], stash => stash.sha, 'stashes')
 const droppedPick = useMultiSelect(() => actions.dropped.value, entry => entry.id, 'dropped')
@@ -160,7 +178,12 @@ const active = (path: string) => route.path === path ? 'bg-elevated font-medium 
             </span>
           </UTooltip>
         </button>
-        <RefTree v-if="!shut.branches" :refs="shown.branches" storage-key="branches" :expand="!!filter" />
+        <div v-if="!shut.branches && branchPick.several.value" class="flex items-center gap-1 pr-2 pl-5 text-label text-muted">
+          <span class="flex-1">{{ t('AppSidebar.picked', { count: branchPick.chosen.value.length }) }}</span>
+          <UButton v-if="branchesToDelete.length" :label="t('AppSidebar.deleteBranches', { count: branchesToDelete.length })" size="xs" color="error" variant="ghost" @click="actions.deleteBranches(branchesToDelete)" />
+          <UButton icon="i-lucide-x" size="xs" color="neutral" variant="ghost" :aria-label="t('AppSidebar.unpick')" :title="t('AppSidebar.unpick')" @click="branchPick.clear()" />
+        </div>
+        <RefTree v-if="!shut.branches" data-select-all="branches" :refs="shown.branches" storage-key="branches" :expand="!!filter" />
       </section>
 
       <WorktreeList :shut="!!shut.worktrees" @toggle="toggle('worktrees')" />
@@ -193,14 +216,21 @@ const active = (path: string) => route.path === path ? 'bg-elevated font-medium 
           <UIcon name="i-lucide-chevron-right" class="size-3 transition" :class="{ 'rotate-90': !shut.tags }" />
           {{ t('AppSidebar.tags') }} <span class="ml-auto font-normal tabular-nums">{{ shown.tags.length }}</span>
         </button>
-        <ul v-if="!shut.tags" class="grid grid-cols-[minmax(0,1fr)]">
+        <div v-if="!shut.tags && tagPick.several.value" class="flex items-center gap-1 pr-2 pl-5 text-label text-muted">
+          <span class="flex-1">{{ t('AppSidebar.picked', { count: tagPick.chosen.value.length }) }}</span>
+          <UButton :label="t('AppSidebar.deleteTags', { count: tagPick.chosen.value.length })" size="xs" color="error" variant="ghost" @click="actions.deleteTags(tagPick.chosen.value.map(tag => tag.name))" />
+          <UButton icon="i-lucide-x" size="xs" color="neutral" variant="ghost" :aria-label="t('AppSidebar.unpick')" :title="t('AppSidebar.unpick')" @click="tagPick.clear()" />
+        </div>
+        <ul v-if="!shut.tags" data-select-all="tags" class="grid grid-cols-[minmax(0,1fr)] select-none">
           <li v-for="tag in shown.tags" :key="tag.name">
-            <UContextMenu :items="[[{ label: t('AppSidebar.newBranch'), icon: 'i-lucide-git-branch-plus', onSelect: () => actions.newBranch({ rev: tag.name, label: tag.name }) }, { label: t('AppSidebar.pushTag'), icon: 'i-lucide-arrow-up-from-line', disabled: !!network.running.value, onSelect: () => network.pushTag(tag.name) }, { label: t('AppSidebar.releaseNotesTo'), icon: 'i-lucide-scroll-text', onSelect: () => navigateTo({ path: '/release', query: { to: tag.name } }) }], [{ label: t('AppSidebar.delete'), icon: 'i-lucide-trash-2', color: 'error', onSelect: () => actions.deleteTag(tag.name) }]]">
+            <UContextMenu :items="tagMenu(tag)">
             <NuxtLink
               :to="{ path: '/commits', query: { from: tag.name } }"
               class="flex items-center gap-1.5 rounded py-1 pr-2 pl-5 text-ui hover:bg-elevated"
-              :class="{ 'bg-elevated text-highlighted': route.path === '/commits' && route.query.from === tag.name }"
+              :class="{ 'bg-elevated text-highlighted': tagPick.several.value ? tagPick.isPicked(tag) : route.path === '/commits' && route.query.from === tag.name }"
               :title="`${tag.sha.slice(0, 7)} · ${new Date(tag.time * 1000).toLocaleDateString(locale())}`"
+              :aria-selected="tagPick.several.value ? tagPick.isPicked(tag) : undefined"
+              @click="clickTag(tag, $event)"
             >
               <UIcon name="i-lucide-tag" class="size-3.5 shrink-0 text-dimmed" />
               <span class="min-w-0 truncate">{{ tag.name }}</span>

@@ -64,5 +64,22 @@
     "one": "{count} stash dropped",
     "other": "{count} stashes dropped"
   },
-  "droppedSeveralHelp": "Kept for 30 days."
+  "droppedSeveralHelp": "Kept for 30 days.",
+  "deleteSeveralTitle": {
+    "one": "Delete {count} branch?",
+    "other": "Delete {count} branches?"
+  },
+  "severalLost": {
+    "one": "One of them has commits on no other branch or tag. Git keeps them for a while in its reflog, but Haunt cannot show them after this.",
+    "other": "{count} of them have commits on no other branch or tag. Git keeps them for a while in its reflog, but Haunt cannot show them after this."
+  },
+  "nothingLostSeveral": "Their commits are on other branches too: nothing is lost.",
+  "deleteSeveral": {
+    "one": "Delete {count}",
+    "other": "Delete {count}"
+  },
+  "deleteTagsTitle": {
+    "one": "Delete {count} tag?",
+    "other": "Delete {count} tags?"
+  }
 }

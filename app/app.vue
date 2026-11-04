@@ -64,5 +64,6 @@ useHead({ title: 'Haunt', htmlAttrs: { lang: language }, link: [{ rel: 'icon', t
     <AppDialog />
     <AppPalette />
     <ShortcutsSheet />
+    <TextFind />
   </UApp>
 </template>

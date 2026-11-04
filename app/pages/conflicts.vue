@@ -9,7 +9,8 @@ import { choose, conflictsLeft, joinSegments, parseConflicts, type Choice, type 
  * resolved saves the result and stages it; once no file conflicts, Continue (in the banner) finishes the operation.
  */
 const { operation, busy: operating } = useOperation()
-const { open: openInEditor } = useCode()
+// A conflicted file need not be one the scan reads: opened as any file of the repository.
+const { openFile: openInEditor } = useOpenIn()
 const { repo } = useRepositories()
 const route = useRoute()
 const router = useRouter()
@@ -18,6 +19,27 @@ const toast = useToast()
 const failure = useFailure()
 
 const files = computed(() => operation.value?.conflicted ?? [])
+// Several files picked (Ctrl- and Shift-click) take one side together.
+const filePick = useMultiSelect(() => files.value, path => path, 'conflicts')
+function clickFile(path: string, event: MouseEvent): void {
+  if (filePick.click(path, event)) event.preventDefault()
+}
+async function takeSeveral(side: 'ours' | 'theirs'): Promise<void> {
+  const paths = filePick.chosen.value
+  if (!repo.value || !paths.length) return
+  saving.value = true
+  try {
+    for (const path of paths) await haunt.takeSide(repo.value, path, side)
+    toast.add({ title: t('pages.conflicts.resolvedSeveral', { count: paths.length }), icon: 'i-lucide-check' })
+    filePick.clear()
+    const next = files.value.find(path => !paths.includes(path))
+    void router.replace({ query: { ...route.query, path: next } })
+  } catch (error) {
+    failure.failed(t('pages.conflicts.notResolved'), error, t('common.tryAgain'))
+  } finally {
+    saving.value = false
+  }
+}
 const picked = computed(() => {
   const asked = typeof route.query.path === 'string' ? route.query.path : null
   return asked && files.value.includes(asked) ? asked : files.value[0] ?? null
@@ -117,13 +139,20 @@ function go(step: number): void {
   <div v-else class="grid h-full grid-cols-[16rem_minmax(0,1fr)]">
     <aside class="flex min-h-0 flex-col border-r border-default">
       <p class="border-b border-default px-3 py-2 text-label font-semibold tracking-wider text-muted uppercase">{{ t('pages.conflicts.conflicts') }} <span class="tabular-nums">{{ files.length }}</span></p>
-      <ul class="min-h-0 flex-1 overflow-auto p-1">
+      <div v-if="filePick.several.value" class="grid gap-1 border-b border-default px-3 py-2">
+        <span class="text-label text-muted">{{ t('pages.conflicts.picked', { count: filePick.chosen.value.length }) }}</span>
+        <UButton :label="t('pages.conflicts.takeOursSeveral', { name: said(operation!.ours), count: filePick.chosen.value.length })" size="xs" color="neutral" variant="outline" :disabled="saving || operating" @click="takeSeveral('ours')" />
+        <UButton :label="t('pages.conflicts.takeTheirsSeveral', { name: said(operation!.theirs), count: filePick.chosen.value.length })" size="xs" color="neutral" variant="outline" :disabled="saving || operating" @click="takeSeveral('theirs')" />
+      </div>
+      <ul data-select-all="conflicts" class="min-h-0 flex-1 overflow-auto p-1 select-none">
         <li v-for="path in files" :key="path">
           <NuxtLink
             :to="{ query: { ...route.query, path } }"
             class="flex items-center gap-1.5 rounded px-2 py-1 text-ui"
-            :class="path === picked ? 'bg-elevated text-highlighted' : 'hover:bg-elevated/60'"
+            :class="(filePick.several.value ? filePick.isPicked(path) : path === picked) ? 'bg-elevated text-highlighted' : 'hover:bg-elevated/60'"
+            :aria-selected="filePick.several.value ? filePick.isPicked(path) : undefined"
             :title="path"
+            @click="clickFile(path, $event)"
           >
             <span class="w-3 shrink-0 text-center font-mono text-label font-semibold text-error">!</span>
             <span class="min-w-0 truncate">{{ path }}</span>

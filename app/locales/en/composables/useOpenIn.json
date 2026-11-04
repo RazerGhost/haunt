@@ -1,5 +1,8 @@
 {
   "openIn": "Open in {editor}",
   "openInEditor": "Open in editor",
-  "notOpened": "Could not open the editor"
+  "notOpened": "Could not open the editor",
+  "notShown": "Could not show the file",
+  "showInFolder": "Show in folder",
+  "copyPath": "Copy path"
 }

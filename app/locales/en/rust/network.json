@@ -18,5 +18,9 @@
   "pushStopped": "Pushing was stopped.",
   "stale": "{remote}/{target} has changed since this repository last fetched it, so it was not overwritten. Fetch and look at what is there first.",
   "noTag": "There is no tag {name}.",
-  "tagThere": "{remote} already has a tag {name} on another commit; it was left as it is."
+  "tagThere": "{remote} already has a tag {name} on another commit; it was left as it is.",
+  "noBranch": "There is no branch {name}.",
+  "forwardCurrent": "{name} is the branch you are on: pull it instead.",
+  "forwardNoUpstream": "{name} tracks no remote branch.",
+  "forwardApart": "{name} and {remote}/{branch} went apart, so {name} was left as it is. Switch to it and pull to merge or rebase."
 }

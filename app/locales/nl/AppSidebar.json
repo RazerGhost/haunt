@@ -52,5 +52,17 @@
     "one": "{count} gekozen",
     "other": "{count} gekozen"
   },
-  "unpick": "Niets kiezen"
+  "unpick": "Niets kiezen",
+  "deleteBranches": {
+    "one": "{count} branch verwijderen",
+    "other": "{count} branches verwijderen"
+  },
+  "deleteTags": {
+    "one": "{count} tag verwijderen",
+    "other": "{count} tags verwijderen"
+  },
+  "pushTags": {
+    "one": "{count} tag pushen",
+    "other": "{count} tags pushen"
+  }
 }

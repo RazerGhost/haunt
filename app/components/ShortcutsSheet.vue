@@ -18,6 +18,9 @@ const GROUPS: { id: string, items: { id: string, keys: string[][] }[] }[] = [
       { id: 'settings', keys: [['meta', ',']] },
       { id: 'repositories', keys: [['meta', 'o']] },
       { id: 'reopen', keys: [['meta', 'shift', 't']] },
+      { id: 'nextTab', keys: [['ctrl', 'tab'], ['ctrl', 'shift', 'tab']] },
+      { id: 'closeTab', keys: [['meta', 'w']] },
+      { id: 'nthTab', keys: [['alt', '1'], ['alt', '9']] },
       { id: 'back', keys: [['alt', 'arrowleft']] },
       { id: 'forward', keys: [['alt', 'arrowright']] },
       { id: 'shortcuts', keys: [['?']] },
@@ -44,14 +47,19 @@ const GROUPS: { id: string, items: { id: string, keys: string[][] }[] }[] = [
       { id: 'localSelect', keys: [['shift', 'arrowup'], ['shift', 'arrowdown']] },
       { id: 'localSelectAll', keys: [['meta', 'a']] },
       { id: 'stage', keys: [['space']] },
-      { id: 'commit', keys: [['meta', 'enter']] }
+      { id: 'discardKey', keys: [['delete']] },
+      { id: 'openFile', keys: [['enter']] },
+      { id: 'commit', keys: [['meta', 'enter']] },
+      { id: 'commitPush', keys: [['meta', 'shift', 'enter']] }
     ]
   },
   {
     id: 'commits',
     items: [
       { id: 'commitMove', keys: [['arrowup'], ['arrowdown']] },
-      { id: 'compare', keys: [['meta', 'click']] }
+      { id: 'compare', keys: [['meta', 'click']] },
+      { id: 'copySha', keys: [['meta', 'c']] },
+      { id: 'findText', keys: [['meta', 'f']] }
     ]
   },
   {

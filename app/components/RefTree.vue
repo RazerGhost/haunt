@@ -55,11 +55,22 @@ const webs = useWeb()
 const { current } = useRefs()
 const into = () => current.value?.name ?? t('RefTree.currentBranch')
 const drag = useRefDrag()
+const network = useNetwork()
 const worktrees = useWorktrees()
 const isCurrent = (ref: Leaf) => isBranch(ref) && ref.current
+// The sidebar's picked branches (local ones only; remote branches are not picked).
+const pick = props.prefix === undefined ? inject<ReturnType<typeof useMultiSelect<BranchRef>> | null>('branchPick', null) : null
+const picked = (ref: Leaf) => !!pick?.several.value && isBranch(ref) && pick.isPicked(ref)
+function clickLeaf(ref: Leaf, event: MouseEvent): void {
+  if (pick && isBranch(ref) && pick.click(ref, event)) event.preventDefault()
+}
 
 function menu(ref: Leaf) {
   const name = full(ref)
+  if (pick && isBranch(ref) && pick.covering(ref).length > 1) {
+    const names = pick.covering(ref).filter(one => !one.current).map(one => one.name)
+    return [[{ label: t('RefTree.deleteSeveral', { count: names.length }), icon: 'i-lucide-trash-2', color: 'error' as const, disabled: !names.length, onSelect: () => actions.deleteBranches(names) }]]
+  }
   const from = { rev: name, label: name }
   if (!isBranch(ref)) {
     return [[
@@ -73,6 +84,7 @@ function menu(ref: Leaf) {
     ]]
   }
   const remoteName = ref.upstream?.split('/').slice(1).join('/')
+  const here = current.value
   return [
     [
       ...ref.current ? [] : [{ label: t('RefTree.switchTo'), icon: 'i-lucide-git-branch', onSelect: () => actions.switchTo(name) }],
@@ -80,6 +92,10 @@ function menu(ref: Leaf) {
       { label: t('RefTree.newTag'), icon: 'i-lucide-tag', onSelect: () => actions.newTag(from) },
       ...ref.current ? [] : [{ label: t('RefTree.worktree'), icon: 'i-lucide-git-fork', onSelect: () => worktrees.add(name) }],
       ...ref.current ? [] : [{ label: t('RefTree.merge', { name: into() }), icon: 'i-lucide-git-merge', onSelect: () => undo.merge(name) }],
+      // A branch you are not on: what differs from yours, and bringing it level with its remote branch either way.
+      ...!ref.current && here ? [{ label: t('RefTree.compare', { name: here.name }), icon: 'i-lucide-git-compare', onSelect: () => navigateTo({ path: '/commits', query: { commit: ref.sha, compare: here.sha } }) }] : [],
+      ...!ref.current && ref.upstream && !ref.gone && ref.behind ? [{ label: t('RefTree.fastForward', { upstream: ref.upstream, count: ref.behind }), icon: 'i-lucide-arrow-down-to-line', disabled: !!network.running.value, onSelect: () => network.fastForward(name) }] : [],
+      ...!ref.current && (ref.ahead || !ref.upstream || ref.gone) ? [{ label: t('RefTree.pushBranch', { name }), icon: 'i-lucide-arrow-up-from-line', disabled: !!network.running.value, onSelect: () => network.pushBranch(name) }] : [],
       ...webs.label.value && remoteName ? [{ label: webs.label.value, icon: 'i-lucide-external-link', onSelect: () => webs.openBranch(remoteName) }] : [],
       ...webs.copyLabel.value && remoteName ? [{ label: webs.copyLabel.value, icon: 'i-lucide-link', onSelect: () => webs.copyBranch(remoteName) }] : []
     ],
@@ -117,7 +133,7 @@ function tip(ref: Leaf): string {
         :to="{ path: '/commits', query: { from: full(leaf.ref) } }"
         class="flex items-center gap-1.5 rounded py-1 pr-2 text-ui hover:bg-elevated"
         :class="[
-          { 'bg-elevated': route.path === '/commits' && route.query.from === full(leaf.ref) },
+          { 'bg-elevated': pick?.several.value ? picked(leaf.ref) : route.path === '/commits' && route.query.from === full(leaf.ref), 'text-highlighted': picked(leaf.ref) },
           drag.over.value === full(leaf.ref) && drag.hint(full(leaf.ref), isCurrent(leaf.ref)) ? 'bg-primary/15 ring-1 ring-primary' : '',
           drag.dragged.value?.name === full(leaf.ref) ? 'opacity-50' : ''
         ]"
@@ -128,6 +144,7 @@ function tip(ref: Leaf): string {
         draggable="false"
         @pointerdown="drag.down($event, full(leaf.ref), isCurrent(leaf.ref))"
         @click.capture="drag.endedDrag($event)"
+        @click="clickLeaf(leaf.ref, $event)"
         @dblclick.prevent="switchTo(leaf.ref)"
       >
         <UIcon v-if="isBranch(leaf.ref) && leaf.ref.current" name="i-lucide-check" class="size-3.5 shrink-0 text-highlighted" />

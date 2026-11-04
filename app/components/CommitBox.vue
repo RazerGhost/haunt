@@ -110,7 +110,9 @@ const notes = computed(() => {
 })
 const ready = computed(() => !!subject.value.trim() && (props.staged > 0 || amend.value) && !busy.value)
 
-async function submit(): Promise<void> {
+const network = useNetwork()
+/** Commits; `andPush` pushes the branch right after (Ctrl Shift Enter). */
+async function submit(andPush = false): Promise<void> {
   if (!ready.value) return
   const message = body.value.trim() ? `${subject.value.trim()}\n\n${body.value.trim()}` : subject.value.trim()
   const key = draftKey.value
@@ -123,14 +125,15 @@ async function submit(): Promise<void> {
       drafts.value = rest
     }
     emit('done')
+    if (andPush) await network.push()
   }
 }
 </script>
 
 <template>
-  <form class="grid gap-2 p-3" @submit.prevent="submit">
+  <form class="grid gap-2 p-3" @submit.prevent="submit()">
     <div class="flex items-center gap-1.5">
-      <UInput v-model="subject" :placeholder="t('CommitBox.subject')" size="sm" class="min-w-0 flex-1" :aria-label="t('CommitBox.subjectLabel')" @keydown.ctrl.enter="submit" @keydown.meta.enter="submit">
+      <UInput v-model="subject" :placeholder="t('CommitBox.subject')" size="sm" class="min-w-0 flex-1" :aria-label="t('CommitBox.subjectLabel')" @keydown.ctrl.enter.exact="submit()" @keydown.meta.enter.exact="submit()" @keydown.ctrl.shift.enter="submit(true)" @keydown.meta.shift.enter="submit(true)">
         <template v-if="subjectLength" #trailing>
           <span class="text-label tabular-nums" :class="subjectLength > 72 ? 'text-error' : subjectLength > 50 ? 'text-warning' : 'text-dimmed'" :title="subjectLength > 50 ? t('CommitBox.subjectLong') : undefined">{{ subjectLength }}</span>
         </template>
@@ -153,6 +156,7 @@ async function submit(): Promise<void> {
       <UCheckbox v-model="amend" :label="t('CommitBox.amend')" size="sm" :disabled="!commitBox?.lastMessage" />
       <UCheckbox v-model="signoff" :label="t('CommitBox.signOff')" size="sm" />
       <span class="ml-auto text-label text-muted">Ctrl Enter</span>
+      <UButton v-if="!amend" :label="t('CommitBox.commitAndPush')" icon="i-lucide-arrow-up-from-line" size="sm" color="neutral" variant="outline" :title="t('CommitBox.commitAndPushHelp')" :disabled="!ready || !!network.running.value" @click="submit(true)" />
       <UButton type="submit" :label="amend ? t('CommitBox.amendLast') : props.staged ? t('CommitBox.commitFiles', { count: props.staged }) : t('CommitBox.commit')" icon="i-lucide-git-commit-horizontal" size="sm" :disabled="!ready" :loading="busy" />
     </div>
   </form>

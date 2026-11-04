@@ -599,16 +599,44 @@ impl Writer<'_> {
         })
     }
 
+    /// A local branch by name: the name as given, when the repository has it.
+    fn local_branch(&self, name: &str) -> Result<String, String> {
+        let known = !name.is_empty()
+            && !name.starts_with('-')
+            && read(self.root, &["rev-parse", "-q", "--verify", &format!("refs/heads/{name}")]).is_ok();
+        if known {
+            Ok(name.to_owned())
+        } else {
+            Err(said!("network.noBranch", "There is no branch {name}.", name = name))
+        }
+    }
+
     /// Pushes the current branch to the branch it tracks, or, the first time, to a branch of the same name that it
     /// then tracks. `force` overwrites the remote branch, only if it is still where Haunt last fetched it.
     pub fn push(&self, remote: Option<&str>, force: bool, progress: &dyn Fn(&str)) -> Result<PushResult, String> {
+        let branch = self.current_branch()?;
+        self.push_from(branch, remote, force, progress)
+    }
+
+    /// Pushes a branch you are not on, as `push` does the current one (never forced).
+    pub fn push_branch(&self, name: &str, remote: Option<&str>, progress: &dyn Fn(&str)) -> Result<PushResult, String> {
+        let branch = self.local_branch(name)?;
+        self.push_from(branch, remote, false, progress)
+    }
+
+    fn push_from(
+        &self,
+        branch: String,
+        remote: Option<&str>,
+        force: bool,
+        progress: &dyn Fn(&str),
+    ) -> Result<PushResult, String> {
         if !self.trusted {
             return Err(said!(
                 "network.pushUntrusted",
                 "Pushing runs this repository's pre-push hook, so it runs only in a trusted folder. Trust this folder to push."
             ));
         }
-        let branch = self.current_branch()?;
         let tracked =
             match (self.setting(&format!("branch.{branch}.remote")), self.setting(&format!("branch.{branch}.merge"))) {
                 (Some(upstream), Some(merge)) if upstream != "." && remote.is_none_or(|asked| asked == upstream) => {
@@ -660,6 +688,51 @@ impl Writer<'_> {
         }
         if ran.stderr.contains("[rejected]") {
             return Ok(PushResult::Rejected);
+        }
+        Err(said(&ran.stderr))
+    }
+
+    /// Brings a branch you are not on up to the remote branch it tracks, only as a fast-forward (`git fetch <remote>
+    /// <its branch>:refs/heads/<name>`): its own commits are never lost, and nothing checked out is touched. Like a
+    /// fetch, it runs nothing of the repository's own, so it needs no trust.
+    pub fn fast_forward(&self, name: &str, progress: &dyn Fn(&str)) -> Result<(), String> {
+        let name = self.local_branch(name)?;
+        if self.current_branch().ok().as_deref() == Some(name.as_str()) {
+            return Err(said!(
+                "network.forwardCurrent",
+                "{name} is the branch you are on: pull it instead.",
+                name = name
+            ));
+        }
+        let (Some(remote), Some(merge)) =
+            (self.setting(&format!("branch.{name}.remote")), self.setting(&format!("branch.{name}.merge")))
+        else {
+            return Err(said!("network.forwardNoUpstream", "{name} tracks no remote branch.", name = name));
+        };
+        if remote == "." || remote.starts_with('-') || merge.starts_with('-') {
+            return Err(said!("network.forwardNoUpstream", "{name} tracks no remote branch.", name = name));
+        }
+        let queue = queue(self.root);
+        let _turn = queue.lock();
+        let network = network_turn(self.root);
+        let _network = network.lock();
+        let spec = format!("{merge}:refs/heads/{name}");
+        let ran = self.network(&["fetch", "--progress", "--end-of-options", &remote, &spec], &[], &[], progress)?;
+        if ran.ok {
+            return Ok(());
+        }
+        if ran.cancelled {
+            return Err(said!("network.fetchStopped", "Fetching was stopped."));
+        }
+        if ran.stderr.contains("non-fast-forward") || ran.stderr.contains("[rejected]") {
+            let short = merge.strip_prefix("refs/heads/").unwrap_or(&merge);
+            return Err(said!(
+                "network.forwardApart",
+                "{name} and {remote}/{branch} went apart, so {name} was left as it is. Switch to it and pull to merge or rebase.",
+                name = name,
+                remote = remote,
+                branch = short
+            ));
         }
         Err(said(&ran.stderr))
     }

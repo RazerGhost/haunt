@@ -300,6 +300,13 @@ commands! {
         let file = api.repos.scanned(&repo, &path)?;
         crate::editor::open(&api.repos.tools(), &editor, &repo, &file, line.max(1), 1)
     }
+    /// Opens any file of the shown repository at a line in your editor (a changed file the scan does not read too).
+    fn open_repo_file(api, repo: String, editor: String, path: String, line: u32) -> () {
+        let file = api.repos.repo_file(&repo, &path)?;
+        crate::editor::open(&api.repos.tools(), &editor, &repo, &file, line.max(1), 1)
+    }
+    /// Shows a file of the shown repository in the file manager, picked where the file manager can (Windows, macOS).
+    fn reveal_repo_file(api, repo: String, path: String) -> () { crate::editor::reveal_file(&api.repos.repo_file(&repo, &path)?) }
     /// Opens an open tab's folder in your editor.
     fn open_folder_tab(api, path: String, editor: String) -> () {
         crate::editor::open_folder(&api.repos.tools(), &editor, &api.repos.tab_folder(&path)?)
@@ -562,6 +569,14 @@ commands! {
     /// Pushes the current branch (to `remote` the first time, when there are several); `force` overwrites with a lease.
     fn push(api, repo: String, remote: Option<String>, force: bool) -> PushResult {
         api.network(&repo, "push", &["refs"], |writer, progress| writer.push(remote.as_deref(), force, progress))
+    }
+    /// Pushes a branch you are not on to the branch it tracks (or, the first time, a new one of its name).
+    fn push_branch(api, repo: String, name: String, remote: Option<String>) -> PushResult {
+        api.network(&repo, "push", &["refs"], |writer, progress| writer.push_branch(&name, remote.as_deref(), progress))
+    }
+    /// Fast-forwards a branch you are not on to the remote branch it tracks.
+    fn fast_forward(api, repo: String, name: String) -> () {
+        api.network(&repo, "fetch", &["refs"], |writer, progress| writer.fast_forward(&name, progress))
     }
     fn push_tag(api, repo: String, name: String, remote: Option<String>) -> PushResult {
         api.network(&repo, "push", &["refs"], |writer, progress| writer.push_tag(&name, remote.as_deref(), progress))

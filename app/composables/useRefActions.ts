@@ -96,6 +96,26 @@ export function useRefActions() {
     if (ok) await run(t('composables.useRefActions.branchNotDeleted'), where => haunt.deleteBranch(where, name, lost > 0))
   }
 
+  /** Deletes several branches after one question, which says how many have commits on no other branch. */
+  async function deleteBranches(names: string[]): Promise<void> {
+    const at = repo.value
+    if (!at || !names.length) return
+    if (names.length === 1) return deleteBranch(names[0]!)
+    const lost = await Promise.all(names.map(name => haunt.unmerged(at, name).catch(() => 0)))
+    const losing = lost.filter(count => count > 0).length
+    const ok = await dialog.confirm({
+      title: t('composables.useRefActions.deleteSeveralTitle', { count: names.length }),
+      description: losing ? t('composables.useRefActions.severalLost', { count: losing }) : t('composables.useRefActions.nothingLostSeveral'),
+      confirm: t('composables.useRefActions.deleteSeveral', { count: names.length }),
+      danger: losing > 0
+    })
+    if (ok) {
+      await run(t('composables.useRefActions.branchNotDeleted'), async (where) => {
+        for (const [index, name] of names.entries()) await haunt.deleteBranch(where, name, lost[index]! > 0)
+      })
+    }
+  }
+
   async function stash(): Promise<void> {
     const answer = await dialog.prompt({
       title: t('composables.useRefActions.stashTitle'),
@@ -166,5 +186,16 @@ export function useRefActions() {
     if (ok) await run(t('composables.useRefActions.tagNotDeleted'), where => haunt.deleteTag(where, name))
   }
 
-  return { busy, dropped, loadDropped, newBranch, switchTo, renameBranch, deleteBranch, stash, applyStash, dropStash, dropStashes, restoreStash, restoreStashes, newTag, deleteTag }
+  /** Deletes several tags after one question. */
+  async function deleteTags(names: string[]): Promise<void> {
+    if (names.length === 1) return deleteTag(names[0]!)
+    const ok = await dialog.confirm({ title: t('composables.useRefActions.deleteTagsTitle', { count: names.length }), description: t('composables.useRefActions.deleteTagHelp'), confirm: t('composables.useRefActions.deleteSeveral', { count: names.length }), danger: true })
+    if (ok) {
+      await run(t('composables.useRefActions.tagNotDeleted'), async (where) => {
+        for (const name of names) await haunt.deleteTag(where, name)
+      })
+    }
+  }
+
+  return { busy, dropped, loadDropped, newBranch, switchTo, renameBranch, deleteBranch, deleteBranches, deleteTags, stash, applyStash, dropStash, dropStashes, restoreStash, restoreStashes, newTag, deleteTag }
 }

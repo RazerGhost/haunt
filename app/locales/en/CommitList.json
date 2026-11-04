@@ -33,5 +33,6 @@
   "remoteBranch": "Remote branch",
   "tag": "Tag",
   "searchFiles": "Search the files here…",
-  "signed": "Signed: the commit's details check the signature"
+  "signed": "Signed: the commit's details check the signature",
+  "shaCopied": "Copied {sha}"
 }

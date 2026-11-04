@@ -196,9 +196,68 @@ export function useNetwork() {
     }
   }
 
+  /** Pushes a branch you are not on (to the branch it tracks, or a new one of its name, asking which remote). */
+  async function pushBranch(name: string, remote: string | null = null): Promise<void> {
+    const at = repo.value
+    if (!at || running.value || !(await trustFirst())) return
+    try {
+      const pushed = await haunt.pushBranch(at, name, remote)
+      if (pushed.kind === 'chooseRemote') {
+        const chosen = await dialog.choose({
+          title: t('composables.useNetwork.whichRemote'),
+          description: t('composables.useNetwork.whichRemoteHelp', { name }),
+          choices: pushed.remotes.map((one, index) => ({ label: one, value: one, color: index === 0 ? 'primary' as const : undefined }))
+        })
+        if (chosen) await pushBranch(name, chosen)
+      } else if (pushed.kind === 'rejected') {
+        toast.add({ title: t('composables.useNetwork.branchRejected', { name }), description: t('composables.useNetwork.branchRejectedHelp', { name }), color: 'warning', icon: 'i-lucide-circle-alert' })
+      } else {
+        toast.add({ title: t('composables.useNetwork.branchPushed', { name }), icon: 'i-lucide-check' })
+      }
+    } catch (error) {
+      failed(t('composables.useNetwork.pushFailed'), error)
+    }
+  }
+
+  /** Brings a branch you are not on up to its remote branch, when that is a fast-forward. */
+  async function fastForward(name: string): Promise<void> {
+    const at = repo.value
+    if (!at || running.value) return
+    try {
+      await haunt.fastForward(at, name)
+      toast.add({ title: t('composables.useNetwork.forwarded', { name }), icon: 'i-lucide-check' })
+    } catch (error) {
+      failed(t('composables.useNetwork.forwardFailed', { name }), error)
+    }
+  }
+
+  /** Pushes several tags, to one remote (asked once when there are several). */
+  async function pushTags(names: string[]): Promise<void> {
+    const at = repo.value
+    if (!at || running.value || !(await trustFirst())) return
+    let remote: string | null = null
+    try {
+      for (const name of names) {
+        let pushed = await haunt.pushTag(at, name, remote)
+        if (pushed.kind === 'chooseRemote') {
+          remote = await dialog.choose({
+            title: t('composables.useNetwork.tagsWhichRemote', { count: names.length }),
+            description: t('composables.useNetwork.severalRemotes'),
+            choices: pushed.remotes.map((one, index) => ({ label: one, value: one, color: index === 0 ? 'primary' as const : undefined }))
+          })
+          if (!remote) return
+          pushed = await haunt.pushTag(at, name, remote)
+        }
+      }
+      toast.add({ title: t('composables.useNetwork.tagsPushed', { count: names.length }), icon: 'i-lucide-check' })
+    } catch (error) {
+      failed(t('composables.useNetwork.tagsNotPushed'), error)
+    }
+  }
+
   async function stop(): Promise<void> {
     if (repo.value) await haunt.stopNetwork(repo.value).catch(() => false)
   }
 
-  return { running, trusted, lastFetch, fetch, pull, push, pushTag, stop }
+  return { running, trusted, lastFetch, fetch, pull, push, pushBranch, fastForward, pushTag, pushTags, stop }
 }

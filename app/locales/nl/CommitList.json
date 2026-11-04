@@ -33,5 +33,6 @@
   "remoteBranch": "Remote branch",
   "tag": "Tag",
   "searchFiles": "In de bestanden hier zoeken…",
-  "signed": "Ondertekend: de details van de commit controleren de handtekening"
+  "signed": "Ondertekend: de details van de commit controleren de handtekening",
+  "shaCopied": "{sha} gekopieerd"
 }

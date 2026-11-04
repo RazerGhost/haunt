@@ -47,5 +47,19 @@
   "tagWhichRemote": "{name} naar welke remote pushen?",
   "severalRemotes": "Deze repository heeft meerdere remotes.",
   "tagPushed": "{name} gepusht",
-  "tagNotPushed": "{name} is niet gepusht"
+  "tagNotPushed": "{name} is niet gepusht",
+  "branchPushed": "{name} gepusht",
+  "branchRejected": "{name} is niet gepusht",
+  "branchRejectedHelp": "De remote branch heeft commits die {name} niet heeft. Schakel ernaar over en pull eerst.",
+  "forwarded": "{name} is bijgewerkt",
+  "forwardFailed": "{name} is niet bijgewerkt",
+  "tagsWhichRemote": {
+    "one": "{count} tag naar welke remote pushen?",
+    "other": "{count} tags naar welke remote pushen?"
+  },
+  "tagsPushed": {
+    "one": "{count} tag gepusht",
+    "other": "{count} tags gepusht"
+  },
+  "tagsNotPushed": "Niet elke tag is gepusht"
 }
