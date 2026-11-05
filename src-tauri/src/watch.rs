@@ -367,6 +367,12 @@ mod tests {
             let _ = sender.lock().send(change);
         });
         std::thread::sleep(Duration::from_millis(200));
+        // macOS's FSEvents may still deliver the writes made above, after the watch started: wait until it has been
+        // quiet for a second, so only what the reads below cause is checked.
+        let quiet = std::time::Instant::now();
+        while receiver.recv_timeout(Duration::from_millis(1000)).is_ok() {
+            assert!(quiet.elapsed() < Duration::from_secs(15), "the setup's writes kept coming");
+        }
         // What a scan does: list the folders and read the files.
         for _ in 0..3 {
             let _ = std::fs::read_dir(&src).unwrap().count();
@@ -425,12 +431,19 @@ mod tests {
         let mut changes = 0;
         let mut wait = Duration::from_secs(5);
         while let Ok(change) = receiver.recv_timeout(wait) {
-            let Change::Git(found) = change else { panic!("not a git change") };
+            let Change::Git(mut found) = change else { panic!("not a git change") };
+            let named = found.len();
+            found.sort_by_key(|part| part.name());
+            found.dedup();
+            assert_eq!(found.len(), named, "a part named twice in one change");
             parts.extend(found);
             changes += 1;
             wait = Duration::from_millis(800);
         }
+        // Across two changes a part may come twice: macOS's FSEvents reports the branch's file in both when it splits
+        // the burst.
         parts.sort_by_key(|part| part.name());
+        parts.dedup();
         assert_eq!(parts, [GitPart::Index, GitPart::Refs], "each part once");
         assert!(changes <= 2);
         let _ = std::fs::remove_dir_all(&dir);
