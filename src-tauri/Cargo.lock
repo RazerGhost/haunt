@@ -2608,7 +2608,7 @@ dependencies = [
 
 [[package]]
 name = "haunt"
-version = "0.3.5"
+version = "0.3.6"
 dependencies = [
  "haunt-core",
  "notify",
@@ -2631,7 +2631,7 @@ dependencies = [
 
 [[package]]
 name = "haunt-core"
-version = "0.3.5"
+version = "0.3.6"
 dependencies = [
  "gix",
  "parking_lot",
