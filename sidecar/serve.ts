@@ -16,7 +16,7 @@ import type { Uses } from './calls.ts'
  * or { "id", "ok": false, "error" }. And { "id", "type": "routes" }: the HTTP routes in the code (routes.ts). Both are
  * answered while a call graph is being worked out too: it gives way every few milliseconds (calls.ts).
  * And asked of the app while scanning: { "ask", "type": "read-others", "files", "cargoManifests" } for the PHP, Rust and
- * Lua files, which Rust reads (src-tauri/src/code); it answers { "answer", "ok", "value" | "error" }.
+ * Lua files, which Rust reads (src-tauri/crates/haunt-core/src/code); it answers { "answer", "ok", "value" | "error" }.
  */
 
 export type Event =

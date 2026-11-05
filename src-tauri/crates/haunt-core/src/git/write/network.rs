@@ -9,7 +9,7 @@
 //! - Pull fast-forwards; when the branches went apart it says so, and the window asks whether to merge or rebase. A
 //!   pull that stops on conflicts leaves them for the conflict view (`conflicts.rs`), where it is continued or aborted.
 //! - Push sets the upstream the first time, and overwrites only with a lease on what Haunt last fetched.
-//! - git's questions (passwords, passphrases, host keys) go to the window (`crate::askpass`); git's progress goes to
+//! - git's questions (passwords, passphrases, host keys) go to the window (the app's askpass, `command::set_askpass`); git's progress goes to
 //!   `progress` as it comes; a run can be stopped (`cancel`), which stops git and everything it started. How git is
 //!   started for it (settings and environment) is in `../command.rs`.
 

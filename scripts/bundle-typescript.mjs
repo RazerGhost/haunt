@@ -1,6 +1,7 @@
 // Copies Haunt's own TypeScript into the desktop app's files (src-tauri/bundled/node_modules), for folders you have not
 // trusted, so their own node_modules never runs: package.json, the licence, lib/typescript.js and the lib.*.d.ts files the
-// type checker reads. PHP, Rust and Lua need nothing here: the app reads them itself (src-tauri/src/code).
+// type checker reads. PHP, Rust and Lua need nothing here: the app reads them itself
+// (src-tauri/crates/haunt-core/src/code).
 import { copyFileSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'

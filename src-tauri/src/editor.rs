@@ -10,7 +10,11 @@
 //! Everything started runs on its own and is waited for aside, so it never stays behind as a zombie.
 
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::Stdio;
+
+use crate::process::detached;
+/// In core's process.rs, since git's overview opens a remote's page too; here for the app's other callers.
+pub use crate::process::open_url;
 
 type Args = fn(&str, &str, u32, u32) -> Vec<String>;
 
@@ -212,34 +216,6 @@ fn terminal_words(chosen: &[String], folder: &str, run: Option<&[String]>) -> Ve
         _ => {}
     }
     out
-}
-
-/// Opens a web page in the system's browser; only `https://` addresses.
-pub fn open_url(url: &str) -> Result<(), String> {
-    if !url.starts_with("https://") || url.chars().any(|c| c.is_whitespace() || c == '"' || c == '\'') {
-        return Err(said!("editor.httpsOnly", "Only web addresses (https) can be opened."));
-    }
-    let command = if cfg!(windows) {
-        // Through the shell's URL handler: `start` would read & and ^ in the address as its own.
-        let mut command = crate::process::command("rundll32");
-        command.args(["url.dll,FileProtocolHandler", url]);
-        command
-    } else {
-        let mut command = crate::process::command(if cfg!(target_os = "macos") { "open" } else { "xdg-open" });
-        command.arg(url);
-        command
-    };
-    detached(command).map_err(|error| said!("editor.browser", "The browser could not start: {error}", error = error))
-}
-
-/// Starts a program that runs on its own, and waits for it aside, so it does not stay behind as a zombie (Unix).
-fn detached(mut command: Command) -> std::io::Result<()> {
-    command.stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
-    let mut child = command.spawn()?;
-    std::thread::spawn(move || {
-        let _ = child.wait();
-    });
-    Ok(())
 }
 
 /// A command's path: as given when it is one, else the first on the PATH (with the login shell's and the installers'

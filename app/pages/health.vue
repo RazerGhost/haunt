@@ -2,9 +2,10 @@
 import type { Health } from '~/bindings'
 
 /*
- * Repository health (src-tauri/src/git/health.rs): how much room the history takes, the files that take the most of it
- * (deleted ones too: the history keeps every version), the files that belong in Git LFS, and branches nobody has
- * touched in a long time. Read only: it says what could be done, and leaves the rewriting tools to you.
+ * Repository health (src-tauri/crates/haunt-core/src/git/health.rs): how much room the history takes, the files that
+ * take the most of it (deleted ones too: the history keeps every version), the files that belong in Git LFS, and
+ * branches nobody has touched in a long time. Read only: it says what could be done, and leaves the rewriting tools to
+ * you.
  */
 const { repo } = useRepositories()
 const { refs } = useRefs()

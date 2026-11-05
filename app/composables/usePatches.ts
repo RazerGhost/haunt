@@ -1,9 +1,9 @@
 import type { PatchPreview } from '~/bindings'
 
 /*
- * Patches (src-tauri/src/git/write/patches.rs): commits saved as patch files in a folder you pick, and patch files
- * applied after a preview of what they change function by function (app/pages/patches.vue). The files chosen and their
- * preview are kept while the app runs, so leaving the screen loses nothing.
+ * Patches (src-tauri/crates/haunt-core/src/git/write/patches.rs): commits saved as patch files in a folder you pick,
+ * and patch files applied after a preview of what they change function by function (app/pages/patches.vue). The files
+ * chosen and their preview are kept while the app runs, so leaving the screen loses nothing.
  */
 
 const files = ref<string[]>([])

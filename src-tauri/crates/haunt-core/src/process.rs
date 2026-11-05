@@ -17,6 +17,45 @@ pub fn command(program: impl AsRef<std::ffi::OsStr>) -> Command {
     command
 }
 
+/// No console window for a program started from the app (Windows).
+#[cfg(windows)]
+pub fn hide_console(command: &mut Command) {
+    use std::os::windows::process::CommandExt;
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+    command.creation_flags(CREATE_NO_WINDOW);
+}
+
+#[cfg(not(windows))]
+pub fn hide_console(_command: &mut Command) {}
+
+/// Opens a web page in the system's browser; only `https://` addresses.
+pub fn open_url(url: &str) -> Result<(), String> {
+    if !url.starts_with("https://") || url.chars().any(|c| c.is_whitespace() || c == '"' || c == '\'') {
+        return Err(said!("editor.httpsOnly", "Only web addresses (https) can be opened."));
+    }
+    let command = if cfg!(windows) {
+        // Through the shell's URL handler: `start` would read & and ^ in the address as its own.
+        let mut command = crate::process::command("rundll32");
+        command.args(["url.dll,FileProtocolHandler", url]);
+        command
+    } else {
+        let mut command = crate::process::command(if cfg!(target_os = "macos") { "open" } else { "xdg-open" });
+        command.arg(url);
+        command
+    };
+    detached(command).map_err(|error| said!("editor.browser", "The browser could not start: {error}", error = error))
+}
+
+/// Starts a program that runs on its own, and waits for it aside, so it does not stay behind as a zombie (Unix).
+pub fn detached(mut command: Command) -> std::io::Result<()> {
+    command.stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
+    let mut child = command.spawn()?;
+    std::thread::spawn(move || {
+        let _ = child.wait();
+    });
+    Ok(())
+}
+
 /// What a program left when it finished.
 pub struct Finished {
     pub status: ExitStatus,
@@ -145,26 +184,31 @@ pub fn release(pid: u32) {
 
 /// Stops the program `pid` and every process it started: on Windows its job (`adopt`) and `taskkill /T`, on Unix its
 /// process group (the program must have been started in its own group, `own_group`). Whether the stop could be sent.
+#[cfg(windows)]
 pub fn kill_tree(pid: u32) -> bool {
-    #[cfg(windows)]
     let job = jobs().lock().get(&pid).cloned().is_some_and(|job| job.stop());
-    #[cfg(not(windows))]
-    let job = false;
-    #[cfg(windows)]
-    let mut kill = {
-        let mut command = command("taskkill");
-        command.args(["/T", "/F", "/PID", &pid.to_string()]);
-        command
-    };
-    #[cfg(not(windows))]
-    let mut kill = {
-        let mut command = command("kill");
-        command.args(["-TERM", &format!("-{pid}")]);
-        command
-    };
+    let mut kill = command("taskkill");
+    kill.args(["/T", "/F", "/PID", &pid.to_string()]);
     kill.stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
-    crate::startup::hide_console(&mut kill);
+    hide_console(&mut kill);
     kill.status().is_ok() || job
+}
+
+/// On Unix the signal goes to the group directly, not through the `kill` program: procps' `kill -TERM -<group>` reads
+/// the group as an option, so it stopped nothing (Debian 12), or, on GitHub's Ubuntu runner, the runner itself.
+#[cfg(not(windows))]
+pub fn kill_tree(pid: u32) -> bool {
+    extern "C" {
+        fn kill(pid: i32, signal: i32) -> i32;
+    }
+    /// SIGTERM, the same number on Linux and macOS.
+    const TERM: i32 = 15;
+    // Never 0 or 1: group 0 is Haunt's own, and -1 is every process Haunt may signal.
+    match i32::try_from(pid) {
+        // SAFETY: kill(2) only sends a signal; it touches no memory of Haunt's.
+        Ok(group) if group > 1 => unsafe { kill(-group, TERM) == 0 },
+        _ => false,
+    }
 }
 
 /// Starts the program in a process group of its own on Unix, so `kill_tree` stops what it starts too; nothing on
@@ -201,7 +245,7 @@ fn wait(child: &mut Child, limit: Duration) -> Result<ExitStatus, Failure> {
 /// `adopt`ed: hand it to `finish`.
 pub fn start(mut command: Command) -> Result<Child, Failure> {
     command.stdout(Stdio::piped()).stderr(Stdio::piped());
-    crate::startup::hide_console(&mut command);
+    hide_console(&mut command);
     own_group(&mut command);
     let child = command.spawn().map_err(|error| match error.kind() {
         std::io::ErrorKind::NotFound => Failure::NotFound,

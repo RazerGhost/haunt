@@ -3,9 +3,10 @@ import type { Import, ImportChanges } from '~/bindings'
 import { importGraph, reaches } from '~~/shared/reach'
 
 /*
- * What a change does to the architecture (src-tauri/src/code/architecture.rs): the imports it adds and removes, by
- * file, each judged by the project's rules (a layer broken, a part entered past its door), and the added run-time ones
- * that would close a cycle in the imports as they are now. Read for the commit, or the two commits, picked.
+ * What a change does to the architecture (src-tauri/crates/haunt-core/src/code/architecture.rs): the imports it adds
+ * and removes, by file, each judged by the project's rules (a layer broken, a part entered past its door), and the
+ * added run-time ones that would close a cycle in the imports as they are now. Read for the commit, or the two commits,
+ * picked.
  */
 const props = defineProps<{ from: string | null, to: string }>()
 const { repo } = useRepositories()

@@ -506,6 +506,7 @@ mod bisect {
         // Test one picked by hand, then follow git's picks.
         writer.bisect_jump(&shas[1]).unwrap();
         assert!(writer.bisect_jump(&shas[7]).is_err(), "the good one is not in play");
+        assert!(writer.bisect_jump("--orphan=x").is_err(), "an option is never passed to checkout");
         let mut guard = 0;
         loop {
             let state = bisect_state(&r.root);

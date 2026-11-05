@@ -24,7 +24,9 @@ without it that step says so and stops. For a release published before, run the 
 
 ## How it is put together
 
-- **`src-tauri/`**: the app, in Rust. The window calls typed Tauri commands (`api.rs`); `app/bindings.ts` is written
+- **`src-tauri/`**: the app, in Rust, a Cargo workspace of two crates: the app (`src/`) and `crates/haunt-core`,
+  which holds `git/` and `code/` with what they are built on (`said.rs`, `paths.rs`, `process.rs`, `appimage.rs`) and
+  has no Tauri in it (see below). The window calls typed Tauri commands (`api.rs`); `app/bindings.ts` is written
   from them by `cargo test`. Every call about a repository names it, and `repos.rs` refuses one for a repository that
   is not shown, so an answer cannot land in the wrong tab.
   - `git/` reads repositories: a commit, the files between two commits and a file's diff on gix, in the process
@@ -60,6 +62,28 @@ without it that step says so and stops. For a release published before, run the 
 - **`shared/`**: what both sides use, with their tests: the types, the commit graph's lanes, word diffs, the commit
   message drafts, release notes, themes and more.
 
+## haunt-core
+
+`src-tauri/crates/haunt-core` is git, the code reading and the scan without a JavaScript runtime, with no Tauri in
+it, so they can be tested and used on their own (a command-line tool or another window later): `cargo test -p
+haunt-core` builds no Tauri and no WebKit. `src-tauri/Cargo.toml` is the workspace's root as well as the app's, so
+`pnpm app`, `tauri build` and the Release workflow kept their paths. The app reaches core's modules at their old
+paths (`crate::git`, `crate::code`, `crate::said`…, re-exported in `lib.rs`), and gets the `said!` macro from it.
+What core needed of the app, and where it went:
+
+| Used by git/ or code/ | What of it | Where it went |
+| --- | --- | --- |
+| `said.rs`, `paths.rs`, `process.rs`, `appimage.rs` | all | into core, whole |
+| `startup.rs` | `hide_console` | into core's `process.rs` (`startup::hide_console` re-exports it); finding Node, Bun or Deno and checking git stay in the app |
+| `editor.rs` | `open_url` (`overview::open_remote_page`) | into core's `process.rs` with its `detached` (`editor::open_url` re-exports it); the editors and terminals stay in the app |
+| `askpass.rs` | `env`, what git needs to ask through Haunt | stays in the app, whose `askpass::start` hands it to core (`git::command::set_askpass`); with none handed over, git gets nothing, as in the tests |
+| `sidecar.rs` | the types `Shape` and `ShapeFile` | into core's `code/shape.rs` (`sidecar::Shape` re-exports it); running the scanner stays in the app |
+
+`repos/` and `repos.rs` (tabs, trust, the last scans) stay in the app: they need `events`, `settings`, `sidecar`,
+`watch`, `folders`, `startup` and `editor`. The app's tests build repositories with core's `git::testing::Repo`,
+which core's `test-support` feature makes public for them only. `shared/locales.test.ts` reads both crates' `said!`
+texts.
+
 ## Checks
 
 Run these before a change:
@@ -74,5 +98,10 @@ pnpm check:rust
 `check:rust` checks the Rust's formatting, runs clippy with its warnings as errors, and runs the Rust tests. The Rust
 tests start the real scanner on fixture projects (`sidecar/fixtures/`), so they need Node (or Bun or Deno) too. One test asks gitlab.com
 for real through `glab` and is skipped unless asked for: `cargo test asks_gitlab_through_glab -- --ignored`.
+
+`app/bindings.ts` is written by one of those tests, without starting the app; to write it alone after changing a
+command: `cargo test --manifest-path src-tauri/Cargo.toml --lib writes_the_windows_bindings`. The Check workflow
+(`.github/workflows/check.yml`) runs these checks on Linux, Windows and macOS for every push to main and every pull
+request, and on Linux fails when the bindings written differ from the ones checked in.
 
 After adding an `i-lucide-*` icon, run `node scripts/icon-sets.mjs` to update the icon sets' matches.

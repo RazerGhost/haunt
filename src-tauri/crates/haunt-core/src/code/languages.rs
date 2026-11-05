@@ -99,7 +99,7 @@ mod tests {
     #[test]
     fn agrees_with_the_sidecar_on_the_shared_cases() {
         let cases: Vec<(String, Option<Language>)> =
-            serde_json::from_str(include_str!("../../../shared/languages.cases.json")).unwrap();
+            serde_json::from_str(include_str!("../../../../../shared/languages.cases.json")).unwrap();
         for (path, expected) in cases {
             assert_eq!(language_of(&path), expected, "{path}");
         }

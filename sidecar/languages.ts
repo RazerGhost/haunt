@@ -1,9 +1,9 @@
 /*
  * The languages Haunt reads, by file extension. The TypeScript family goes through the TypeScript compiler (with the
  * type checker for calls): TypeScript, JavaScript, and the script blocks of Vue, Svelte and Astro files (frameworks.ts).
- * The others (PHP, Rust, Lua, Python, Go, Java, C#, Ruby, C and C++) the app reads with tree-sitter (src-tauri/src/code),
- * with calls matched by name; its copy of this table (code/languages.rs) is tested against the same cases
- * (shared/languages.cases.json).
+ * The others (PHP, Rust, Lua, Python, Go, Java, C#, Ruby, C and C++) the app reads with tree-sitter
+ * (src-tauri/crates/haunt-core/src/code), with calls matched by name; its copy of this table (code/languages.rs) is
+ * tested against the same cases (shared/languages.cases.json).
  */
 
 export type Language = 'typescript' | 'php' | 'rust' | 'lua' | 'python' | 'go' | 'java' | 'csharp' | 'ruby' | 'c' | 'cpp'

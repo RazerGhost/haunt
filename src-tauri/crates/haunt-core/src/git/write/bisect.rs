@@ -135,14 +135,18 @@ impl Writer<'_> {
     /// Tests another commit still in play instead of the one git picked.
     pub fn bisect_jump(&self, sha: &str) -> Result<(), String> {
         let state = bisect_state(self.root);
-        if !state.candidates.iter().any(|candidate| candidate == sha) {
+        // Only a full hex id still in play (rev-list's), so it can never pass for an option below.
+        if !sha.bytes().all(|byte| byte.is_ascii_hexdigit())
+            || !state.candidates.iter().any(|candidate| candidate == sha)
+        {
             return Err(said!("bisect.notInPlay", "That commit is not one still in play."));
         }
         self.refuse_checkout(super::refs::Checkout::Bisect)?;
         let queue = queue(self.root);
         let _turn = queue.lock();
         self.wait_for_lock()?;
-        self.git(&["checkout", "--detach", "--end-of-options", sha], None, &[], None).map(drop)
+        // No --end-of-options here: older git (2.39 among them) reads it after `checkout --detach` as a path and refuses.
+        self.git(&["checkout", "--detach", sha], None, &[], None).map(drop)
     }
 
     /// Stops bisecting: back to the branch it started from.

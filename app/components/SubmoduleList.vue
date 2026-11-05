@@ -2,10 +2,10 @@
 import type { Submodule } from '~/bindings'
 
 /*
- * The sidebar's submodules (src-tauri/src/git/submodules.rs): other repositories this one has at a fixed commit. Each
- * shows whether it is checked out at that commit, at another, or not at all; click one to open it in its own tab, and
- * Update checks them out at the recorded commits, cloning the missing ones (only in a trusted folder: it clones from
- * the addresses in .gitmodules). Shown only when there are any.
+ * The sidebar's submodules (src-tauri/crates/haunt-core/src/git/submodules.rs): other repositories this one has at a
+ * fixed commit. Each shows whether it is checked out at that commit, at another, or not at all; click one to open it in
+ * its own tab, and Update checks them out at the recorded commits, cloning the missing ones (only in a trusted folder:
+ * it clones from the addresses in .gitmodules). Shown only when there are any.
  */
 const { repo, info, gitChanged, chooseRoot } = useRepositories()
 const network = useNetwork()

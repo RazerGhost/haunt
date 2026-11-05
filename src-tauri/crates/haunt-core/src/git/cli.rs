@@ -160,7 +160,7 @@ impl Drop for Lines {
 }
 
 fn started(command: &mut Command) -> Result<Child, String> {
-    crate::startup::hide_console(command);
+    crate::process::hide_console(command);
     command.spawn().map_err(|error| match error.kind() {
         std::io::ErrorKind::NotFound => said!("cli.notInstalled", "git could not start: it is not installed."),
         _ => said!("cli.couldNotStart", "git could not start: {error}", error = error),

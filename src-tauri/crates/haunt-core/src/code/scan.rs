@@ -14,7 +14,7 @@ use serde_json::{json, Value};
 use super::languages::{language_of, Language, MAX_SOURCE_BYTES};
 use super::others::{self, Request, Wanted};
 use super::project::{dirname, package_name};
-use crate::sidecar::{Shape, ShapeFile};
+use super::shape::{Shape, ShapeFile};
 
 /// Folders never searched: dependencies, builds and caches (workspaces.ts `IGNORED_FOLDERS`).
 const IGNORED: &[&str] = &[

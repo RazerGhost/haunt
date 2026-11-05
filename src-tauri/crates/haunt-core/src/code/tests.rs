@@ -9,7 +9,7 @@ use super::others::{read, Request, Wanted};
 use super::types::FunctionNode;
 
 fn fixture(name: &str) -> String {
-    format!("{}/../sidecar/fixtures/{name}", env!("CARGO_MANIFEST_DIR"))
+    format!("{}/../../../sidecar/fixtures/{name}", env!("CARGO_MANIFEST_DIR"))
 }
 
 fn files(root: &str, dir: &str, out: &mut Vec<String>) {

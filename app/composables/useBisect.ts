@@ -1,11 +1,11 @@
 import type { BisectMark, BisectState, CommitInfo } from '~/bindings'
 
 /*
- * Bisecting (src-tauri/src/git/write/bisect.rs): finding the first bad commit between a good one and a bad one, step by
- * step. Where it stands is read when a repository is shown and on every git news; a banner shows it on the Git screens
- * and the Bisect screen starts and steers it. Started from a function, the commits that touched it (its history, read
- * at the start and kept per repository) are suggested first among the ones still in play.
- * One copy for the app; plugins/haunt.client.ts starts it.
+ * Bisecting (src-tauri/crates/haunt-core/src/git/write/bisect.rs): finding the first bad commit between a good one and
+ * a bad one, step by step. Where it stands is read when a repository is shown and on every git news; a banner shows it
+ * on the Git screens and the Bisect screen starts and steers it. Started from a function, the commits that touched it
+ * (its history, read at the start and kept per repository) are suggested first among the ones still in play. One copy
+ * for the app; plugins/haunt.client.ts starts it.
  */
 
 const state = shallowRef<BisectState | null>(null)

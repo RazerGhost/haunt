@@ -277,7 +277,7 @@ mod tests {
 
     #[test]
     fn lists_the_hooks_git_would_run_with_their_text() {
-        let r = crate::git::tests::Repo::new();
+        let r = crate::git::testing::Repo::new();
         let hooks = r.path(".git/hooks");
         std::fs::create_dir_all(&hooks).unwrap();
         executable(&hooks.join("pre-commit"), "#!/bin/sh\nnpm test\n");

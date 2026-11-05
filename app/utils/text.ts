@@ -75,8 +75,8 @@ const MARK = '\u0001'
 
 /**
  * A text from Haunt's Rust side in the window's language: Rust sends a key, its values and the English
- * (src-tauri/src/said.rs), worded here from app/locales/<language>/rust/; a key the window does not know, or any other
- * text (what git said), shows as it came.
+ * (src-tauri/crates/haunt-core/src/said.rs), worded here from app/locales/<language>/rust/; a key the window does not
+ * know, or any other text (what git said), shows as it came.
  */
 export function said(text: string): string {
   if (!text.startsWith(MARK)) return text

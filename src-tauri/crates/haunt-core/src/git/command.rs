@@ -18,6 +18,25 @@
 
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
+use std::sync::OnceLock;
+
+/// What git needs in its environment to ask its questions through the app, for a repository: handed over once by the
+/// app when it starts listening for them (its askpass.rs). Without it git cannot ask, and stops with its own message,
+/// as in the tests.
+static ASKPASS: OnceLock<AskpassEnv> = OnceLock::new();
+
+/// A repository in, the variables to give git out.
+pub type AskpassEnv = fn(&str) -> Vec<(String, String)>;
+
+/// Hands over the app's askpass environment (see `ASKPASS`); only the first call counts.
+pub fn set_askpass(env: AskpassEnv) {
+    let _ = ASKPASS.set(env);
+}
+
+/// The askpass environment for the repository `repo`; nothing when the app has handed none over.
+fn askpass_env(repo: &str) -> Vec<(String, String)> {
+    ASKPASS.get().map(|env| env(repo)).unwrap_or_default()
+}
 
 /// The `-c` settings of every read.
 const READ_CONFIG: [&str; 12] = [
@@ -72,7 +91,7 @@ pub(crate) fn read(root: &str, filters: &[String], command: &str, rest: &[&str])
         .env("PAGER", "cat")
         .env("LC_ALL", "C")
         .stdin(Stdio::null());
-    crate::startup::hide_console(&mut git);
+    crate::process::hide_console(&mut git);
     git
 }
 
@@ -107,7 +126,7 @@ pub(crate) fn write(cwd: &str, trusted: bool) -> Command {
         .env("GIT_EDITOR", ":")
         .env("GIT_SEQUENCE_EDITOR", ":")
         .env("LC_ALL", "C");
-    crate::startup::hide_console(&mut git);
+    crate::process::hide_console(&mut git);
     git
 }
 
@@ -117,7 +136,7 @@ pub(crate) fn write(cwd: &str, trusted: bool) -> Command {
 pub(crate) fn network(cwd: &str, trusted: bool, extra: &[String], asks_for: Option<&str>) -> Command {
     let mut git = write(cwd, trusted);
     git.args(extra.iter().flat_map(|setting| ["-c".to_string(), setting.clone()]))
-        .envs(asks_for.map(crate::askpass::env).unwrap_or_default())
+        .envs(asks_for.map(askpass_env).unwrap_or_default())
         .envs(asks_for.is_none().then_some(("GCM_INTERACTIVE", "never")));
     crate::process::own_group(&mut git);
     git
@@ -244,7 +263,7 @@ mod tests {
         with_extra.extend(["-c", "gc.auto=0", "-c", "credential.helper="]);
         assert_eq!(args(&asked), with_extra);
         let mut asked_env = write_env.clone();
-        asked_env.extend(crate::askpass::env("/r"));
+        asked_env.extend(askpass_env("/r"));
         assert_eq!(sorted(envs(&asked)), sorted(asked_env));
         let quiet = network("/r", true, &[], None);
         assert_eq!(args(&quiet), ["-c", "color.ui=false", "-c", "core.pager=cat"]);

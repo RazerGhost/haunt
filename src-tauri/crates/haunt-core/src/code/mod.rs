@@ -12,6 +12,7 @@ mod project;
 mod read;
 pub mod routes;
 pub mod scan;
+pub mod shape;
 pub mod types;
 
 #[cfg(test)]

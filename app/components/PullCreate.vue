@@ -4,8 +4,8 @@ import type { PullDraft } from '~/bindings'
 /*
  * A new pull request (a merge request on GitLab) for a branch, made through the host's own tool (gh, glab; tea for
  * Gitea) with the account you signed in with: the branch it goes into, a title and a description to start from (its
- * commits; src-tauri/src/git/remote.rs), and whether it is a draft. A branch not on the remote yet, or with commits
- * the remote lacks, is pushed first, from here.
+ * commits; src-tauri/crates/haunt-core/src/git/remote.rs), and whether it is a draft. A branch not on the remote yet,
+ * or with commits the remote lacks, is pushed first, from here.
  */
 const open = defineModel<boolean>('open', { required: true })
 const { repo } = useRepositories()

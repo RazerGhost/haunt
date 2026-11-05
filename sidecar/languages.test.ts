@@ -3,7 +3,8 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { isTestPath, languageOf } from './languages.ts'
 
-/* The language table agrees with the app's copy (src-tauri/src/code/languages.rs), which is tested on the same cases. */
+/* The language table agrees with the app's copy (src-tauri/crates/haunt-core/src/code/languages.rs), which is tested on
+ * the same cases. */
 
 test('reads the shared cases as the app does', () => {
   const cases = JSON.parse(readFileSync(new URL('../shared/languages.cases.json', import.meta.url), 'utf8')) as [string, string | null][]

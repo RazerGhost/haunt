@@ -358,7 +358,7 @@ pub fn open_remote_page(path: &str, remote: &str, url: &str) -> Result<(), Strin
     if url != page.base && !url.starts_with(&format!("{}/", page.base)) {
         return Err(said!("overview.otherPage", "Only pages of the repository's remotes can be opened."));
     }
-    crate::editor::open_url(url)
+    crate::process::open_url(url)
 }
 
 const README_NAMES: [&str; 6] = ["readme.md", "readme.markdown", "readme", "readme.txt", "readme.rst", "readme.adoc"];
@@ -599,7 +599,8 @@ mod tests {
     #[test]
     #[ignore]
     fn overview_timing() {
-        let path = std::env::var("HAUNT_OVERVIEW").unwrap_or_else(|_| env!("CARGO_MANIFEST_DIR").to_owned() + "/..");
+        let path =
+            std::env::var("HAUNT_OVERVIEW").unwrap_or_else(|_| env!("CARGO_MANIFEST_DIR").to_owned() + "/../../..");
         // The first of each reads git's filters and warms the disk cache.
         let (_, _) = (overview(&path), statistics(&path));
         for _ in 0..5 {
