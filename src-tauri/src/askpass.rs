@@ -68,6 +68,8 @@ pub fn start(events: Arc<Events>) -> std::io::Result<()> {
     if ASKER.set(asker.clone()).is_err() {
         return Ok(());
     }
+    // git's runs (in haunt-core) ask for this environment from now on.
+    crate::git::command::set_askpass(env);
     std::thread::spawn(move || {
         for stream in listener.incoming().flatten() {
             let asker = asker.clone();

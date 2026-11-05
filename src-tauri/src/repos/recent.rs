@@ -232,7 +232,7 @@ mod tests {
 
     #[test]
     fn checks_a_typed_folder_and_reads_a_recent_repository() {
-        let r = crate::git::tests::Repo::new();
+        let r = crate::git::testing::Repo::new();
         r.write("a.ts", "export const a = 1\n");
         r.sh(&["add", "."]);
         r.sh(&["commit", "-q", "-m", "First"]);
@@ -248,7 +248,7 @@ mod tests {
 
     #[test]
     fn reads_a_recent_repository_again_only_when_git_changed_it() {
-        let r = crate::git::tests::Repo::new();
+        let r = crate::git::testing::Repo::new();
         r.write("a.ts", "export const a = 1\n");
         r.sh(&["add", "."]);
         r.sh(&["commit", "-q", "-m", "First"]);

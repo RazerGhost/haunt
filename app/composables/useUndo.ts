@@ -1,10 +1,10 @@
 import type { LastAction } from '~/bindings'
 
 /*
- * Undo for the last write that moved history (src-tauri/src/git/write/last.rs): after a commit, merge, pull, reset,
- * rebase, branch switch, or a branch made, renamed or deleted, Rust says what Undo would do; it shows as a toast with
- * Undo, and the palette offers it while nothing has moved since. One copy for the app; plugins/haunt.client.ts
- * starts it.
+ * Undo for the last write that moved history (src-tauri/crates/haunt-core/src/git/write/last.rs): after a commit,
+ * merge, pull, reset, rebase, branch switch, or a branch made, renamed or deleted, Rust says what Undo would do; it
+ * shows as a toast with Undo, and the palette offers it while nothing has moved since. One copy for the app;
+ * plugins/haunt.client.ts starts it.
  */
 
 const last = shallowRef<LastAction | null>(null)

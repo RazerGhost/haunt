@@ -2,11 +2,11 @@
 import type { GrepLine, GrepMode, GrepResult } from '~/bindings'
 
 /*
- * Searching the files of a commit (src-tauri/src/git/grep.rs, `git grep` on its tree): HEAD by default, or any branch,
- * tag or commit (`?at=` from the commit menu). The pattern is plain text, a regular expression or a whole word, found
- * in the opened folder's files, optionally only under a path or glob. The matches come by file, with the match marked;
- * a line opens the file as it was at that commit around it, from where its blame is one click away. A search runs on
- * Enter or the button only, never while typing.
+ * Searching the files of a commit (src-tauri/crates/haunt-core/src/git/grep.rs, `git grep` on its tree): HEAD by
+ * default, or any branch, tag or commit (`?at=` from the commit menu). The pattern is plain text, a regular expression
+ * or a whole word, found in the opened folder's files, optionally only under a path or glob. The matches come by file,
+ * with the match marked; a line opens the file as it was at that commit around it, from where its blame is one click
+ * away. A search runs on Enter or the button only, never while typing.
  */
 const route = useRoute()
 const { repo } = useRepositories()

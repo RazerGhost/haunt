@@ -19,8 +19,8 @@ These cost little work but wait on someone else, so they start first.
 ## 2. Translations
 
 Done: the window's texts are in app/locales (English and Dutch), looked up by `t()` in app/utils/text.ts; Haunt's own
-texts from Rust come as keys with values (`said!`, src-tauri/src/said.rs) and are worded in the window. What git itself
-says stays as git says it.
+texts from Rust come as keys with values (`said!`, src-tauri/crates/haunt-core/src/said.rs) and are worded in the
+window. What git itself says stays as git says it.
 
 ## 3. Repository manager
 
@@ -29,7 +29,7 @@ the sidebar and from the manager.
 
 ## 4. Reflog
 
-Done (app/pages/reflog.vue, src-tauri/src/git/reflog.rs).
+Done (app/pages/reflog.vue, src-tauri/crates/haunt-core/src/git/reflog.rs).
 
 ## 5. Git
 

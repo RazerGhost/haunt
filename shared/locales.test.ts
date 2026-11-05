@@ -64,10 +64,12 @@ test('every key the window names is in English', () => {
 })
 
 test('every text Rust says is in English, word for word', () => {
-  const rust = join(import.meta.dirname, '..', 'src-tauri', 'src')
+  // The app's Rust and haunt-core's (git, the code reading).
+  const rust = join(import.meta.dirname, '..', 'src-tauri')
+  const sources = [join(rust, 'src'), join(rust, 'crates', 'haunt-core', 'src')].flatMap(dir => files(dir, /\.rs$/))
   const wrong: string[] = []
   // said.rs holds only examples.
-  for (const path of files(rust, /\.rs$/).filter(path => !path.endsWith('said.rs'))) {
+  for (const path of sources.filter(path => !path.endsWith('said.rs'))) {
     const source = readFileSync(path, 'utf8')
     for (const [, key, literal] of source.matchAll(/said!\(\s*"([\w.]+)",\s*"((?:[^"\\]|\\.)*)"/g)) {
       const english = literal!.replace(/\\(["\\n])/g, (_, c: string) => (c === 'n' ? '\n' : c))

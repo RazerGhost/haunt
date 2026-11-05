@@ -2,10 +2,10 @@
 import type { Reflog, ReflogEntry } from '~/bindings'
 
 /*
- * The reflog (src-tauri/src/git/reflog.rs): where HEAD, or a branch, pointed before, newest first, and what moved it.
- * A commit that only the reflog still keeps (a reset, a rebase or an amend left it behind, or its branch was deleted)
- * is marked lost; from any entry, see the commit, put a new branch on it, reset the current branch to it or
- * cherry-pick it. Undo goes back one step only; this goes back as far as git keeps (90 days by default).
+ * The reflog (src-tauri/crates/haunt-core/src/git/reflog.rs): where HEAD, or a branch, pointed before, newest first,
+ * and what moved it. A commit that only the reflog still keeps (a reset, a rebase or an amend left it behind, or its
+ * branch was deleted) is marked lost; from any entry, see the commit, put a new branch on it, reset the current branch
+ * to it or cherry-pick it. Undo goes back one step only; this goes back as far as git keeps (90 days by default).
  */
 const route = useRoute()
 const { repo, gitChanged } = useRepositories()

@@ -157,15 +157,8 @@ pub fn check_git() -> Result<(), String> {
     }
 }
 
-#[cfg(windows)]
-pub fn hide_console(command: &mut Command) {
-    use std::os::windows::process::CommandExt;
-    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-    command.creation_flags(CREATE_NO_WINDOW);
-}
-
-#[cfg(not(windows))]
-pub fn hide_console(_command: &mut Command) {}
+/// In core's process.rs with the rest of starting programs; here too, where the app has always found it.
+pub use crate::process::hide_console;
 
 /// The tiling compositor or window manager Haunt runs in on Linux, by the variables each sets: these place and size
 /// windows themselves, and ignore a window's own minimise and maximise (Hyprland drops maximise requests by default and

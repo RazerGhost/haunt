@@ -3,11 +3,11 @@ import type { Route } from '~/bindings'
 import type { Located } from '~/composables/useCode'
 
 /*
- * The HTTP routes in the code (src-tauri/src/code/routes.rs, sidecar/routes.ts): Hono and Express routes with their
- * mounted prefixes, and WordPress's REST routes, each with its method, path, middleware and handler. A handler is a
- * click from its call path (the Calls page's Paths view); an inline handler shows the functions it calls instead.
- * Found in the code as it is written: nothing runs, nothing leaves the machine. Try it sends a request to your dev
- * server on this machine (TryIt.vue).
+ * The HTTP routes in the code (src-tauri/crates/haunt-core/src/code/routes.rs, sidecar/routes.ts): Hono and Express
+ * routes with their mounted prefixes, and WordPress's REST routes, each with its method, path, middleware and handler.
+ * A handler is a click from its call path (the Calls page's Paths view); an inline handler shows the functions it calls
+ * instead. Found in the code as it is written: nothing runs, nothing leaves the machine. Try it sends a request to your
+ * dev server on this machine (TryIt.vue).
  */
 const { scan, index, select, open } = useCode()
 const { repo } = useRepositories()

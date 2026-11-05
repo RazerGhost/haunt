@@ -3,9 +3,9 @@ import type { ArchitectureHistory } from '~/bindings'
 
 /*
  * The rule breaks over time: for the last commits along the current branch, the imports each one added and removed
- * that break the project's rules (src-tauri/src/code/architecture.rs), as bars (up: added, down: removed), and the
- * total there was after each, worked back from the total now. Read when asked: every version of every changed file is
- * parsed. Click a bar to see that commit's Architecture lens.
+ * that break the project's rules (src-tauri/crates/haunt-core/src/code/architecture.rs), as bars (up: added, down:
+ * removed), and the total there was after each, worked back from the total now. Read when asked: every version of every
+ * changed file is parsed. Click a bar to see that commit's Architecture lens.
  */
 const props = defineProps<{ now: number }>()
 const { repo } = useRepositories()

@@ -1,18 +1,21 @@
 //! Haunt's desktop app. The window calls Rust through typed commands (api.rs; their TypeScript is app/bindings.ts);
-//! Rust keeps the tabs and the settings, reads git (git/), watches the repositories, opens the editor, and runs the
-//! TypeScript scan in a sidecar per shown repository, on Node, Bun or Deno (sidecar.rs). In a release build nothing
+//! Rust keeps the tabs and the settings, reads git and the code (git/ and code/, in haunt-core: crates/haunt-core),
+//! watches the repositories, opens the editor, and runs the TypeScript scan in a sidecar per shown repository, on
+//! Node, Bun or Deno (sidecar.rs). In a release build nothing
 //! listens on a port but askpass.rs, on the loopback address with a secret, for git's questions while it fetches,
 //! pulls or pushes.
 //! While Haunt is worked on, the same commands also answer on 127.0.0.1 for the dev server's page (devbridge.rs).
 
-// First: the said! macro is used by the modules after it.
+// First: the said! macro, from haunt-core, is used by the modules after it.
 #[macro_use]
-mod said;
+extern crate haunt_core;
+
+// git, the code reading and what they are built on live in haunt-core (crates/haunt-core); here at their old paths.
+use haunt_core::{appimage, code, git, paths, process, said};
+
 mod alerts;
 mod api;
-mod appimage;
 mod askpass;
-mod code;
 mod desktop;
 #[cfg(debug_assertions)]
 mod devbridge;
@@ -21,11 +24,8 @@ mod events;
 mod export;
 mod first_frame;
 mod folders;
-mod git;
 mod hosts;
 mod icons;
-mod paths;
-mod process;
 mod repos;
 mod settings;
 mod sidecar;

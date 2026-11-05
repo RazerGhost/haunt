@@ -1,9 +1,7 @@
 //! Git's reads, on repositories the tests build: the log, refs, a commit and its files, diffs, history and churn, and
 //! the safety rule that a repository's own diff driver, textconv and filters never run.
 
-use std::cell::Cell;
 use std::fs;
-use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use super::types::{DecorationKind, LineKind, LogQuery, MergeFilter, PathStatus};
@@ -12,53 +10,7 @@ use super::*;
 const A1: &str = "export function keep() { return 1 }\nexport function edit() {\n  return 1\n}\nexport function drop() { return 3 }\nexport class Order {\n  total() { return 0 }\n}\n";
 const A2: &str = "export function keep() { return 1 }\nexport function edit() {\n  return 2\n}\nexport class Order {\n  total() { return 0 }\n}\nexport function fresh() { return keep() }\n";
 
-pub(crate) struct Repo {
-    _dir: tempfile::TempDir,
-    pub(crate) root: String,
-    /// Each commit a minute after the last, from yesterday: commits made in one second would tie in blame and log.
-    clock: Cell<u64>,
-}
-
-impl Repo {
-    pub(crate) fn new() -> Repo {
-        let dir = tempfile::tempdir().unwrap();
-        let root = crate::paths::plain(fs::canonicalize(dir.path()).unwrap()).to_string_lossy().into_owned();
-        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
-        let repo = Repo { _dir: dir, root, clock: Cell::new(now - 86_400) };
-        repo.sh(&["init", "-q", "-b", "main"]);
-        for (key, value) in [
-            ("user.name", "Test"),
-            ("user.email", "test@example.com"),
-            ("core.autocrlf", "false"),
-            ("commit.gpgsign", "false"),
-        ] {
-            repo.sh(&["config", key, value]);
-        }
-        repo
-    }
-
-    pub(crate) fn sh(&self, args: &[&str]) -> String {
-        self.clock.set(self.clock.get() + 60);
-        let date = format!("@{} +0000", self.clock.get());
-        let output = Command::new("git")
-            .args(args)
-            .current_dir(&self.root)
-            .env("GIT_AUTHOR_DATE", &date)
-            .env("GIT_COMMITTER_DATE", &date)
-            .output()
-            .unwrap();
-        assert!(output.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&output.stderr));
-        String::from_utf8_lossy(&output.stdout).into_owned()
-    }
-
-    pub(crate) fn write(&self, path: &str, text: &str) {
-        fs::write(Path::new(&self.root).join(path), text).unwrap();
-    }
-
-    pub(crate) fn path(&self, path: &str) -> PathBuf {
-        Path::new(&self.root).join(path)
-    }
-}
+pub(crate) use super::testing::Repo;
 
 /// main: a.ts, old.ts, gone.ts, other.ts; feature (two commits): a.ts edited, old.ts renamed; main moves on.
 fn feature_branch() -> Repo {

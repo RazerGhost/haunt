@@ -1,11 +1,11 @@
 import type { Worktree } from '~/bindings'
 
 /*
- * The repository's worktrees (src-tauri/src/git/write/worktrees.rs): more branches checked out side by side, each in a
- * folder of its own, opened in tabs of their own. A new one goes beside the repository's folder by default
- * (`<folder>-<branch>`), and opens in a tab once it is made; removing one takes its folder away (its branch stays),
- * closing its tab first, and one with changes not committed asks again first. The worktree on screen is removed from
- * another tab.
+ * The repository's worktrees (src-tauri/crates/haunt-core/src/git/write/worktrees.rs): more branches checked out side
+ * by side, each in a folder of its own, opened in tabs of their own. A new one goes beside the repository's folder by
+ * default (`<folder>-<branch>`), and opens in a tab once it is made; removing one takes its folder away (its branch
+ * stays), closing its tab first, and one with changes not committed asks again first. The worktree on screen is removed
+ * from another tab.
  */
 
 const list = shallowRef<Worktree[]>([])

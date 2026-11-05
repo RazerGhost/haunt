@@ -3,10 +3,10 @@ import type { CommitInfo, PullRequest } from '~/bindings'
 
 /*
  * Pull requests, reviewed here without switching your branch: fetched as refs from the remote (the newest 30, or one by
- * its number; src-tauri/src/git/write/network.rs), with no account or API, so each is named by its number and its
- * newest commit. A pull request opens with every lens of the commit list (files, functions, what could break and the
- * tests that reach it, the map, the calls) on what it changes since it went apart from the main branch; one of its
- * commits can be looked at alone.
+ * its number; src-tauri/crates/haunt-core/src/git/write/network.rs), with no account or API, so each is named by its
+ * number and its newest commit. A pull request opens with every lens of the commit list (files, functions, what could
+ * break and the tests that reach it, the map, the calls) on what it changes since it went apart from the main branch;
+ * one of its commits can be looked at alone.
  */
 const { repo, gitChanged } = useRepositories()
 const route = useRoute()

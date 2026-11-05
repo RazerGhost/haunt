@@ -14,7 +14,7 @@
     "postinstall": "nuxt prepare",
     "test": "node --test \"sidecar/*.test.ts\" \"shared/*.test.ts\"",
     "typecheck": "tsc -p tsconfig.sidecar.json && nuxt typecheck",
-    "check:rust": "cargo fmt --check --manifest-path src-tauri/Cargo.toml && cargo clippy --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings && cargo test --manifest-path src-tauri/Cargo.toml",
+    "check:rust": "cargo fmt --all --check --manifest-path src-tauri/Cargo.toml && cargo clippy --workspace --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings && cargo test --workspace --manifest-path src-tauri/Cargo.toml",
     "app": "tauri dev",
     "app:build": "tauri build"
   },

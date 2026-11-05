@@ -2610,7 +2610,7 @@ dependencies = [
 name = "haunt"
 version = "0.3.5"
 dependencies = [
- "gix",
+ "haunt-core",
  "notify",
  "notify-debouncer-full",
  "parking_lot",
@@ -2626,6 +2626,19 @@ dependencies = [
  "tauri-plugin-window-state",
  "tauri-specta",
  "tempfile",
+ "zbus",
+]
+
+[[package]]
+name = "haunt-core"
+version = "0.3.5"
+dependencies = [
+ "gix",
+ "parking_lot",
+ "serde",
+ "serde_json",
+ "specta",
+ "tempfile",
  "tree-sitter",
  "tree-sitter-c",
  "tree-sitter-c-sharp",
@@ -2637,7 +2650,6 @@ dependencies = [
  "tree-sitter-python",
  "tree-sitter-ruby",
  "tree-sitter-rust",
- "zbus",
 ]
 
 [[package]]

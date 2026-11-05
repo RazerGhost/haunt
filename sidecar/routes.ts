@@ -13,7 +13,7 @@ import { functionResolver } from './resolve.ts'
  *
  * An inline handler has no function of its own in the scan (an unnamed callback is kept only when named functions sit
  * inside it): then the route lists the functions the handler calls, which is where its call path goes on. The PHP
- * routes (WordPress) are read by the app (src-tauri/src/code/routes.rs).
+ * routes (WordPress) are read by the app (src-tauri/crates/haunt-core/src/code/routes.rs).
  */
 
 export interface Route {
