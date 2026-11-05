@@ -8,5 +8,8 @@
   "tileSize": "{files} · {functions}",
   "found": "{count} gevonden",
   "split": "{top} op bestandsniveau, {nested} genest",
-  "fns": "{count} fn"
+  "fns": "{count} fn",
+  "understood": "{percent}% begrepen",
+  "known": "{percent}% van de functies begrepen",
+  "knownStale": "{percent}% van de functies begrepen, {count} veranderd sindsdien"
 }

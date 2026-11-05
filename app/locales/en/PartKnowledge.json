@@ -12,10 +12,6 @@
   "title": "Who knows it",
   "onlyOne": "wrote nearly all of it, and nobody else changed it this year: worth a second reviewer or some notes.",
   "wrote": "Wrote the lines it has now",
-  "lines": {
-    "one": "{count} line",
-    "other": "{count} lines"
-  },
   "skipped": {
     "one": "{count} file not counted (new, or past the first 300).",
     "other": "{count} files not counted (new, or past the first 300)."

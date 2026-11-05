@@ -87,6 +87,8 @@ export const commands = {
 	recentAuthors: (repo: string, days: number) => __TAURI_INVOKE<FileAuthor[]>("recent_authors", { repo, days }),
 	/**  Who wrote the lines of these files at HEAD (at most 300 files). */
 	blameAuthors: (repo: string, paths: string[]) => __TAURI_INVOKE<Blamed>("blame_authors", { repo, paths }),
+	/**  Who wrote the lines of one function as its file is now, yours alone and those co-written with an AI apart. */
+	blameFunction: (repo: string, path: string, line: number, endLine: number) => __TAURI_INVOKE<Blamed>("blame_function", { repo, path, line, endLine }),
 	/**  Who wrote the lines a change touches, as they were at `base`: the reviewers to suggest. */
 	reviewers: (repo: string, base: string, spans: LineSpanAt[]) => __TAURI_INVOKE<Knowers>("reviewers", { repo, base, spans }),
 	hotspots: (repo: string, days: number) => __TAURI_INVOKE<Hotspots>("hotspots", { repo, days }),
@@ -462,6 +464,14 @@ export type Blamed = {
 	files: number,
 	/**  Files left out: past the limit, or not in HEAD yet. */
 	skipped: number,
+	/**  Your lines whose commit names no AI as co-author (you are git's `user.name` or `user.email`). */
+	youAlone: number,
+	/**  Lines whose commit names an AI as co-author, whoever committed them. */
+	ai: number,
+	/**  Everyone else's lines without an AI co-author, most first. */
+	others: AuthorLines[],
+	/**  Your name in git, when it is set. */
+	you: string | null,
 };
 
 /**  A local branch, with how far it is from the branch it tracks. */

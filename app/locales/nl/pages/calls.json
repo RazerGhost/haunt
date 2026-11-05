@@ -69,5 +69,18 @@
   "hintPaths": "Dubbele rand: een ingang · klik om te bekijken · dubbelklik om te centreren · scroll om te zoomen",
   "hint": "klik om te bekijken · dubbelklik om te centreren · scroll om te zoomen",
   "working": "De aanroepgraaf wordt uitgezocht…",
-  "pick": "Kies of zoek een functie: Paden laat zien hoe de code het vanuit de ingangen bereikt."
+  "pick": "Kies of zoek een functie: Paden laat zien hoe de code het vanuit de ingangen bereikt.",
+  "includeTests": "Tests meetellen",
+  "includeTestsHelp": "Tests en de helpers die alleen tests aanroepen (test-helpers.ts en dergelijke) meetellen in de lijsten en grafen",
+  "fit": "Passend",
+  "predict": "Voorspellen",
+  "predictHelp": "Verberg de functies tussen de ingangen en deze, en vul ze zelf in",
+  "predictNothing": "Hier valt niets te voorspellen: de ingangen roepen hem direct aan, of hij is zelf een ingang.",
+  "predictFill": "Kies de functie voor plek {number}: uit de lijst hieronder, of uit de lijst links (zoek naar elke functie).",
+  "predictDone": "Elke plek is ingevuld: toon de paden, of klik op een plek om hem te wijzigen.",
+  "predictScore": "{right} van {count} goed",
+  "reveal": "Tonen",
+  "predictClear": "Wissen",
+  "predictAgain": "Opnieuw",
+  "predictUnpick": "Deze keuze weghalen"
 }

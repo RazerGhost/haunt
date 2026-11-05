@@ -11,5 +11,12 @@
     "one": "{count} caller, calls {callees}",
     "other": "{count} callers, calls {callees}"
   },
-  "map": "Where you are: click or drag to move"
+  "map": "Where you are: click or drag to move",
+  "familiar": {
+    "familiar": "understood",
+    "stale": "changed since you learned it",
+    "not": "not learned yet"
+  },
+  "known": "{percent}% understood",
+  "knownStale": "{percent}% understood, {count} changed since"
 }

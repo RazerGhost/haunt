@@ -51,5 +51,6 @@
     "after": "toe om ze aan je eigen lagen te toetsen (zie de README van Haunt)."
   },
   "help": "Klik op een pijl voor de bestanden, op een onderdeel voor wat het gebruikt; dubbelklik om naar binnen te gaan. Tests zijn weggelaten.",
-  "runtimeCycles": "Kringlopen bij runtime"
+  "runtimeCycles": "Kringlopen bij runtime",
+  "fit": "Passend"
 }

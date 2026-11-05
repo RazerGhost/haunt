@@ -12,5 +12,11 @@
   "png": "PNG image",
   "svg": "SVG image",
   "exported": "Canvas exported",
-  "notExported": "The canvas could not be exported"
+  "notExported": "The canvas could not be exported",
+  "familiarity": "Familiarity",
+  "familiarityHelp": "Colour functions by whether you learned them: grey not yet, green understood, amber changed since",
+  "familiarityLegend": "What the colours mean",
+  "notLearned": "not learned",
+  "understood": "understood",
+  "changedSince": "changed since"
 }

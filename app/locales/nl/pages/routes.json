@@ -15,5 +15,17 @@
   "open": "{file} openen in de editor",
   "callPath": "Aanroeppad",
   "tryIt": "Proberen",
-  "tryItHelp": "Een request naar je dev-server sturen"
+  "tryItHelp": "Een request naar je dev-server sturen",
+  "hideChains": "Ketens verbergen",
+  "hideChainsHelp": "Bedek waar elke handler naartoe leidt, om jezelf te testen; klik op een bedekte keten om hem te zien",
+  "shuffle": "Schudden",
+  "reveal": {
+    "one": "{count} functie: klik om te tonen",
+    "other": "{count} functies: klik om te tonen"
+  },
+  "iKnew": "Wist ik",
+  "iDidNot": "Wist ik niet",
+  "knewIt": "Geweten",
+  "didNot": "Niet geweten",
+  "score": "{knew} van {count} geweten"
 }

@@ -281,6 +281,14 @@ commands! {
         }
         Ok(crate::git::knowledge::blame_authors(&repo, &paths))
     }
+    /// Who wrote the lines of one function as its file is now, yours alone and those co-written with an AI apart.
+    fn blame_function(api, repo: String, path: String, line: u32, end_line: u32) -> crate::git::knowledge::Blamed {
+        api.repos.require(&repo)?;
+        if crate::paths::inside(&repo, &path).is_none() {
+            return Err(said!("api.pathOutside", "That path is not in this repository."));
+        }
+        crate::git::knowledge::blame_span(&repo, &path, line, end_line)
+    }
     /// Who wrote the lines a change touches, as they were at `base`: the reviewers to suggest.
     fn reviewers(api, repo: String, base: String, spans: Vec<crate::git::knowledge::LineSpanAt>) -> crate::git::knowledge::Knowers {
         api.repos.require(&repo)?;

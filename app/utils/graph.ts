@@ -19,6 +19,9 @@ export function graphStyle(): StylesheetJson {
   const muted = resolvedColor('--ui-text-muted')
   const background = resolvedColor('--ui-bg')
   const warning = resolvedColor('--ui-warning')
+  const primary = resolvedColor('--ui-primary')
+  const success = resolvedColor('--ui-success')
+  const error = resolvedColor('--ui-error')
   return [
     {
       selector: 'node',
@@ -35,6 +38,8 @@ export function graphStyle(): StylesheetJson {
         'text-halign': 'center',
         'font-family': 'ui-monospace, Cascadia Mono, Menlo, Consolas, monospace',
         'font-size': 11,
+        // A label smaller than this on screen is mush: not drawn (hover a node to read it, GraphView).
+        'min-zoomed-font-size': 7,
         'color': text
       }
     },
@@ -48,6 +53,13 @@ export function graphStyle(): StylesheetJson {
     // On the Calls page's path view: an entry point (nothing calls it), and the label of a row of steps.
     { selector: 'node.entry', style: { 'border-style': 'double', 'border-width': 4 } },
     { selector: 'node.rowlabel', style: { 'border-width': 0, 'background-opacity': 0, 'color': muted, 'font-family': 'system-ui, sans-serif', 'font-size': 11, 'text-halign': 'right', 'events': 'no' } },
+    // Predict on the Calls page: a place to fill in (the chosen one stands out), then each pick right or wrong.
+    { selector: 'node.slot', style: { 'border-style': 'dashed', 'color': muted } },
+    { selector: 'node.slot.picked', style: { 'border-style': 'solid', 'color': text } },
+    { selector: 'node.slot.active', style: { 'border-width': 3, 'border-color': primary, 'underlay-color': primary, 'underlay-opacity': 0.2, 'underlay-padding': 6, 'underlay-shape': 'round-rectangle' } },
+    { selector: 'node.right', style: { 'border-style': 'solid', 'border-width': 3, 'border-color': success, 'color': text } },
+    { selector: 'node.wrong', style: { 'border-style': 'solid', 'border-width': 3, 'border-color': error, 'color': text } },
+    { selector: 'node.missed', style: { 'border-style': 'dashed', 'border-color': muted, 'color': muted } },
     { selector: 'node.selected', style: { 'underlay-color': text, 'underlay-opacity': 0.18, 'underlay-padding': 7, 'underlay-shape': 'round-rectangle' } },
     {
       selector: 'edge',

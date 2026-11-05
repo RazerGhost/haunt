@@ -5,6 +5,19 @@ const webs = useWeb()
 const copyWhere = () => selected.value && navigator.clipboard?.writeText(`${selected.value.file.path}:${selected.value.fn.line}`)
 const { refs } = useRefs()
 const pins = usePins()
+// Whether you learned it (useFamiliarity): familiar while its code is as it was then, stale once it changed.
+const familiar = useFamiliarity()
+const learned = computed(() => (selected.value ? familiar.states.value.get(selected.value.fn.id) ?? null : null))
+const learnedHow = computed(() => {
+  const record = selected.value ? familiar.recordOf(selected.value.fn.id) : null
+  if (!record) return ''
+  return t('FunctionPanel.learnedHow', { when: new Date(record.at).toLocaleDateString(locale()), how: t(`FunctionPanel.learnedBy.${record.source}`) })
+})
+function toggleLearned(): void {
+  if (!selected.value) return
+  if (learned.value) familiar.unmark([selected.value.fn.id])
+  else void familiar.mark([selected.value.fn.id], 'manual')
+}
 
 const parents = computed(() => {
   const chain: string[] = []
@@ -17,7 +30,13 @@ const parents = computed(() => {
 })
 const byCount = (a: { count: number }, b: { count: number }) => b.count - a.count
 const callees = computed(() => [...index.value?.callees.get(selected.value?.fn.id ?? '') ?? []].sort(byCount))
-const callers = computed(() => [...index.value?.callers.get(selected.value?.fn.id ?? '') ?? []].sort(byCount))
+const allCallers = computed(() => [...index.value?.callers.get(selected.value?.fn.id ?? '') ?? []].sort(byCount))
+// Callers from tests (test files, helpers only tests call) listed apart, as the Calls page counts them, unless it
+// includes tests; for a function that is test code itself they all stay together.
+const { includeTests, isTestCode } = useTestSupport()
+const apart = computed(() => !includeTests.value && !!selected.value && !isTestCode(selected.value.fn.id))
+const callers = computed(() => apart.value ? allCallers.value.filter(edge => !isTestCode(edge.from)) : allCallers.value)
+const testCallers = computed(() => apart.value ? allCallers.value.filter(edge => isTestCode(edge.from)) : [])
 const part = computed(() => selected.value ? index.value?.parts.get(selected.value.file.part) : undefined)
 const { changedById, affected, changes } = useChanges()
 const change = computed(() => changedById.value.get(selected.value?.fn.id ?? ''))
@@ -38,6 +57,7 @@ const reach = computed(() => affected.value.get(selected.value?.fn.id ?? ''))
         <UBadge :label="t('FunctionPanel.lines', { count: selected.fn.endLine - selected.fn.line + 1 })" size="sm" variant="outline" color="neutral" />
         <UBadge v-if="change" :label="`${t('FunctionPanel.since', { status: t(`FunctionPanel.status.${change.status}`), base: said(changes?.base.label ?? '') })} · +${change.added} −${change.removed}`" size="sm" variant="soft" :color="change.status === 'added' ? 'success' : change.status === 'moved' ? 'info' : 'warning'" />
         <UBadge v-else-if="reach" :label="t('FunctionPanel.reach', { count: reach.distance })" size="sm" variant="outline" color="warning" />
+        <UBadge v-if="learned" :label="t(`FunctionPanel.learned.${learned}`)" :icon="learned === 'familiar' ? 'i-lucide-graduation-cap' : 'i-lucide-history'" size="sm" variant="soft" :color="learned === 'familiar' ? 'success' : 'warning'" :title="learnedHow" />
       </div>
       <button type="button" class="text-left font-mono text-xs break-all text-muted hover:underline" @click="open(selected.file.path, selected.fn.line)">
         {{ selected.file.path }}:{{ selected.fn.line }}
@@ -50,6 +70,7 @@ const reach = computed(() => affected.value.get(selected.value?.fn.id ?? ''))
       <UButton icon="i-lucide-layers" :label="t('FunctionPanel.inPart')" size="sm" color="neutral" variant="ghost" :to="{ path: '/layers', query: { part: selected.file.part, fn: selected.fn.id } }" />
       <UButton icon="i-lucide-user-round-search" :label="t('FunctionPanel.blame')" size="sm" color="neutral" variant="ghost" :to="{ path: '/blame', query: { path: selected.file.path, fn: selected.fn.id } }" />
       <UButton :icon="pins.isPinned(selected) ? 'i-lucide-pin-off' : 'i-lucide-pin'" :label="pins.isPinned(selected) ? t('FunctionPanel.unpin') : t('FunctionPanel.pin')" size="sm" color="neutral" variant="ghost" :title="pins.isPinned(selected) ? t('FunctionPanel.unpinHelp') : t('FunctionPanel.pinHelp')" @click="pins.toggle(selected)" />
+      <UButton :icon="learned ? 'i-lucide-x' : 'i-lucide-graduation-cap'" :label="learned ? t('FunctionPanel.unmark') : t('FunctionPanel.markUnderstood')" size="sm" color="neutral" variant="ghost" :title="learned ? t('FunctionPanel.unmarkHelp') : t('FunctionPanel.markUnderstoodHelp')" @click="toggleLearned" />
       <UButton icon="i-lucide-copy" :label="t('FunctionPanel.copyWhere')" size="sm" color="neutral" variant="ghost" @click="copyWhere" />
       <UButton v-if="webs.label.value && refs?.sha" icon="i-lucide-external-link" :label="webs.label.value" size="sm" color="neutral" variant="ghost" @click="webs.openFile(refs.sha!, selected.file.path, selected.fn.line, selected.fn.endLine)" />
       <UButton v-if="webs.copyLabel.value && refs?.sha" icon="i-lucide-link" :label="webs.copyLabel.value" size="sm" color="neutral" variant="ghost" :title="t('FunctionPanel.linkHelp')" @click="webs.copyFile(refs.sha!, selected.file.path, selected.fn.line, selected.fn.endLine)" />
@@ -87,9 +108,20 @@ const reach = computed(() => affected.value.get(selected.value?.fn.id ?? ''))
         <ul v-if="callers.length" class="grid gap-1">
           <FunctionLink v-for="edge in callers" :id="edge.from" :key="edge.from" :count="edge.count" :guessed="edge.guessed" />
         </ul>
-        <p v-else class="text-xs text-muted">{{ t('FunctionPanel.noCallers') }}</p>
+        <p v-else class="text-xs text-muted">{{ testCallers.length ? t('FunctionPanel.onlyTests') : t('FunctionPanel.noCallers') }}</p>
+        <details v-if="testCallers.length" class="group">
+          <summary class="flex cursor-pointer list-none items-center gap-1 text-xs text-muted hover:text-default">
+            <UIcon name="i-lucide-chevron-right" class="size-3.5 transition-transform group-open:rotate-90" />
+            {{ t('FunctionPanel.fromTests', { count: testCallers.length }) }}
+          </summary>
+          <ul class="mt-1 grid gap-1">
+            <FunctionLink v-for="edge in testCallers" :id="edge.from" :key="edge.from" :count="edge.count" :guessed="edge.guessed" />
+          </ul>
+        </details>
       </section>
     </template>
+
+    <FunctionKnowledge :path="selected.file.path" :start="selected.fn.line" :end="selected.fn.endLine" />
 
     <FunctionHistory :path="selected.file.path" :start="selected.fn.line" :end="selected.fn.endLine" :name="selected.fn.anonymous ? undefined : selected.fn.name" />
   </div>
