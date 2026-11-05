@@ -8,8 +8,9 @@ const recent = ref<string[]>([])
 <script setup lang="ts">
 import type { ElementDefinition } from 'cytoscape'
 import { groupColumns } from '~~/shared/callGroups'
-import { entryPoints, pathView } from '~~/shared/callPaths'
-import type { CallEdge } from '~~/shared/types'
+import { entryPoints, pathsTo, pathView } from '~~/shared/callPaths'
+import { candidates, grade, puzzle, type Puzzle } from '~~/shared/predict'
+import type { CallEdge, FunctionNode } from '~~/shared/types'
 import { addTo } from '~~/shared/collect'
 
 /*
@@ -47,7 +48,8 @@ const center = computed(() => {
 const name = (id: string) => index.value?.functions.get(id)?.fn.name ?? id
 
 function recenter(id: string | null): void {
-  void router.push({ query: { ...route.query, center: id ?? undefined, fn: id ?? undefined } })
+  // While predicting, the panel (with the callers in it) stays closed.
+  void router.push({ query: { ...route.query, center: id ?? undefined, fn: predicting.value ? undefined : id ?? undefined } })
 }
 // The trail follows the function in the middle: going back to one in it cuts what came after.
 watch(center, (id) => {
@@ -241,13 +243,150 @@ const around = computed(() => {
   return { elements, hidden, grouped }
 })
 
-const elements = computed(() => (mode.value === 'paths' ? paths.value?.elements ?? [] : around.value.elements))
+/*
+ * Predict (Paths only): the entry points and the function stay, the functions between them are numbered places to
+ * fill in (shared/predict.ts). Click a place, then a function from the list under the toolbar (the real ones among
+ * decoys from the same parts) or from the list on the left, which the search box narrows to any function. Reveal shows
+ * the real paths with each pick right or wrong; the right ones are marked familiar (useFamiliarity, `call-predict`).
+ */
+const predict = usePersisted('calls-predict', false, value => typeof value === 'boolean')
+const predicting = computed(() => predict.value && mode.value === 'paths')
+const picks = ref(new Map<string, string>())
+const active = ref<string | null>(null)
+const revealed = ref(false)
+/** The seed the candidate list is dealt with; a new one with every new puzzle. */
+const deal = ref(1)
+const game = computed<Puzzle | null>(() => {
+  if (!predicting.value || !center.value || !index.value || !scan.value?.calls) return null
+  return puzzle(pathsTo(center.value, callersOf, 12, shown))
+})
+function restart(): void {
+  picks.value = new Map()
+  revealed.value = false
+  deal.value = Math.floor(Math.random() * 2 ** 31)
+  active.value = game.value?.slots[0]?.id ?? null
+}
+watch([center, predicting, () => game.value?.slots.map(slot => slot.id).join(' ')], restart, { immediate: true })
+// The function panel lists callers, which would give the answer away: closed while a puzzle is open.
+// The function stays in the middle: only the panel closes.
+watch(predicting, (on) => {
+  if (on && selected.value) void router.push({ query: { ...route.query, center: center.value ?? undefined, fn: undefined } })
+}, { immediate: true })
+
+/** The functions of a set of parts, for decoys. */
+function functionsOfParts(parts: Set<string>): string[] {
+  const out: string[] = []
+  const walk = (items: FunctionNode[]) => items.forEach((fn) => {
+    out.push(fn.id)
+    walk(fn.children)
+  })
+  for (const part of parts) for (const file of index.value?.filesByPart.get(part) ?? []) walk(file.functions)
+  return out
+}
+const offered = computed(() => {
+  const found = game.value
+  const at = index.value
+  if (!found || !at) return []
+  const real = found.slots.map(slot => slot.real)
+  const parts = new Set(real.map(id => at.functions.get(id)!.file.part))
+  const ends = new Set(found.paths.flatMap(path => [path[0]!, path.at(-1)!]))
+  const pool = functionsOfParts(parts).filter(id => shown(id) && !ends.has(id))
+  return candidates(real, pool, deal.value)
+})
+function fill(id: string): void {
+  const found = game.value
+  if (!found || !active.value || revealed.value) return
+  picks.value = new Map(picks.value).set(active.value, id)
+  // On to the next empty place after this one, round to the first.
+  const at = found.slots.findIndex(slot => slot.id === active.value)
+  const after = [...found.slots.slice(at + 1), ...found.slots.slice(0, at)]
+  active.value = after.find(slot => !picks.value.has(slot.id))?.id ?? active.value
+}
+function clearPick(slot: string): void {
+  const next = new Map(picks.value)
+  next.delete(slot)
+  picks.value = next
+  active.value = slot
+}
+const marks = computed(() => (revealed.value && game.value ? grade(game.value, picks.value, (from, to) => calleesOf(from).includes(to)) : null))
+const right = computed(() => [...marks.value?.values() ?? []].filter(Boolean).length)
+const { mark } = useFamiliarity()
+function revealPaths(): void {
+  revealed.value = true
+  active.value = null
+  const known = [...marks.value ?? []].filter(([, ok]) => ok).map(([slot]) => picks.value.get(slot)!)
+  if (known.length) void mark(known, 'call-predict')
+}
+const activeNumber = computed(() => game.value?.slots.find(slot => slot.id === active.value)?.number ?? null)
+
+/** The puzzle drawn: a column per path, the entry point at the top, the function at the bottom, places between. */
+const predictElements = computed(() => {
+  void colorMode.value
+  const found = game.value
+  const at = index.value
+  if (!found || !at || !center.value) return []
+  const elements: ElementDefinition[] = []
+  const muted = resolvedColor('--ui-text-muted')
+  const colorOf = (id: string) => resolvedColor(layerVar(at.parts.get(at.functions.get(id)!.file.part)?.layer ?? 'unmapped'))
+  const labelOf = (id: string) => `${name(id)}\n${tailOf(at.functions.get(id)!.file.path)}`
+  const target = center.value
+  const targetLabel = labelOf(target)
+  elements.push({ group: 'nodes', data: { id: target, label: targetLabel, color: colorOf(target), ...nodeSize(targetLabel, 13) }, position: { x: 0, y: 0 }, classes: 'center' })
+  const line = resolvedColor('--ui-text-dimmed')
+  found.paths.forEach((path, column) => {
+    const x = (column - (found.paths.length - 1) / 2) * COLUMN
+    const ids = path.map((id, place) => {
+      const y = (place - (path.length - 1)) * ROW
+      if (place === path.length - 1) return target
+      if (place === 0) {
+        const label = labelOf(id)
+        elements.push({ group: 'nodes', data: { id: `pe:${column}:${id}`, label, color: colorOf(id), ...nodeSize(label) }, position: { x, y }, classes: 'entry' })
+        return `pe:${column}:${id}`
+      }
+      const slot = found.slots.find(item => item.path === column && item.at === place)!
+      const pick = picks.value.get(slot.id)
+      const ok = marks.value?.get(slot.id)
+      let label: string
+      let classes = 'slot'
+      if (!revealed.value) {
+        label = pick ? `${slot.number}. ${name(pick)}` : `${slot.number}  ?`
+        if (slot.id === active.value) classes += ' active'
+        if (pick) classes += ' picked'
+      } else if (ok) {
+        label = `${slot.number}. ${name(pick!)}`
+        classes += ' right'
+      } else {
+        label = pick ? `${slot.number}. ${name(pick)} ✗\n${name(slot.real)}` : `${slot.number}. ${name(slot.real)}`
+        classes += pick ? ' wrong' : ' missed'
+      }
+      // An empty place is as wide as a short name, to be seen and clicked.
+      const size = nodeSize(label.length < 14 ? label.padEnd(14) : label)
+      elements.push({ group: 'nodes', data: { id: `slot:${slot.id}`, label, color: revealed.value ? colorOf(slot.real) : muted, ...size }, position: { x, y }, classes })
+      return `slot:${slot.id}`
+    })
+    for (let place = 1; place < ids.length; place++) {
+      elements.push({ group: 'edges', data: { id: `${ids[place - 1]}->${ids[place]}`, source: ids[place - 1], target: ids[place], width: 1.5, color: line } })
+    }
+  })
+  return elements
+})
+
+const elements = computed(() => (mode.value === 'paths' ? (predicting.value ? predictElements.value : paths.value?.elements ?? []) : around.value.elements))
+/** A node's function: an entry point in Predict is drawn once per path (`pe:column:id`). */
+const realId = (id: string) => (id.startsWith('pe:') ? id.split(':').slice(2).join(':') : id)
 function pickNode(id: string): void {
   if (id.startsWith('group:')) toggle(id)
-  else if (!id.startsWith('row:')) select(id)
+  else if (id.startsWith('slot:')) {
+    if (!revealed.value) active.value = id.slice(5)
+  } else if (!id.startsWith('row:')) select(realId(id))
 }
 function openNode(id: string): void {
-  if (!id.startsWith('group:') && !id.startsWith('row:')) recenter(id)
+  if (!id.startsWith('group:') && !id.startsWith('row:') && !id.startsWith('slot:')) recenter(realId(id))
+}
+/** A function in the list on the left: fills the chosen place while predicting, else goes in the middle. */
+function choose(id: string): void {
+  if (predicting.value && active.value && !revealed.value) fill(id)
+  else recenter(id)
 }
 const layout = { name: 'preset' as const, fit: true, padding: 40 }
 const graph = useTemplateRef<{ fit: () => void }>('graph')
@@ -278,7 +417,7 @@ const graph = useTemplateRef<{ fit: () => void }>('graph')
             type="button"
             class="grid w-full rounded px-2 py-1 text-left"
             :class="choice.id === center ? 'bg-elevated' : 'hover:bg-elevated/60'"
-            @click="recenter(choice.id)"
+            @click="choose(choice.id)"
           >
             <span class="truncate font-mono text-xs text-highlighted">{{ choice.found.fn.name }}</span>
             <span class="truncate font-mono text-label text-muted">
@@ -305,6 +444,7 @@ const graph = useTemplateRef<{ fit: () => void }>('graph')
             <UButton :label="t('pages.calls.paths')" :color="mode === 'paths' ? 'primary' : 'neutral'" :variant="mode === 'paths' ? 'solid' : 'outline'" :title="t('pages.calls.pathsHelp')" @click="mode = 'paths'" />
             <UButton :label="t('pages.calls.around')" :color="mode === 'around' ? 'primary' : 'neutral'" :variant="mode === 'around' ? 'solid' : 'outline'" :title="t('pages.calls.aroundHelp')" @click="mode = 'around'" />
           </UFieldGroup>
+          <USwitch v-if="mode === 'paths'" v-model="predict" :label="t('pages.calls.predict')" size="xs" :title="t('pages.calls.predictHelp')" />
           <USelect v-if="mode === 'around'" v-model="direction" :items="directions" size="xs" class="w-44" :aria-label="t('pages.calls.show')" />
           <div class="flex items-center gap-1.5 text-xs text-muted">
             {{ mode === 'paths' ? t('pages.calls.stepsBelow') : t('pages.calls.stepsLabel') }}
@@ -318,7 +458,7 @@ const graph = useTemplateRef<{ fit: () => void }>('graph')
         </div>
       </div>
       <div class="flex flex-wrap items-center gap-3 border-b border-default px-3 py-1.5 text-xs text-muted empty:hidden">
-        <span v-if="mode === 'paths' && summary">{{ summary }}</span>
+        <span v-if="mode === 'paths' && summary && !predicting">{{ summary }}</span>
         <template v-if="mode === 'around'">
           <span v-if="around.grouped">{{ t('pages.calls.grouped', { count: around.grouped }) }}</span>
           <span v-if="around.hidden">{{ t('pages.calls.hidden', { count: around.hidden, max: MAX_COLUMN }) }}</span>
@@ -329,6 +469,37 @@ const graph = useTemplateRef<{ fit: () => void }>('graph')
         </span>
         <span v-if="center" class="ml-auto">{{ mode === 'paths' ? t('pages.calls.hintPaths') : t('pages.calls.hint') }}</span>
         <UButton v-if="center && scan?.calls" icon="i-lucide-maximize" :label="t('pages.calls.fit')" size="xs" color="neutral" variant="ghost" class="-my-1" @click="graph?.fit()" />
+      </div>
+      <div v-if="predicting && game && center" class="grid gap-2 border-b border-default px-3 py-2 text-xs">
+        <p v-if="!game.slots.length" class="text-muted">{{ t('pages.calls.predictNothing') }}</p>
+        <template v-else>
+          <div class="flex flex-wrap items-center gap-2">
+            <span v-if="revealed" class="font-medium text-highlighted tabular-nums">{{ t('pages.calls.predictScore', { right, count: game.slots.length }) }}</span>
+            <span v-else-if="activeNumber" class="text-muted">{{ t('pages.calls.predictFill', { number: activeNumber }) }}</span>
+            <span v-else class="text-muted">{{ t('pages.calls.predictDone') }}</span>
+            <span class="flex-1" />
+            <UButton v-if="!revealed" icon="i-lucide-eye" :label="t('pages.calls.reveal')" size="xs" color="primary" variant="soft" :disabled="!picks.size" @click="revealPaths" />
+            <UButton icon="i-lucide-rotate-ccw" :label="revealed ? t('pages.calls.predictAgain') : t('pages.calls.predictClear')" size="xs" color="neutral" variant="ghost" @click="restart" />
+          </div>
+          <div v-if="!revealed" class="flex flex-wrap gap-1">
+            <button
+              v-for="id in offered"
+              :key="id"
+              type="button"
+              class="rounded border px-2 py-0.5 font-mono"
+              :class="[...picks.values()].includes(id) ? 'border-accented bg-elevated text-muted' : 'border-default hover:bg-elevated'"
+              :disabled="!active"
+              @click="fill(id)"
+            >
+              {{ name(id) }}
+            </button>
+          </div>
+          <div v-if="!revealed && picks.size" class="flex flex-wrap gap-1 text-muted">
+            <button v-for="slot in game.slots.filter(item => picks.has(item.id))" :key="slot.id" type="button" class="flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-elevated" :title="t('pages.calls.predictUnpick')" @click="clearPick(slot.id)">
+              {{ slot.number }}. <span class="font-mono text-default">{{ name(picks.get(slot.id)!) }}</span><UIcon name="i-lucide-x" class="size-3" />
+            </button>
+          </div>
+        </template>
       </div>
       <div class="relative min-h-0 flex-1">
         <p v-if="!scan?.calls" class="absolute inset-0 grid place-items-center text-muted">{{ t('pages.calls.working') }}</p>

@@ -72,5 +72,15 @@
   "pick": "Pick or search for a function: Paths shows how the code reaches it from its entry points.",
   "includeTests": "Include tests",
   "includeTestsHelp": "Count tests and the helpers only tests call (test-helpers.ts and the like) in the lists and graphs",
-  "fit": "Fit"
+  "fit": "Fit",
+  "predict": "Predict",
+  "predictHelp": "Hide the functions between the entry points and this one, and fill them in yourself",
+  "predictNothing": "Nothing to predict here: the entry points call it directly, or it is an entry point itself.",
+  "predictFill": "Pick the function for place {number}: from the list below, or from the list on the left (search for any function).",
+  "predictDone": "Every place is filled: reveal the paths, or click a place to change it.",
+  "predictScore": "{right} of {count} right",
+  "reveal": "Reveal",
+  "predictClear": "Clear",
+  "predictAgain": "Try again",
+  "predictUnpick": "Take this pick out"
 }
