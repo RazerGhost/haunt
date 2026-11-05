@@ -69,5 +69,8 @@
   "hintPaths": "Dubbele rand: een ingang · klik om te bekijken · dubbelklik om te centreren · scroll om te zoomen",
   "hint": "klik om te bekijken · dubbelklik om te centreren · scroll om te zoomen",
   "working": "De aanroepgraaf wordt uitgezocht…",
-  "pick": "Kies of zoek een functie: Paden laat zien hoe de code het vanuit de ingangen bereikt."
+  "pick": "Kies of zoek een functie: Paden laat zien hoe de code het vanuit de ingangen bereikt.",
+  "includeTests": "Tests meetellen",
+  "includeTestsHelp": "Tests en de helpers die alleen tests aanroepen (test-helpers.ts en dergelijke) meetellen in de lijsten en grafen",
+  "fit": "Passend"
 }

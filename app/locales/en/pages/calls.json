@@ -69,5 +69,8 @@
   "hintPaths": "Double border: an entry point · click to inspect · double-click to centre · scroll to zoom",
   "hint": "click to inspect · double-click to centre · scroll to zoom",
   "working": "Working out the call graph…",
-  "pick": "Pick or search for a function: Paths shows how the code reaches it from its entry points."
+  "pick": "Pick or search for a function: Paths shows how the code reaches it from its entry points.",
+  "includeTests": "Include tests",
+  "includeTestsHelp": "Count tests and the helpers only tests call (test-helpers.ts and the like) in the lists and graphs",
+  "fit": "Fit"
 }

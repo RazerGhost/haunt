@@ -14,6 +14,7 @@ const colorMode = useColorMode()
 
 const typeOnly = ref(true)
 const picked = ref<{ kind: 'edge' | 'node', id: string } | null>(null)
+const graph = useTemplateRef<{ fit: () => void }>('graph')
 
 const part = computed(() => index.value?.parts.get(props.part) ?? null)
 const partFolder = computed(() => part.value?.folder ?? '')
@@ -99,7 +100,10 @@ const cycles = computed(() => shown.value.edges.filter(edge => edge.cycle).lengt
       </nav>
       <span class="text-muted tabular-nums">{{ t('PartImports.summary', { count: shown.edges.reduce((sum, edge) => sum + edge.count, 0), nodes: shown.nodes.length }) }}</span>
       <span v-if="cycles" class="text-error tabular-nums">{{ t('PartImports.cycles', { count: cycles }) }}</span>
-      <USwitch v-model="typeOnly" :label="t('PartImports.typeOnly')" size="sm" class="ml-auto" />
+      <div class="ml-auto flex items-center gap-4">
+        <UButton icon="i-lucide-maximize" :label="t('pages.imports.fit')" size="xs" color="neutral" variant="ghost" @click="graph?.fit()" />
+        <USwitch v-model="typeOnly" :label="t('PartImports.typeOnly')" size="sm" />
+      </div>
     </div>
     <div class="flex min-h-0 flex-1">
       <div class="relative min-w-0 flex-1">
@@ -109,6 +113,7 @@ const cycles = computed(() => shown.value.edges.filter(edge => edge.cycle).lengt
         <p v-else-if="!shown.nodes.length" class="absolute inset-0 grid place-items-center text-sm text-muted">{{ t('PartImports.empty') }}</p>
         <GraphView
           v-else
+          ref="graph"
           :elements="elements"
           :stylesheet="graphStyle"
           :layout="layout"

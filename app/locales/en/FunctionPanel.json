@@ -37,5 +37,10 @@
   "calls": "Calls ({count})",
   "noCalls": "Nothing that was scanned.",
   "calledBy": "Called by ({count})",
-  "noCallers": "No direct calls (it may be called through an interface or a route table)."
+  "noCallers": "No direct calls (it may be called through an interface or a route table).",
+  "fromTests": {
+    "one": "From tests ({count})",
+    "other": "From tests ({count})"
+  },
+  "onlyTests": "Only tests call it."
 }

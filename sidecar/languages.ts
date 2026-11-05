@@ -45,9 +45,11 @@ export function isSource(path: string): boolean {
   return languageOf(path) !== null
 }
 
-/** The tests by their usual names and folders (test helpers in a `testing/` folder too), in every language Haunt reads. */
+/** The tests by their usual names and folders (test helpers in a `testing/` folder or a `test-helpers.ts` too), in every
+ * language Haunt reads. */
 export function isTestPath(path: string): boolean {
   return /\.(test|spec)\.[cm]?[jt]sx?$/.test(path)
+    || /(^|\/)test[-_]?(helpers?|utils?|setup|support)\.[cm]?[jt]sx?$/i.test(path)
     || /(Test|_test)\.php$/.test(path)
     || /_spec\.lua$|_test\.lua$/.test(path)
     || /(^|\/)test_[^/]*\.py$|_test\.py$|(^|\/)conftest\.py$/.test(path)

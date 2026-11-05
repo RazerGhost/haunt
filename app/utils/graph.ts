@@ -35,6 +35,8 @@ export function graphStyle(): StylesheetJson {
         'text-halign': 'center',
         'font-family': 'ui-monospace, Cascadia Mono, Menlo, Consolas, monospace',
         'font-size': 11,
+        // A label smaller than this on screen is mush: not drawn (hover a node to read it, GraphView).
+        'min-zoomed-font-size': 7,
         'color': text
       }
     },

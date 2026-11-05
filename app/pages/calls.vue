@@ -21,11 +21,12 @@ import { addTo } from '~~/shared/collect'
  * The list on the left stays: the most called functions, the entry points, and the ones you looked at. The trail above
  * goes back. Click a function to see it in the panel, double-click to put it in the middle.
  */
-const { scan, index, selected, search, visible, select } = useCode()
+const { scan, index, selected, search, select } = useCode()
 const route = useRoute()
 const router = useRouter()
 const colorMode = useColorMode()
 const { changedById, affected } = useChanges()
+const { includeTests, isTestCode } = useTestSupport()
 
 const mode = usePersisted<'paths' | 'around'>('calls-mode', 'paths', value => value === 'paths' || value === 'around')
 const depth = ref(2)
@@ -67,13 +68,21 @@ type Tab = 'called' | 'entries' | 'recent'
 const tab = ref<Tab>('called')
 const tabs = ['called', 'entries', 'recent'] as const
 const term = computed(() => search.value.trim().toLowerCase())
+/** Test code (test files, and helpers only tests call) is left out of the lists, counts and graphs unless asked for. */
+const included = (id: string) => includeTests.value || !isTestCode(id)
 const shown = (id: string) => {
   const found = index.value?.functions.get(id)
-  return !!found && !found.fn.anonymous && visible(found.file)
+  return !!found && !found.fn.anonymous && included(id)
 }
 const callersOf = (id: string) => (index.value?.callers.get(id) ?? []).map(edge => edge.from)
 const calleesOf = (id: string) => (index.value?.callees.get(id) ?? []).map(edge => edge.to)
-const callerCount = (id: string) => index.value?.callers.get(id)?.length ?? 0
+/** How many functions call each one, test code left out unless included: counted once per call graph and setting. */
+const callerCounts = computed(() => {
+  const counts = new Map<string, number>()
+  for (const [id, edges] of index.value?.callers ?? []) counts.set(id, edges.filter(edge => included(edge.from)).length)
+  return counts
+})
+const callerCount = (id: string) => callerCounts.value.get(id) ?? 0
 /** The functions shown, most called first: worked out once per scan and setting, not on every keystroke. */
 const mostCalled = computed(() => [...index.value?.functions.keys() ?? []].filter(shown).sort((a, b) => callerCount(b) - callerCount(a)))
 const choices = computed(() => {
@@ -89,7 +98,7 @@ const choices = computed(() => {
   } else {
     ids = mostCalled.value
   }
-  return ids.slice(0, 60).map(id => ({ id, found: at.functions.get(id)!, callers: callersOf(id).length, callees: calleesOf(id).length }))
+  return ids.slice(0, 60).map(id => ({ id, found: at.functions.get(id)!, callers: callerCount(id), callees: calleesOf(id).filter(included).length }))
 })
 
 /* Paths: how it is reached, top to bottom */
@@ -166,7 +175,7 @@ const around = computed(() => {
         for (const edge of next(id)) {
           const target = other(edge)
           const located = at.functions.get(target)
-          if (column.has(target) || !located || !visible(located.file)) continue
+          if (column.has(target) || !located || !included(target)) continue
           found.set(target, (found.get(target) ?? 0) + edge.count)
         }
       }
@@ -241,6 +250,7 @@ function openNode(id: string): void {
   if (!id.startsWith('group:') && !id.startsWith('row:')) recenter(id)
 }
 const layout = { name: 'preset' as const, fit: true, padding: 40 }
+const graph = useTemplateRef<{ fit: () => void }>('graph')
 </script>
 
 <template>
@@ -290,6 +300,7 @@ const layout = { name: 'preset' as const, fit: true, padding: 40 }
           </template>
         </nav>
         <div class="ml-auto flex items-center gap-2">
+          <USwitch v-model="includeTests" :label="t('pages.calls.includeTests')" size="xs" :title="t('pages.calls.includeTestsHelp')" />
           <UFieldGroup size="xs">
             <UButton :label="t('pages.calls.paths')" :color="mode === 'paths' ? 'primary' : 'neutral'" :variant="mode === 'paths' ? 'solid' : 'outline'" :title="t('pages.calls.pathsHelp')" @click="mode = 'paths'" />
             <UButton :label="t('pages.calls.around')" :color="mode === 'around' ? 'primary' : 'neutral'" :variant="mode === 'around' ? 'solid' : 'outline'" :title="t('pages.calls.aroundHelp')" @click="mode = 'around'" />
@@ -317,12 +328,14 @@ const layout = { name: 'preset' as const, fit: true, padding: 40 }
           <span class="flex items-center gap-1"><i class="size-2.5 rounded-sm border border-dashed border-warning" />{{ t('pages.calls.affected') }}</span>
         </span>
         <span v-if="center" class="ml-auto">{{ mode === 'paths' ? t('pages.calls.hintPaths') : t('pages.calls.hint') }}</span>
+        <UButton v-if="center && scan?.calls" icon="i-lucide-maximize" :label="t('pages.calls.fit')" size="xs" color="neutral" variant="ghost" class="-my-1" @click="graph?.fit()" />
       </div>
       <div class="relative min-h-0 flex-1">
         <p v-if="!scan?.calls" class="absolute inset-0 grid place-items-center text-muted">{{ t('pages.calls.working') }}</p>
         <p v-else-if="!center" class="absolute inset-0 grid place-items-center px-6 text-center text-muted">{{ t('pages.calls.pick') }}</p>
         <GraphView
           v-else
+          ref="graph"
           :elements="elements"
           :stylesheet="graphStyle"
           :layout="layout"

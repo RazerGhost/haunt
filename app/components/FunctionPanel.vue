@@ -17,7 +17,13 @@ const parents = computed(() => {
 })
 const byCount = (a: { count: number }, b: { count: number }) => b.count - a.count
 const callees = computed(() => [...index.value?.callees.get(selected.value?.fn.id ?? '') ?? []].sort(byCount))
-const callers = computed(() => [...index.value?.callers.get(selected.value?.fn.id ?? '') ?? []].sort(byCount))
+const allCallers = computed(() => [...index.value?.callers.get(selected.value?.fn.id ?? '') ?? []].sort(byCount))
+// Callers from tests (test files, helpers only tests call) listed apart, as the Calls page counts them, unless it
+// includes tests; for a function that is test code itself they all stay together.
+const { includeTests, isTestCode } = useTestSupport()
+const apart = computed(() => !includeTests.value && !!selected.value && !isTestCode(selected.value.fn.id))
+const callers = computed(() => apart.value ? allCallers.value.filter(edge => !isTestCode(edge.from)) : allCallers.value)
+const testCallers = computed(() => apart.value ? allCallers.value.filter(edge => isTestCode(edge.from)) : [])
 const part = computed(() => selected.value ? index.value?.parts.get(selected.value.file.part) : undefined)
 const { changedById, affected, changes } = useChanges()
 const change = computed(() => changedById.value.get(selected.value?.fn.id ?? ''))
@@ -87,7 +93,16 @@ const reach = computed(() => affected.value.get(selected.value?.fn.id ?? ''))
         <ul v-if="callers.length" class="grid gap-1">
           <FunctionLink v-for="edge in callers" :id="edge.from" :key="edge.from" :count="edge.count" :guessed="edge.guessed" />
         </ul>
-        <p v-else class="text-xs text-muted">{{ t('FunctionPanel.noCallers') }}</p>
+        <p v-else class="text-xs text-muted">{{ testCallers.length ? t('FunctionPanel.onlyTests') : t('FunctionPanel.noCallers') }}</p>
+        <details v-if="testCallers.length" class="group">
+          <summary class="flex cursor-pointer list-none items-center gap-1 text-xs text-muted hover:text-default">
+            <UIcon name="i-lucide-chevron-right" class="size-3.5 transition-transform group-open:rotate-90" />
+            {{ t('FunctionPanel.fromTests', { count: testCallers.length }) }}
+          </summary>
+          <ul class="mt-1 grid gap-1">
+            <FunctionLink v-for="edge in testCallers" :id="edge.from" :key="edge.from" :count="edge.count" :guessed="edge.guessed" />
+          </ul>
+        </details>
       </section>
     </template>
 

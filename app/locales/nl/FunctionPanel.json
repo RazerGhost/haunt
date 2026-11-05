@@ -37,5 +37,10 @@
   "calls": "Roept aan ({count})",
   "noCalls": "Niets dat gescand is.",
   "calledBy": "Aangeroepen door ({count})",
-  "noCallers": "Geen directe aanroepen (misschien wordt hij aangeroepen via een interface of een routetabel)."
+  "noCallers": "Geen directe aanroepen (misschien wordt hij aangeroepen via een interface of een routetabel).",
+  "fromTests": {
+    "one": "Vanuit tests ({count})",
+    "other": "Vanuit tests ({count})"
+  },
+  "onlyTests": "Alleen tests roepen hem aan."
 }
