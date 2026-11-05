@@ -5,7 +5,7 @@
 # AUR; edit it here, not in the AUR's copy.
 
 pkgname=haunt-bin
-_version=0.3.4
+_version=0.3.5
 pkgver=${_version//-/_}
 pkgrel=1
 pkgdesc='A git client that maps the code: every function, what calls it, and what a change touches'
@@ -25,7 +25,7 @@ options=('!strip' '!debug')
 source=("Haunt_${_version}_amd64.deb::${url}/releases/download/v${_version}/Haunt_${_version}_amd64.deb"
   "LICENSE-${_version}::https://raw.githubusercontent.com/RazerGhost/haunt/v${_version}/LICENSE"
   "NOTICE-${_version}::https://raw.githubusercontent.com/RazerGhost/haunt/v${_version}/NOTICE")
-sha256sums=('52e7bbc9cb7e8376602f3b4717776a9981b4ca0c56d44f3799e7d9059171170e'
+sha256sums=('feb0df30280dfabbc5ab04b02c22d5021cc04b9b07968d8150ae09c7879cfe9a'
             '62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a'
             '5e4bf42e4aa198b5f3bcbc874b13c750d7ed99523d8380a9ceac57964bfb02ca')
 
