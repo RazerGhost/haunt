@@ -75,4 +75,9 @@ pnpm check:rust
 tests start the real scanner on fixture projects (`sidecar/fixtures/`), so they need Node (or Bun or Deno) too. One test asks gitlab.com
 for real through `glab` and is skipped unless asked for: `cargo test asks_gitlab_through_glab -- --ignored`.
 
+`app/bindings.ts` is written by one of those tests, without starting the app; to write it alone after changing a
+command: `cargo test --manifest-path src-tauri/Cargo.toml --lib writes_the_windows_bindings`. The Check workflow
+(`.github/workflows/check.yml`) runs these checks on Linux, Windows and macOS for every push to main and every pull
+request, and on Linux fails when the bindings written differ from the ones checked in.
+
 After adding an `i-lucide-*` icon, run `node scripts/icon-sets.mjs` to update the icon sets' matches.
