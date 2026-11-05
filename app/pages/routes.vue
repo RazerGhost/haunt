@@ -8,6 +8,10 @@ import type { Located } from '~/composables/useCode'
  * click from its call path (the Calls page's Paths view); an inline handler shows the functions it calls instead.
  * Found in the code as it is written: nothing runs, nothing leaves the machine. Try it sends a request to your dev
  * server on this machine (TryIt.vue).
+ *
+ * Hide chains turns the list into flashcards: each route keeps its method, path, middleware and handler, and the
+ * functions the handler leads to stay covered until you click them. Then say whether you knew them: "I knew it" marks
+ * the handler and its chain as familiar (useFamiliarity, `route-recall`). Shuffle deals the routes in another order.
  */
 const { scan, index, select, open } = useCode()
 const { repo } = useRepositories()
@@ -33,9 +37,14 @@ watch(repo, () => { routes.value = [] })
 watch([repo, () => scan.value?.scannedAt], () => void load(), { immediate: true })
 
 const filter = ref('')
+const keyOf = (route: Route) => `${route.file}:${route.line}:${route.method}:${route.path}`
+/** The routes' order after a shuffle, by key; null keeps the order they are written in. */
+const dealt = shallowRef<Map<string, number> | null>(null)
 const shown = computed(() => {
   const term = filter.value.trim().toLowerCase()
-  return term ? routes.value.filter(route => `${route.method} ${route.path} ${route.handlerName} ${route.file}`.toLowerCase().includes(term)) : routes.value
+  const found = term ? routes.value.filter(route => `${route.method} ${route.path} ${route.handlerName} ${route.file}`.toLowerCase().includes(term)) : routes.value
+  const order = dealt.value
+  return order ? [...found].sort((a, b) => (order.get(keyOf(a)) ?? 0) - (order.get(keyOf(b)) ?? 0)) : found
 })
 
 /** The functions by the name a route calls them (`store`; a Go method `Order.store` also as `store`), built once per scan. */
@@ -71,6 +80,42 @@ function next(route: Route, handler: string | null): string[] {
   return [...new Set((index.value?.callees.get(handler) ?? []).map(edge => edge.to))].slice(0, 4)
 }
 const name = (id: string) => index.value?.functions.get(id)?.fn.name ?? id
+
+/* Hide chains: the routes as flashcards */
+const hide = usePersisted('routes-hide-chains', false, value => typeof value === 'boolean')
+/** The routes whose chain you uncovered, and what you said you knew, by key; both start over with a shuffle. */
+const revealed = ref(new Set<string>())
+const answered = ref(new Map<string, 'knew' | 'not'>())
+function reveal(route: Route): void {
+  revealed.value = new Set(revealed.value).add(keyOf(route))
+}
+function shuffle(): void {
+  const keys = routes.value.map(keyOf)
+  for (let i = keys.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const swap = keys[i]!
+    keys[i] = keys[j]!
+    keys[j] = swap
+  }
+  dealt.value = new Map(keys.map((key, at) => [key, at]))
+  revealed.value = new Set()
+  answered.value = new Map()
+}
+watch(hide, (on) => {
+  if (!on) dealt.value = null
+  revealed.value = new Set()
+  answered.value = new Map()
+})
+const { states, mark } = useFamiliarity()
+/** You said whether you knew a route's chain: knowing it marks the handler and the functions after it as familiar. */
+function answer(route: Route, knew: boolean): void {
+  answered.value = new Map(answered.value).set(keyOf(route), knew ? 'knew' : 'not')
+  const handler = handlerOf(route)
+  if (knew) void mark([...handler ? [handler] : [], ...next(route, handler)], 'route-recall')
+}
+/** A route's chain is covered while hiding, until you uncover it; a route that leads nowhere has nothing to cover. */
+const covered = (route: Route) => hide.value && !revealed.value.has(keyOf(route)) && next(route, handlerOf(route)).length > 0
+const knewCount = computed(() => [...answered.value.values()].filter(item => item === 'knew').length)
 function paths(id: string): void {
   void router.push({ path: '/calls', query: { center: id, fn: id } })
 }
@@ -91,6 +136,9 @@ const colorOf = (method: string) => METHOD[method.split(',')[0]!.trim()] ?? 'neu
       <span class="text-xs text-muted tabular-nums">{{ routes.length }}</span>
       <UInput v-model="filter" icon="i-lucide-filter" :placeholder="t('pages.routes.filter')" size="xs" class="w-72" />
       <span class="flex-1" />
+      <span v-if="hide && answered.size" class="text-xs text-muted tabular-nums">{{ t('pages.routes.score', { knew: knewCount, count: answered.size }) }}</span>
+      <UButton v-if="hide" icon="i-lucide-shuffle" :label="t('pages.routes.shuffle')" size="xs" color="neutral" variant="ghost" :disabled="!routes.length" @click="shuffle" />
+      <USwitch v-model="hide" :label="t('pages.routes.hideChains')" size="xs" :title="t('pages.routes.hideChainsHelp')" />
       <UButton icon="i-lucide-refresh-cw" size="xs" color="neutral" variant="ghost" :aria-label="t('pages.routes.reload')" :loading="loading" @click="load" />
     </div>
     <div class="min-h-0 flex-1 overflow-auto px-4 py-3">
@@ -101,7 +149,7 @@ const colorOf = (method: string) => METHOD[method.split(',')[0]!.trim()] ?? 'neu
         <p>{{ t('pages.routes.noneHelp.before') }}<code>app.get('/path', handler)</code>{{ t('pages.routes.noneHelp.with') }} <code>route()</code>, <code>use()</code> {{ t('pages.routes.noneHelp.and') }} <code>basePath()</code> {{ t('pages.routes.noneHelp.prefixes') }} <code>register_rest_route</code>{{ t('pages.routes.noneHelp.after') }}</p>
       </div>
       <ul v-else class="grid gap-1">
-        <li v-for="route in shown" :key="`${route.file}:${route.line}:${route.method}:${route.path}`" class="grid gap-1 rounded border border-default px-3 py-2">
+        <li v-for="route in shown" :key="keyOf(route)" class="grid gap-1 rounded border border-default px-3 py-2">
           <div class="flex min-w-0 flex-wrap items-center gap-2">
             <UBadge :label="route.method" size="sm" :color="colorOf(route.method)" variant="subtle" class="font-mono" />
             <span class="min-w-0 truncate font-mono text-sm text-highlighted" :title="route.path">{{ route.path }}</span>
@@ -111,15 +159,30 @@ const colorOf = (method: string) => METHOD[method.split(',')[0]!.trim()] ?? 'neu
           </div>
           <div class="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-muted">
             <template v-if="handlerOf(route)">
-              <button type="button" class="font-mono text-default hover:underline" @click="select(handlerOf(route))">{{ name(handlerOf(route)!) }}</button>
+              <button type="button" class="font-mono hover:underline" :class="states.get(handlerOf(route)!) === 'familiar' ? 'text-success' : 'text-default'" @click="select(handlerOf(route))">{{ name(handlerOf(route)!) }}</button>
             </template>
             <span v-else class="font-mono">{{ route.handlerName }}</span>
-            <template v-for="id in next(route, handlerOf(route))" :key="id">
+            <template v-if="covered(route)">
               <UIcon name="i-lucide-arrow-right" class="size-3" />
-              <button type="button" class="font-mono hover:text-default hover:underline" @click="select(id)">{{ name(id) }}</button>
+              <button type="button" class="min-w-40 flex-1 rounded border border-dashed border-accented bg-elevated/60 px-2 py-0.5 text-left text-label text-dimmed hover:bg-elevated hover:text-muted" @click="reveal(route)">
+                {{ t('pages.routes.reveal', { count: next(route, handlerOf(route)).length }) }}
+              </button>
+            </template>
+            <template v-for="id in next(route, handlerOf(route))" v-else :key="id">
+              <UIcon name="i-lucide-arrow-right" class="size-3" />
+              <button type="button" class="font-mono hover:text-default hover:underline" :class="{ 'text-success': states.get(id) === 'familiar' }" @click="select(id)">{{ name(id) }}</button>
             </template>
             <span class="flex-1" />
-            <UButton v-if="handlerOf(route) || route.calls.length" :label="t('pages.routes.callPath')" icon="i-lucide-git-fork" size="xs" color="neutral" variant="ghost" @click="paths(handlerOf(route) ?? route.calls[0]!)" />
+            <template v-if="hide && revealed.has(keyOf(route))">
+              <span v-if="answered.get(keyOf(route))" class="text-label" :class="answered.get(keyOf(route)) === 'knew' ? 'text-success' : 'text-muted'">
+                {{ answered.get(keyOf(route)) === 'knew' ? t('pages.routes.knewIt') : t('pages.routes.didNot') }}
+              </span>
+              <UFieldGroup v-else size="xs">
+                <UButton :label="t('pages.routes.iKnew')" icon="i-lucide-check" color="success" variant="soft" @click="answer(route, true)" />
+                <UButton :label="t('pages.routes.iDidNot')" color="neutral" variant="outline" @click="answer(route, false)" />
+              </UFieldGroup>
+            </template>
+            <UButton v-if="!covered(route) && (handlerOf(route) || route.calls.length)" :label="t('pages.routes.callPath')" icon="i-lucide-git-fork" size="xs" color="neutral" variant="ghost" @click="paths(handlerOf(route) ?? route.calls[0]!)" />
             <UButton :label="t('pages.routes.tryIt')" icon="i-lucide-send" size="xs" color="neutral" variant="ghost" :title="t('pages.routes.tryItHelp')" @click="tryIt(route)" />
           </div>
         </li>

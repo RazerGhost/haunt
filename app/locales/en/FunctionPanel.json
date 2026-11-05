@@ -42,5 +42,19 @@
     "one": "From tests ({count})",
     "other": "From tests ({count})"
   },
-  "onlyTests": "Only tests call it."
+  "onlyTests": "Only tests call it.",
+  "markUnderstood": "Mark as understood",
+  "markUnderstoodHelp": "Remember that you understand this function, as its code is now; kept on this computer only",
+  "unmark": "Unmark",
+  "unmarkHelp": "Forget that you understood this function",
+  "learned": {
+    "familiar": "Understood",
+    "stale": "Changed since you learned it"
+  },
+  "learnedHow": "Learned {when}, {how}",
+  "learnedBy": {
+    "route-recall": "by recalling a route's chain",
+    "call-predict": "by predicting a call path",
+    "manual": "marked by hand"
+  }
 }
