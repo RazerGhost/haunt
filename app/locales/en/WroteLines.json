@@ -1,0 +1,8 @@
+{
+  "youAlone": "You alone",
+  "ai": "AI co-authored",
+  "lines": {
+    "one": "{count} line",
+    "other": "{count} lines"
+  }
+}

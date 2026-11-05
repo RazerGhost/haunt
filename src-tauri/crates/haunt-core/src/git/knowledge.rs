@@ -1,8 +1,9 @@
 //! Who knows the code: who wrote the lines a set of files has now (`git blame` at HEAD, file by file, several at a
 //! time), who changed each file lately (one `git log --numstat`), and who wrote the lines a change touches, for
-//! suggesting reviewers. Read-only, through the safe runner.
+//! suggesting reviewers. Read-only, through the safe runner. The lines written are split three ways: yours alone, the
+//! ones an AI co-wrote (their commit names one as co-author, `attribution.rs`), and everyone else's.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 use specta::Type;
@@ -65,12 +66,81 @@ pub fn recent_authors(root: &str, days: u32) -> Result<Vec<FileAuthor>, String> 
 
 /// Who wrote the lines of a set of files as HEAD has them.
 #[derive(Debug, Clone, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct Blamed {
     /// Authors by lines, most first.
     pub authors: Vec<AuthorLines>,
     pub files: u32,
     /// Files left out: past the limit, or not in HEAD yet.
     pub skipped: u32,
+    /// Your lines whose commit names no AI as co-author (you are git's `user.name` or `user.email`).
+    pub you_alone: u32,
+    /// Lines whose commit names an AI as co-author, whoever committed them.
+    pub ai: u32,
+    /// Everyone else's lines without an AI co-author, most first.
+    pub others: Vec<AuthorLines>,
+    /// Your name in git, when it is set.
+    pub you: Option<String>,
+}
+
+/// Lines counted by the commit that wrote them and its author's name and email.
+type ByCommit = HashMap<(String, String, String), u32>;
+
+/// Lines per commit and author in `git blame --line-porcelain`'s answer (lines not committed yet left out).
+fn count_by_commit(porcelain: &str) -> ByCommit {
+    let mut out = ByCommit::new();
+    let (mut sha, mut author, mut mail) = (String::new(), String::new(), String::new());
+    for line in porcelain.lines() {
+        if line.starts_with('\t') {
+            // The line itself ends its block.
+            if author != "Not Committed Yet" && !sha.is_empty() {
+                *out.entry((sha.clone(), author.clone(), mail.clone())).or_insert(0) += 1;
+            }
+        } else if let Some(name) = line.strip_prefix("author-mail ") {
+            mail = name.trim_matches(['<', '>']).to_owned();
+        } else if let Some(name) = line.strip_prefix("author ") {
+            name.clone_into(&mut author);
+        } else if line.len() > 40
+            && line.as_bytes()[40] == b' '
+            && line[..40].bytes().all(|byte| byte.is_ascii_hexdigit())
+        {
+            line[..40].clone_into(&mut sha);
+        }
+    }
+    out
+}
+
+/// The lines split three ways: yours alone, co-written with an AI, everyone else's.
+fn split(root: &str, lines: &ByCommit) -> Blamed {
+    let config = |key: &str| {
+        git(root, &["config", key]).ok().map(|value| value.trim().to_owned()).filter(|value| !value.is_empty())
+    };
+    let (you, email) = (config("user.name"), config("user.email"));
+    let shas: HashSet<String> = lines.keys().map(|(sha, _, _)| sha.clone()).collect();
+    let helped = super::attribution::ai_commits(root, &shas, &super::attribution::ai_patterns(root));
+    let (mut authors, mut others): (HashMap<String, u32>, HashMap<String, u32>) = (HashMap::new(), HashMap::new());
+    let (mut you_alone, mut ai) = (0, 0);
+    for ((sha, author, mail), count) in lines {
+        *authors.entry(author.clone()).or_insert(0) += count;
+        let yours = you.as_deref() == Some(author.as_str())
+            || email.as_deref().is_some_and(|email| email.eq_ignore_ascii_case(mail));
+        if helped.contains(sha) {
+            ai += count;
+        } else if yours {
+            you_alone += count;
+        } else {
+            *others.entry(author.clone()).or_insert(0) += count;
+        }
+    }
+    Blamed { authors: sorted(authors), files: 0, skipped: 0, you_alone, ai, others: sorted(others), you }
+}
+
+/// Who wrote lines `line` to `end_line` of the file at `path` as it is now (one function), split the same way; lines
+/// not committed yet are left out.
+pub fn blame_span(root: &str, path: &str, line: u32, end_line: u32) -> Result<Blamed, String> {
+    let range = format!("-L{},{}", line.max(1), end_line.max(line.max(1)));
+    let out = git(root, &["blame", "-w", "--line-porcelain", &range, "--", path])?;
+    Ok(Blamed { files: 1, ..split(root, &count_by_commit(&out)) })
 }
 
 /// Who wrote the lines of `paths` (relative to the opened folder) at HEAD, most lines first; at most
@@ -78,15 +148,17 @@ pub struct Blamed {
 pub fn blame_authors(root: &str, paths: &[String]) -> Blamed {
     let wanted: Vec<&String> = paths.iter().take(BLAMED_FILES).collect();
     let mut skipped = paths.len().saturating_sub(wanted.len()) as u32;
-    let mut lines: HashMap<String, u32> = HashMap::new();
+    let mut lines = ByCommit::new();
     let mut files = 0;
     for chunk in wanted.chunks(AT_ONCE) {
-        let results: Vec<Option<HashMap<String, u32>>> = std::thread::scope(|scope| {
+        let results: Vec<Option<ByCommit>> = std::thread::scope(|scope| {
             let running: Vec<_> = chunk
                 .iter()
                 .map(|path| {
                     scope.spawn(move || {
-                        git(root, &["blame", "-w", "--line-porcelain", "HEAD", "--", path]).ok().map(|out| count(&out))
+                        git(root, &["blame", "-w", "--line-porcelain", "HEAD", "--", path])
+                            .ok()
+                            .map(|out| count_by_commit(&out))
                     })
                 })
                 .collect();
@@ -96,15 +168,15 @@ pub fn blame_authors(root: &str, paths: &[String]) -> Blamed {
             match result {
                 Some(found) => {
                     files += 1;
-                    for (author, count) in found {
-                        *lines.entry(author).or_insert(0) += count;
+                    for (key, count) in found {
+                        *lines.entry(key).or_insert(0) += count;
                     }
                 }
                 None => skipped += 1,
             }
         }
     }
-    Blamed { authors: sorted(lines), files, skipped }
+    Blamed { files, skipped, ..split(root, &lines) }
 }
 
 /// A part of a file in a version: for who wrote it.
@@ -206,5 +278,68 @@ mod tests {
         let names: Vec<&str> = knowers.authors.iter().map(|author| author.name.as_str()).collect();
         assert_eq!(names, ["Ann", "Bo"]);
         assert_eq!(knowers.you.as_deref(), Some("Test"));
+    }
+
+    #[test]
+    fn splits_the_lines_into_yours_alone_co_written_with_an_ai_and_others() {
+        let r = Repo::new();
+        r.write(
+            "a.txt", "one
+two
+",
+        );
+        r.sh(&["add", "."]);
+        r.sh(&["commit", "-q", "-m", "Test writes"]);
+        r.write(
+            "a.txt",
+            "one
+two
+three
+four
+five
+",
+        );
+        r.sh(&[
+            "commit",
+            "-q",
+            "-am",
+            "Test and Claude add
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+        ]);
+        r.write(
+            "a.txt",
+            "one
+two
+three
+four
+five
+six
+",
+        );
+        r.sh(&["-c", "user.name=Ann", "-c", "user.email=ann@example.com", "commit", "-q", "-am", "Ann adds"]);
+        r.write(
+            "a.txt",
+            "one
+two
+three
+four
+five
+six
+seven
+",
+        );
+
+        let blamed = blame_authors(&r.root, &["a.txt".into()]);
+        assert_eq!((blamed.you_alone, blamed.ai), (2, 3));
+        let others: Vec<(&str, u32)> =
+            blamed.others.iter().map(|author| (author.name.as_str(), author.lines)).collect();
+        assert_eq!(others, [("Ann", 1)]);
+        assert_eq!(blamed.you.as_deref(), Some("Test"));
+
+        // Lines 2 to 7 as the file is now: one of yours, three with Claude, Ann's, and one not committed yet.
+        let span = blame_span(&r.root, "a.txt", 2, 7).unwrap();
+        assert_eq!((span.you_alone, span.ai, span.others.len()), (1, 3, 1));
+        assert_eq!(span.authors.iter().map(|author| author.lines).sum::<u32>(), 5);
     }
 }

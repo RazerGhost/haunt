@@ -37,5 +37,24 @@
   "calls": "Roept aan ({count})",
   "noCalls": "Niets dat gescand is.",
   "calledBy": "Aangeroepen door ({count})",
-  "noCallers": "Geen directe aanroepen (misschien wordt hij aangeroepen via een interface of een routetabel)."
+  "noCallers": "Geen directe aanroepen (misschien wordt hij aangeroepen via een interface of een routetabel).",
+  "fromTests": {
+    "one": "Vanuit tests ({count})",
+    "other": "Vanuit tests ({count})"
+  },
+  "onlyTests": "Alleen tests roepen hem aan.",
+  "markUnderstood": "Markeren als begrepen",
+  "markUnderstoodHelp": "Onthouden dat je deze functie begrijpt, zoals de code nu is; alleen op deze computer bewaard",
+  "unmark": "Markering weghalen",
+  "unmarkHelp": "Vergeten dat je deze functie begreep",
+  "learned": {
+    "familiar": "Begrepen",
+    "stale": "Veranderd sinds je hem leerde"
+  },
+  "learnedHow": "Geleerd op {when}, {how}",
+  "learnedBy": {
+    "route-recall": "door de keten van een route te herinneren",
+    "call-predict": "door een aanroeppad te voorspellen",
+    "manual": "met de hand gemarkeerd"
+  }
 }

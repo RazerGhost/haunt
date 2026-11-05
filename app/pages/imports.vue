@@ -19,6 +19,7 @@ const colorMode = useColorMode()
 const typeOnly = ref(true)
 const onlyBreaks = ref(false)
 const picked = ref<{ kind: 'edge' | 'part', id: string } | null>(null)
+const graph = useTemplateRef<{ fit: () => void }>('graph')
 
 const rules = computed(() => scan.value?.rules ?? null)
 const ruled = computed(() => scan.value?.layers.filter(layer => layer.ruled) ?? [])
@@ -117,6 +118,7 @@ const pickedPart = computed(() => {
       </template>
       <span class="tabular-nums" :class="scan?.cycles.length ? 'text-error' : 'text-muted'">{{ t('pages.imports.cycles', { count: scan?.cycles.length ?? 0 }) }}</span>
       <div class="ml-auto flex flex-wrap items-center gap-4">
+        <UButton icon="i-lucide-maximize" :label="t('pages.imports.fit')" size="xs" color="neutral" variant="ghost" @click="graph?.fit()" />
         <UButton v-if="rules" :label="t('pages.imports.overTime')" icon="i-lucide-chart-column" size="xs" :color="overTime ? 'primary' : 'neutral'" :variant="overTime ? 'soft' : 'ghost'" @click="overTime = !overTime" />
         <USwitch v-model="typeOnly" :label="t('pages.imports.typeOnly')" size="sm" />
         <USwitch v-if="rules" v-model="onlyBreaks" :label="t('pages.imports.onlyBreaks')" size="sm" />
@@ -129,6 +131,7 @@ const pickedPart = computed(() => {
       <div class="min-w-0 flex-1">
         <GraphView
           v-if="elements.length"
+          ref="graph"
           :elements="elements"
           :stylesheet="graphStyle"
           :layout="layout"

@@ -15,5 +15,17 @@
   "open": "Open {file} in the editor",
   "callPath": "Call path",
   "tryIt": "Try it",
-  "tryItHelp": "Send a request to your dev server"
+  "tryItHelp": "Send a request to your dev server",
+  "hideChains": "Hide chains",
+  "hideChainsHelp": "Cover what each handler leads to, to test yourself; click a covered chain to see it",
+  "shuffle": "Shuffle",
+  "reveal": {
+    "one": "{count} function: click to reveal",
+    "other": "{count} functions: click to reveal"
+  },
+  "iKnew": "I knew it",
+  "iDidNot": "I didn't",
+  "knewIt": "Knew it",
+  "didNot": "Didn't know it",
+  "score": "Knew {knew} of {count}"
 }

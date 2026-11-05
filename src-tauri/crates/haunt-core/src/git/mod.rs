@@ -2,6 +2,7 @@
 //! through one safe runner (`cli.rs`): the log pages, refs and the status count, churn, blame and `log -L`. Writing
 //! (staging, commits, branches, stashes and tags) is its own module, `write/`, with its own rules.
 
+mod attribution;
 pub mod cli;
 pub mod command;
 pub mod diff;

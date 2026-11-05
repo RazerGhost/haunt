@@ -51,5 +51,6 @@
     "after": "(see Haunt's README)."
   },
   "help": "Click an arrow for its files, a part for what it uses; double-click to go inside. Tests are left out.",
-  "runtimeCycles": "Runtime cycles"
+  "runtimeCycles": "Runtime cycles",
+  "fit": "Fit"
 }

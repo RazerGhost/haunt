@@ -1,0 +1,8 @@
+{
+  "youAlone": "Jij alleen",
+  "ai": "Samen met AI",
+  "lines": {
+    "one": "{count} regel",
+    "other": "{count} regels"
+  }
+}
