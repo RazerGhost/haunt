@@ -216,7 +216,9 @@ In the sidebar's More menu and the palette:
 Without configuration:
 
 - **Languages**: TypeScript and JavaScript, and the script blocks of Vue, Svelte and Astro files, read with the
-  TypeScript compiler, with the project's tsconfig, path aliases and workspace packages. PHP (Laravel, WordPress), Rust,
+  TypeScript compiler, with the project's tsconfig, path aliases and workspace packages: in a trusted folder the
+  project's own TypeScript, else (and for TypeScript 7, the native compiler, which has no compiler API to read with)
+  Haunt's own, which says so. PHP (Laravel, WordPress), Rust,
   Lua, Python, Go, Java, C#, Ruby, C and C++ (a `.h` header as C), read with tree-sitter: their imports are resolved
   per language (Composer's PSR-4 map, Rust's modules and crates, Lua's `require`, Python's imports, Go's packages
   through go.mod, Java's imports from the package's source folder, C#'s `using` to the namespace's folder, Ruby's

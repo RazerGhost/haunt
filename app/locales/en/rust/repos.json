@@ -24,5 +24,6 @@
   "hookNote": "Run by git when Haunt does what triggers it.",
   "husky": "{name} (Husky)",
   "huskyNote": "What the hook above hands over to.",
-  "toolCommand": "A command is one line of at most 500 characters."
+  "toolCommand": "A command is one line of at most 500 characters.",
+  "typescriptUnusable": "This project's TypeScript ({version}) has no compiler API for Haunt to read it with (TypeScript 7 ships none), so Haunt read it with its own TypeScript ({bundled})."
 }

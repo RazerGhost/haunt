@@ -323,6 +323,17 @@ impl Repos {
                 shown.code.calls = Some(message);
                 self.events.send(Some(root), json!({ "type": "scan", "scannedAt": scanned_at, "complete": true }));
             }
+            Said::OwnTypescriptUnusable(version, bundled) => {
+                self.events.send(
+                    Some(root),
+                    json!({ "type": "notice", "message": said!(
+                        "repos.typescriptUnusable",
+                        "This project's TypeScript ({version}) has no compiler API for Haunt to read it with (TypeScript 7 ships none), so Haunt read it with its own TypeScript ({bundled}).",
+                        version = version,
+                        bundled = bundled
+                    ) }),
+                );
+            }
             Said::Error(message) => {
                 eprintln!("[haunt] scan failed: {message}");
                 let first = message.lines().next().unwrap_or(&message).to_owned();

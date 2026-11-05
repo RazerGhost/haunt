@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createInterface } from 'node:readline'
@@ -48,6 +48,46 @@ function start(root: string, script = main, env: Record<string, string> = {}): S
     })
   }
 }
+
+/** A repository whose own `typescript` is TypeScript 7's shape (only `version` and `versionMajorMinor`), with a tsconfig
+ * that extends another for its path alias. Written at run time: a fixture's node_modules is not committed. */
+function typescript7Repository(): string {
+  const dir = mkdtempSync(join(tmpdir(), 'haunt-ts7-'))
+  const write = (path: string, text: string) => {
+    mkdirSync(join(dir, path, '..'), { recursive: true })
+    writeFileSync(join(dir, path), text)
+  }
+  write('package.json', JSON.stringify({ name: 'ts7-app', devDependencies: { typescript: '7.0.2' } }))
+  write('tsconfig.base.json', JSON.stringify({ compilerOptions: { strict: true, baseUrl: '.', paths: { '@lib/*': ['src/lib/*'] } } }))
+  write('tsconfig.json', JSON.stringify({ extends: './tsconfig.base.json', include: ['src'] }))
+  write('src/lib/greet.ts', 'export function greet(name: string): string {\n  return `Hello ${name}`\n}\n')
+  write('src/index.ts', 'import { greet } from \'@lib/greet\'\n\nexport function main(): string {\n  return greet(\'you\')\n}\n')
+  write('node_modules/typescript/package.json', JSON.stringify({ name: 'typescript', version: '7.0.2', main: 'index.js' }))
+  write('node_modules/typescript/index.js', 'module.exports = { version: \'7.0.2\', versionMajorMinor: \'7.0\' }\n')
+  return dir
+}
+
+test('a trusted project on TypeScript 7 (no compiler API) is read with Haunt\'s own TypeScript, and says so', async () => {
+  const dir = typescript7Repository()
+  const sidecar = start(dir, main, { HAUNT_TRUSTED: '1' })
+  try {
+    const told = await sidecar.next(message => message.event === 'typescript')
+    assert.equal(told.version, '7.0.2')
+    assert.match(String(told.bundled), /^\d+\.\d+/)
+    assert.ok((told.missing as string[]).includes('getParsedCommandLineOfConfigFile'))
+    sidecar.send({ type: 'scan' })
+    const structure = await sidecar.next(message => message.event === 'structure' || message.event === 'error')
+    assert.equal(structure.event, 'structure', String(structure.message))
+    const scan = structure.scan as { files: { path: string }[], imports: { files: { from: string, to: string }[] }[] }
+    assert.deepEqual(scan.files.map(file => file.path).sort(), ['src/index.ts', 'src/lib/greet.ts'])
+    // The alias comes from the tsconfig it extends: read through Haunt's own TypeScript.
+    const edges = scan.imports.flatMap(between => between.files)
+    assert.ok(edges.some(edge => edge.from === 'src/index.ts' && edge.to === 'src/lib/greet.ts'), JSON.stringify(scan.imports))
+  } finally {
+    sidecar.child.kill()
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
 
 test('scans on request: the structure, then the calls', async () => {
   const sidecar = start(fixture)

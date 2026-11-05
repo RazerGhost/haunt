@@ -1,6 +1,6 @@
 import * as nodeModule from 'node:module'
-import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { ownTypescript } from './compiler.ts'
 
 /*
  * The sidecar: `node sidecar/main.ts <repository>`, started by the app (src-tauri/src/sidecar.rs) with HAUNT_TRUSTED=1
@@ -8,7 +8,9 @@ import { pathToFileURL } from 'node:url'
  * Loading a package runs its code, so the scan uses the repository's own TypeScript (the version it is checked with,
  * and the one its architecture scripts load) only in a trusted folder; otherwise, and when the repository has none,
  * Haunt's own (the desktop app ships one). Bun and Deno run the sidecar too (src-tauri/src/startup.rs); without Node's
- * `registerHooks` they always use Haunt's own TypeScript.
+ * `registerHooks` they always use Haunt's own TypeScript. A project's TypeScript without the compiler API the scan calls
+ * (TypeScript 7, the native compiler: compiler.ts) is left aside for Haunt's own too, and the app is told once (the
+ * event `typescript`, with both versions) so it can say why.
  */
 
 // stdout carries only the protocol: whatever else is printed (by a library, a project's script) goes to stderr.
@@ -24,10 +26,15 @@ const trusted = process.env.HAUNT_TRUSTED === '1'
 
 let typescript: string | null = null
 if (trusted) {
-  try {
-    typescript = pathToFileURL(nodeModule.createRequire(join(root, 'package.json')).resolve('typescript')).href
-  } catch {
-    // Not installed there: Haunt's own.
+  // Not installed there, or without the API the scan needs: Haunt's own.
+  const own = ownTypescript(root)
+  if (own && !own.missing.length) typescript = pathToFileURL(own.path).href
+  else if (own) {
+    let bundled = 'unknown'
+    try {
+      bundled = (nodeModule.createRequire(import.meta.url)('typescript') as { version?: string }).version ?? bundled
+    } catch { /* none of its own either: the import below says so */ }
+    protocol(`${JSON.stringify({ event: 'typescript', version: own.version, bundled, missing: own.missing })}\n`)
   }
 }
 

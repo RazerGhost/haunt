@@ -24,5 +24,6 @@
   "hookNote": "Uitgevoerd door git als Haunt iets doet waar hij op reageert.",
   "husky": "{name} (Husky)",
   "huskyNote": "Waar de hook hierboven aan doorgeeft.",
-  "toolCommand": "Een opdracht is één regel van hoogstens 500 tekens."
+  "toolCommand": "Een opdracht is één regel van hoogstens 500 tekens.",
+  "typescriptUnusable": "De TypeScript van dit project ({version}) heeft geen compiler-API waarmee Haunt het kan lezen (TypeScript 7 heeft er geen), dus Haunt las het met zijn eigen TypeScript ({bundled})."
 }

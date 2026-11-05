@@ -46,6 +46,9 @@ pub enum Said {
     /// The call graph for a structure: the whole message as JSON text (`scannedAt`, `calls`, `ms`).
     Calls(String, String),
     Error(String),
+    /// The project's own TypeScript has no compiler API for the scan (TypeScript 7): its version and Haunt's own, which
+    /// reads the project instead.
+    OwnTypescriptUnusable(String, String),
     /// The process ended.
     Exited,
 }
@@ -76,6 +79,9 @@ struct Line<'a> {
     message: Option<String>,
     #[serde(rename = "scannedAt")]
     scanned_at: Option<String>,
+    /// The `typescript` event: the project's TypeScript version and Haunt's own.
+    version: Option<String>,
+    bundled: Option<String>,
 }
 
 impl Sidecar {
@@ -149,6 +155,10 @@ impl Sidecar {
                     }
                     Some("calls") => said(Said::Calls(line.clone(), parsed.scanned_at.unwrap_or_default())),
                     Some("error") => said(Said::Error(parsed.message.unwrap_or_default())),
+                    Some("typescript") => said(Said::OwnTypescriptUnusable(
+                        parsed.version.unwrap_or_default(),
+                        parsed.bundled.unwrap_or_default(),
+                    )),
                     _ => {}
                 }
             }
