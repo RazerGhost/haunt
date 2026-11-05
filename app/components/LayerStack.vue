@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import { percent, tally, type Share } from '~~/shared/familiarity'
+import type { FunctionNode } from '~~/shared/types'
+
 /*
  * The bands of the layer map, top to bottom, with a tile per part sized by how many functions it has. Compact: a list per
  * band, for the sidebar of a wide window. A part with changes (useChanges) shows how many functions changed and how many
- * call them; with `heat`, a tile is tinted by how much its files changed lately (hotspots).
+ * call them; with `heat`, a tile is tinted by how much its files changed lately (hotspots). Once you learned functions
+ * (useFamiliarity), a part shows the share of its functions you know.
  */
 const props = defineProps<{ selectedPart: string | null, compact?: boolean, heat?: Map<string, { score: number, commits: number }> | null, counts?: Map<string, { changed: number, affected: number }> }>()
 const emit = defineEmits<{ select: [part: string] }>()
@@ -11,7 +15,9 @@ const { byPart } = useChanges()
 // The badges: the local changes, unless a commit's lens passes its own counts.
 const counts = computed(() => props.counts ?? byPart.value)
 
-interface Tile { name: string, files: number, functions: number, topLevel: number, hits: number, role: string }
+interface Tile { name: string, files: number, functions: number, topLevel: number, hits: number, role: string, known: Share | null }
+const { states } = useFamiliarity()
+const ids = (items: FunctionNode[]): string[] => items.flatMap(fn => [fn.id, ...ids(fn.children)])
 
 const bands = computed(() => {
   if (!scan.value || !index.value) return []
@@ -22,7 +28,9 @@ const bands = computed(() => {
       const functions = files.reduce((sum, file) => sum + countFunctions(file.functions), 0)
       const topLevel = files.reduce((sum, file) => sum + file.functions.length, 0)
       const hits = term ? files.reduce((sum, file) => sum + matchesSearch(file.functions, term), 0) : 0
-      return { name: part.name, files: files.length, functions, topLevel, hits, role: part.role }
+      // What you know of it: only once you learned something, so a repository you never studied shows no zeros.
+      const known = states.value.size ? tally(files.flatMap(file => ids(file.functions)), states.value) : null
+      return { name: part.name, files: files.length, functions, topLevel, hits, role: part.role, known }
     }).filter(tile => tile.files > 0).sort((a, b) => b.functions - a.functions)
     return { layer, tiles, total: tiles.reduce((sum, tile) => sum + tile.functions, 0) }
   }).filter(band => band.tiles.length)
@@ -36,6 +44,10 @@ defineExpose({ bands, short })
 function tint(name: string): Record<string, string> {
   const hot = props.heat?.get(name)
   return hot ? { background: `color-mix(in srgb, var(--rule-known) ${Math.round(6 + hot.score * 38)}%, var(--ui-bg))` } : {}
+}
+function knownTitle(known: Share | null): string {
+  if (!known) return ''
+  return ` · ${known.stale ? t('LayerStack.knownStale', { percent: percent(known), count: known.stale }) : t('LayerStack.known', { percent: percent(known) })}`
 }
 function heatTitle(name: string): string {
   const hot = props.heat?.get(name)
@@ -58,7 +70,7 @@ function heatTitle(name: string): string {
           class="grid min-w-24 gap-1 rounded-md border border-t-[3px] border-default border-t-(--c) bg-default px-2 py-1.5 text-left transition hover:border-(--c) focus-visible:outline-2 focus-visible:outline-(--c)"
           :class="{ 'border-(--c) bg-elevated!': props.selectedPart === tile.name, 'opacity-35': searching && !tile.hits }"
           :style="{ flex: `${Math.max(1, Math.round(Math.sqrt(tile.functions)))} 1 6rem`, ...tint(tile.name) }"
-          :title="(tile.role || band.layer.note) + heatTitle(tile.name)"
+          :title="(tile.role || band.layer.note) + heatTitle(tile.name) + knownTitle(tile.known)"
           :aria-pressed="props.selectedPart === tile.name"
           @click="emit('select', tile.name)"
         >
@@ -67,7 +79,7 @@ function heatTitle(name: string): string {
             <ChangeBadge :counts="counts.get(tile.name)" />
           </span>
           <span class="text-label text-muted tabular-nums">
-            {{ t('LayerStack.tileSize', { files: t('common.files', { count: tile.files }), functions: t('common.fns', { count: tile.functions }) }) }}<template v-if="searching"> · <b class="text-highlighted">{{ t('LayerStack.found', { count: tile.hits }) }}</b></template>
+            {{ t('LayerStack.tileSize', { files: t('common.files', { count: tile.files }), functions: t('common.fns', { count: tile.functions }) }) }}<template v-if="searching"> · <b class="text-highlighted">{{ t('LayerStack.found', { count: tile.hits }) }}</b></template><template v-if="tile.known"> · <span class="text-success">{{ t('LayerStack.understood', { percent: percent(tile.known) }) }}</span></template>
           </span>
           <span class="flex h-1 overflow-hidden rounded-full bg-elevated" :title="t('LayerStack.split', { top: tile.topLevel, nested: tile.functions - tile.topLevel })">
             <i class="block h-full bg-(--c)" :style="{ width: `${tile.functions ? tile.topLevel / tile.functions * 100 : 0}%` }" />
@@ -91,7 +103,7 @@ function heatTitle(name: string): string {
         class="grid gap-0.5 rounded px-2 py-1 text-left transition hover:bg-elevated focus-visible:outline-2 focus-visible:outline-(--c)"
         :class="{ 'bg-elevated ring-1 ring-(--c)': props.selectedPart === tile.name, 'opacity-35': searching && !tile.hits }"
         :style="tint(tile.name)"
-        :title="(tile.role || band.layer.note) + heatTitle(tile.name)"
+        :title="(tile.role || band.layer.note) + heatTitle(tile.name) + knownTitle(tile.known)"
         :aria-pressed="props.selectedPart === tile.name"
         @click="emit('select', tile.name)"
       >
@@ -99,6 +111,7 @@ function heatTitle(name: string): string {
           <span class="truncate font-mono text-xs" :class="props.selectedPart === tile.name ? 'font-semibold text-highlighted' : ''">{{ short(tile.name) }}</span>
           <span class="flex shrink-0 items-center gap-1.5">
             <ChangeBadge :counts="counts.get(tile.name)" />
+            <span v-if="tile.known" class="text-label tabular-nums" :class="tile.known.familiar ? 'text-success' : 'text-dimmed'">{{ percent(tile.known) }}%</span>
             <span class="text-label text-muted tabular-nums">{{ searching ? t('LayerStack.found', { count: tile.hits }) : tile.functions }}</span>
           </span>
         </span>

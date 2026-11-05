@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { boxAt, boxesById, bounds, canvasTree, insets, layout, type Box } from '~~/shared/canvas'
+import { percent, tallyTree, type Familiarity } from '~~/shared/familiarity'
 
 /*
  * The canvas: the code as boxes in boxes, drawn on a plain 2D canvas. Scroll to
@@ -9,7 +10,9 @@ import { boxAt, boxesById, bounds, canvasTree, insets, layout, type Box } from '
  * hovered or picked shows its calls as lines to the boxes they reach (dashed when matched by name only).
  *
  * The Map lens and Code use the same canvas: `changed` functions are amber and the functions that call them
- * (`affected`) outlined, `heat` tints files by how often they changed, and `focus` zooms to a few files.
+ * (`affected`) outlined, `heat` tints files by how often they changed, and `focus` zooms to a few files. With
+ * `familiar` (the functions you learned), a function is grey until you learn it, green once you did and amber when its
+ * code changed since; every other box gets a bar along its foot with the share of its functions you know.
  */
 const props = defineProps<{
   changed?: Set<string>
@@ -20,6 +23,8 @@ const props = defineProps<{
   focus?: string[]
   /** Function names to mark (a search). */
   term?: string
+  /** The functions you learned, by id: familiar or stale; null when not shown. */
+  familiar?: ReadonlyMap<string, Familiarity> | null
 }>()
 
 const { structure: scan, index, selected, select, visible } = useCode()
@@ -33,6 +38,9 @@ const tree = computed(() => {
   layout(root, WORLD)
   return { root, byId: boxesById(root) }
 })
+
+/** How much of each box you know, by box id: worked out again only when the boxes or what you learned change. */
+const shares = computed(() => (props.familiar && tree.value ? tallyTree(tree.value.root, props.familiar) : null))
 
 const wrapper = ref<HTMLElement>()
 const canvas = ref<HTMLCanvasElement>()
@@ -59,7 +67,8 @@ function readColors(): void {
     primary: resolvedColor('--ui-primary'),
     warning: resolvedColor('--ui-warning'),
     info: resolvedColor('--ui-info'),
-    error: resolvedColor('--ui-error')
+    error: resolvedColor('--ui-error'),
+    success: resolvedColor('--ui-success')
   }
   layerColors.clear()
 }
@@ -111,7 +120,11 @@ function drawBox(ctx: CanvasRenderingContext2D, item: Box, term: string, chosen:
   if (item.kind === 'part') fill = alpha(layer, 0.1)
   else if (item.kind === 'folder') fill = alpha(layer, 0.06)
   else if (item.kind === 'file') fill = colors.elevated!
-  else fill = alpha(layer, 0.26 + Math.min(0.24, (item.depth % 4) * 0.06))
+  else if (props.familiar) {
+    // Grey until learned; green when you know it; amber when it changed since.
+    const state = props.familiar.get(item.id)
+    fill = state === 'familiar' ? alpha(colors.success!, 0.55) : state === 'stale' ? alpha(colors.warning!, 0.55) : alpha(colors.dimmed!, 0.2)
+  } else fill = alpha(layer, 0.26 + Math.min(0.24, (item.depth % 4) * 0.06))
   ctx.fillStyle = fill
   ctx.fillRect(s.x, s.y, s.w, s.h)
   if (item.kind === 'file' && props.heat) {
@@ -125,6 +138,19 @@ function drawBox(ctx: CanvasRenderingContext2D, item: Box, term: string, chosen:
   if (isChanged) {
     ctx.fillStyle = alpha(colors.warning!, 0.55)
     ctx.fillRect(s.x, s.y, s.w, s.h)
+  }
+  const share = item.kind !== 'function' ? shares.value?.get(item.id) : undefined
+  if (share?.total && s.w > 16 && s.h > 10) {
+    // Along its foot: the share of its functions you know (green), then the ones that changed since (amber).
+    const bar = Math.max(2, Math.min(4, s.h * 0.06))
+    const y = s.y + s.h - bar - 1
+    ctx.fillStyle = alpha(colors.dimmed!, 0.35)
+    ctx.fillRect(s.x + 1, y, s.w - 2, bar)
+    const known = (s.w - 2) * share.familiar / share.total
+    ctx.fillStyle = colors.success!
+    ctx.fillRect(s.x + 1, y, known, bar)
+    ctx.fillStyle = colors.warning!
+    ctx.fillRect(s.x + 1 + known, y, (s.w - 2) * share.stale / share.total, bar)
   }
   ctx.lineWidth = 1
   ctx.strokeStyle = item.kind === 'part' ? alpha(layer, 0.6) : colors.border!
@@ -319,10 +345,22 @@ function onMove(event: PointerEvent): void {
           t('CodeCanvas.lines', { count: found.weight }),
           found.kind === 'function' && index.value
             ? t('CodeCanvas.calls', { count: index.value.callers.get(found.id)?.length ?? 0, callees: index.value.callees.get(found.id)?.length ?? 0 })
-            : null
+            : null,
+          familiarTip(found)
         ].filter(Boolean).join(' · ')
       }
     : null
+}
+/** What the tip says of what you know of a box, while Familiarity is on. */
+function familiarTip(found: Box): string | null {
+  if (!props.familiar) return null
+  if (found.kind === 'function') {
+    const state = props.familiar.get(found.id)
+    return state ? t(`CodeCanvas.familiar.${state}`) : t('CodeCanvas.familiar.not')
+  }
+  const share = shares.value?.get(found.id)
+  if (!share?.total) return null
+  return share.stale ? t('CodeCanvas.knownStale', { percent: percent(share), count: share.stale }) : t('CodeCanvas.known', { percent: percent(share) })
 }
 function onUp(event: PointerEvent): void {
   const wasDrag = drag?.moved
@@ -380,7 +418,7 @@ onBeforeUnmount(() => {
 })
 
 watch(tree, redraw)
-watch(() => [selected.value, props.changed, props.affected, props.heat, props.term, index.value], redraw)
+watch(() => [selected.value, props.changed, props.affected, props.heat, props.term, index.value, shares.value], redraw)
 watch(() => colorMode.value, () => nextTick(() => {
   readColors()
   redraw()

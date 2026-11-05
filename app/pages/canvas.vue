@@ -5,9 +5,14 @@ import { canvasSvg } from '~~/shared/exportSvg'
 /*
  * The canvas: the code as boxes in boxes (CodeCanvas), with hotspots as a tint and the search marking the functions
  * it finds. Layers show what sits on what; the canvas shows what sits in what.
+ *
+ * Familiarity colours each function by whether you learned it (useFamiliarity), and gives every other box a bar of the
+ * share you know. With Hotspots on too, a red file full of grey functions is code that changes a lot and you do not know.
  */
 const { scan, status, message, search } = useCode()
 const { on: hotspots, files: churn, days } = useHotspots()
+const familiarity = usePersisted('familiarity-overlay', false, value => typeof value === 'boolean')
+const { states } = useFamiliarity()
 const { repo } = useRepositories()
 const toast = useToast()
 const failure = useFailure()
@@ -53,6 +58,12 @@ const heat = computed(() => {
     <div class="flex items-center gap-3 border-b border-default px-3 py-1.5 text-xs text-muted">
       <span class="truncate">{{ t('pages.canvas.hint') }}</span>
       <div class="ml-auto flex shrink-0 items-center gap-3">
+        <span v-if="familiarity" class="flex items-center gap-2" :aria-label="t('pages.canvas.familiarityLegend')">
+          <span class="flex items-center gap-1"><i class="size-2.5 rounded-sm bg-(--ui-text-dimmed)/40" />{{ t('pages.canvas.notLearned') }}</span>
+          <span class="flex items-center gap-1"><i class="size-2.5 rounded-sm bg-success/70" />{{ t('pages.canvas.understood') }}</span>
+          <span class="flex items-center gap-1"><i class="size-2.5 rounded-sm bg-warning/70" />{{ t('pages.canvas.changedSince') }}</span>
+        </span>
+        <USwitch v-model="familiarity" :label="t('pages.canvas.familiarity')" size="xs" :title="t('pages.canvas.familiarityHelp')" />
         <USwitch v-model="hotspots" :label="t('pages.canvas.hotspots')" size="xs" :title="t('pages.canvas.hotspotsHelp', { count: days })" />
         <UButton icon="i-lucide-maximize" :label="t('pages.canvas.fit')" size="xs" color="neutral" variant="ghost" @click="board?.fit()" />
         <UDropdownMenu :items="exportItems" :content="{ align: 'end' }">
@@ -64,7 +75,7 @@ const heat = computed(() => {
       <TrustLayersNote />
     </div>
     <div class="min-h-0 flex-1">
-      <CodeCanvas ref="board" :heat="heat" :term="search" />
+      <CodeCanvas ref="board" :heat="heat" :term="search" :familiar="familiarity ? states : null" />
     </div>
   </div>
 </template>

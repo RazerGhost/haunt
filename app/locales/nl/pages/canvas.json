@@ -12,5 +12,11 @@
   "png": "PNG-afbeelding",
   "svg": "SVG-afbeelding",
   "exported": "Canvas geëxporteerd",
-  "notExported": "Het canvas kon niet worden geëxporteerd"
+  "notExported": "Het canvas kon niet worden geëxporteerd",
+  "familiarity": "Bekendheid",
+  "familiarityHelp": "Kleur functies naar of je ze geleerd hebt: grijs nog niet, groen begrepen, amber veranderd sindsdien",
+  "familiarityLegend": "Wat de kleuren betekenen",
+  "notLearned": "niet geleerd",
+  "understood": "begrepen",
+  "changedSince": "veranderd sindsdien"
 }
