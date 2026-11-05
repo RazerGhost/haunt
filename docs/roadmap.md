@@ -12,9 +12,9 @@ These cost little work but wait on someone else, so they start first.
   the name Haunt). Approval takes weeks; the signed installers themselves come at the end.
 - **A first full release** (not a pre-release). Haunt checks for a new version and links to it, but GitHub's "latest
   release" skips pre-releases, so the check finds nothing until one exists.
-- **Linux, on a real machine:** check that the window draws (some NVIDIA and Wayland setups need
-  `WEBKIT_DISABLE_DMABUF_RENDERER=1`, which Haunt could set itself), that saving a file rescans, and that fetch and
-  push work.
+- **Linux, on a real machine:** check that the window draws, that saving a file rescans, and that fetch and push
+  work. Done of it: on Wayland with an NVIDIA driver Haunt sets `WEBKIT_DISABLE_DMABUF_RENDERER=1` itself, unless it
+  is set already (src-tauri/src/main.rs); left is seeing the window draw there.
 
 ## 2. Translations
 
