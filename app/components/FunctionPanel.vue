@@ -121,6 +121,8 @@ const reach = computed(() => affected.value.get(selected.value?.fn.id ?? ''))
       </section>
     </template>
 
+    <FunctionKnowledge :path="selected.file.path" :start="selected.fn.line" :end="selected.fn.endLine" />
+
     <FunctionHistory :path="selected.file.path" :start="selected.fn.line" :end="selected.fn.endLine" :name="selected.fn.anonymous ? undefined : selected.fn.name" />
   </div>
 </template>

@@ -4,7 +4,8 @@ import type { Blamed, FileAuthor } from '~/bindings'
 /*
  * Who knows a part, or the folder of it shown: who wrote the lines it has now (git blame at HEAD, up to 300 files), who
  * changed it in the last year, and a warning where one person wrote nearly all of it and nobody else changed it
- * lately, in a repository others work on too: the code only they know.
+ * lately, in a repository others work on too: the code only they know. The lines written are split into yours alone,
+ * the ones an AI co-wrote and everyone else's (WroteLines).
  */
 const props = defineProps<{ paths: string[] }>()
 const { repo, gitChanged } = useRepositories()
@@ -77,12 +78,7 @@ function ago(seconds: number): string {
       <div class="grid content-start gap-1">
         <p class="text-label text-muted">{{ t('PartKnowledge.wrote') }}</p>
         <template v-if="blamed && total">
-          <div class="flex h-1.5 overflow-hidden rounded-full bg-elevated">
-            <i v-for="(author, n) in blamed.authors.slice(0, 6)" :key="author.name" class="block h-full" :style="{ width: `${author.lines / total * 100}%`, background: `color-mix(in srgb, var(--c, var(--ui-primary)) ${100 - n * 16}%, var(--ui-bg-elevated))` }" :title="`${author.name}: ${t('PartKnowledge.lines', { count: author.lines })}`" />
-          </div>
-          <p class="text-xs">
-            <template v-for="(author, n) in blamed.authors.slice(0, 4)" :key="author.name">{{ n ? ' · ' : '' }}{{ author.name }} <span class="text-muted">{{ Math.round(author.lines / total * 100) }}%</span></template>
-          </p>
+          <WroteLines :blamed="blamed" />
           <p v-if="blamed.skipped" class="text-label text-dimmed">{{ t('PartKnowledge.skipped', { count: blamed.skipped }) }}</p>
         </template>
         <p v-else-if="blamed" class="text-xs text-muted">{{ t('PartKnowledge.noLines') }}</p>
