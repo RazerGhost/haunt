@@ -15,7 +15,12 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
-use crate::paths::canonical;
+use crate::paths::{canonical, created};
+
+/// A path from the file in its one form, or as written while its folder is missing; None for an empty one.
+fn kept(path: &str) -> Option<String> {
+    canonical(path).or_else(|| Some(path.trim().to_owned()).filter(|path| !path.is_empty()))
+}
 
 const RECENT: usize = 6;
 /// The profile's name when none was ever made.
@@ -212,6 +217,9 @@ pub struct Settings {
     pub recent: Vec<String>,
     /// Folders whose own code may run (their TypeScript, an architecture script).
     pub trusted: Vec<String>,
+    /// When each trusted folder was made (`paths::created`), so a different folder that turns up at the same path (a
+    /// new clone, another drive with the same letter) is not trusted with it.
+    pub trusted_marks: HashMap<String, u64>,
     pub pull: PullChoice,
     /// Minutes between background fetches of the repository shown; 0 is off.
     pub fetch_every: u32,
@@ -246,20 +254,21 @@ pub fn tool_command(command: &str) -> Option<String> {
 }
 
 impl Settings {
-    /// Reads the file; every path is put in its one form, and folders that no longer exist are dropped.
+    /// Reads the file; every path is put in its one form. Folders that are missing are kept as they were written (a
+    /// drive unplugged, a folder moved away for a while): the window leaves them out until they are back.
     pub fn load(file: &Path) -> Settings {
         let read: Settings =
             fs::read_to_string(file).ok().and_then(|text| serde_json::from_str(&text).ok()).unwrap_or_default();
         let clean = |paths: Vec<String>| {
             let mut out: Vec<String> = Vec::new();
-            for path in paths.iter().filter_map(|path| canonical(path)) {
+            for path in paths.iter().filter_map(|path| kept(path)) {
                 if !out.contains(&path) {
                     out.push(path);
                 }
             }
             out
         };
-        let root = read.root.as_deref().and_then(canonical);
+        let root = read.root.as_deref().and_then(kept);
         // Settings from before the tabs: the one repository is the one tab.
         let mut tabs = clean(read.tabs);
         if let Some(root) = &root {
@@ -267,11 +276,24 @@ impl Settings {
                 tabs.push(root.clone());
             }
         }
-        // Trusted folders are kept even while they are missing (an unplugged drive), in their one form where possible.
-        let trusted = read.trusted.iter().map(|path| canonical(path).unwrap_or_else(|| path.clone())).collect();
+        // Trusted folders are kept even while they are missing too; each with its mark (`trusts`). One trusted before
+        // the marks gets its mark now, while it is there.
+        let trusted: Vec<String> = read.trusted.iter().filter_map(|path| kept(path)).collect();
+        let mut trusted_marks: HashMap<String, u64> = HashMap::new();
+        for (path, mark) in read.trusted_marks {
+            if let Some(path) = kept(&path) {
+                trusted_marks.insert(path, mark);
+            }
+        }
+        for path in &trusted {
+            if let (false, Some(mark)) = (trusted_marks.contains_key(path), created(path)) {
+                trusted_marks.insert(path.clone(), mark);
+            }
+        }
+        trusted_marks.retain(|path, _| trusted.contains(path));
         // The same for the repository folders.
         let mut repository_folders: Vec<String> = Vec::new();
-        for path in read.repository_folders.iter().map(|path| canonical(path).unwrap_or_else(|| path.clone())) {
+        for path in read.repository_folders.iter().filter_map(|path| kept(path)) {
             if !repository_folders.contains(&path) {
                 repository_folders.push(path);
             }
@@ -284,7 +306,7 @@ impl Settings {
             if name.is_empty() || name == profile || profiles.iter().any(|known| known.name == name) {
                 continue;
             }
-            let root = other.root.as_deref().and_then(canonical);
+            let root = other.root.as_deref().and_then(kept);
             let appearance = other.appearance.checked();
             profiles.push(Profile { name, root, tabs: clean(other.tabs), recent: clean(other.recent), appearance });
         }
@@ -295,7 +317,7 @@ impl Settings {
             .filter_map(|(path, look)| {
                 let color = if TAB_COLORS.contains(&look.color.as_str()) { look.color } else { String::new() };
                 let look = TabLook { pinned: look.pinned, color };
-                (look != TabLook::default()).then(|| canonical(&path).map(|path| (path, look))).flatten()
+                (look != TabLook::default()).then(|| kept(&path).map(|path| (path, look))).flatten()
             })
             .collect();
         let mut settings = Settings {
@@ -303,6 +325,7 @@ impl Settings {
             tabs,
             recent: clean(read.recent),
             trusted,
+            trusted_marks,
             pull: read.pull,
             fetch_every,
             profile,
@@ -543,14 +566,24 @@ impl Settings {
         Some(next)
     }
 
+    /// Whether `root` is trusted: its path is, and it is the folder that was (made when it was). A file system that
+    /// does not say when a folder was made leaves the path alone to decide.
     pub fn trusts(&self, root: &str) -> bool {
         self.trusted.iter().any(|path| path == root)
+            && match (self.trusted_marks.get(root), created(root)) {
+                (Some(mark), Some(now)) => *mark == now,
+                _ => true,
+            }
     }
 
     pub fn set_trust(&mut self, root: &str, trusted: bool) {
         self.trusted.retain(|path| path != root);
+        self.trusted_marks.remove(root);
         if trusted {
             self.trusted.push(root.to_owned());
+            if let Some(mark) = created(root) {
+                self.trusted_marks.insert(root.to_owned(), mark);
+            }
         }
     }
 }
@@ -651,8 +684,11 @@ mod tests {
         let read = Settings::load(&file);
         assert_eq!(read.root, Some(here()));
         assert_eq!(read.tabs, [here()]);
-        assert_eq!(read.recent, [here()]);
+        // The missing one is kept (an unplugged drive); the window leaves it out until it is back.
+        assert_eq!(read.recent, [here(), "C:/no/such/folder".to_owned()]);
         assert!(read.trusts(&here()));
+        // Trusted before the marks: it gets its mark while it is there.
+        assert_eq!(read.trusted_marks.get(&here()).copied(), created(&here()));
         fs::write(&file, "{ not json").unwrap();
         let fresh = Settings {
             profile: FIRST_PROFILE.into(),
@@ -660,6 +696,58 @@ mod tests {
             ..Settings::default()
         };
         assert_eq!(Settings::load(&file), fresh);
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn missing_folders_keep_their_tabs_and_looks() {
+        let dir = std::env::temp_dir().join(format!("haunt-settings-missing-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("settings.json");
+        let gone = "Z:/unplugged/repo";
+        let look = TabLook { pinned: true, color: "teal".into() };
+        let settings = Settings {
+            root: Some(gone.into()),
+            tabs: vec![here(), gone.into()],
+            recent: vec![gone.into()],
+            tab_looks: HashMap::from([(gone.to_owned(), look.clone())]),
+            ..Settings::default()
+        };
+        settings.save(&file);
+        // Loaded and saved again while it is missing: nothing of it is lost.
+        Settings::load(&file).save(&file);
+        let read = Settings::load(&file);
+        assert_eq!(read.root.as_deref(), Some(gone));
+        assert_eq!(read.tabs, [gone.to_owned(), here()], "pinned first");
+        assert_eq!(read.recent, [gone]);
+        assert_eq!(read.tab_looks.get(gone), Some(&look));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn trust_does_not_pass_to_another_folder_at_the_same_path() {
+        let dir = std::env::temp_dir().join(format!("haunt-settings-trust-{}", std::process::id()));
+        let folder = dir.join("repo");
+        fs::create_dir_all(&folder).unwrap();
+        let path = canonical(&folder.to_string_lossy()).unwrap();
+        let mut settings = Settings::default();
+        settings.set_trust(&path, true);
+        assert!(settings.trusts(&path));
+        if created(&path).is_none() {
+            // This file system does not say when a folder was made: the path alone decides, as before.
+            let _ = fs::remove_dir_all(&dir);
+            return;
+        }
+        // Another folder made at the same path (deleted and cloned again): not trusted until trusted again.
+        fs::remove_dir_all(&folder).unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        fs::create_dir_all(&folder).unwrap();
+        assert!(!settings.trusts(&path));
+        settings.set_trust(&path, true);
+        assert!(settings.trusts(&path));
+        settings.set_trust(&path, false);
+        assert!(!settings.trusts(&path));
+        assert!(settings.trusted_marks.is_empty());
         let _ = fs::remove_dir_all(&dir);
     }
 

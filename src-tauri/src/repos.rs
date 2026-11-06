@@ -148,10 +148,17 @@ impl Repos {
     }
 
     /// Shows the repository shown last time, if it can still be opened.
+    /// When its folder is missing (a drive unplugged), the first tab whose folder is there.
     pub fn start(&self) {
-        let root = self.inner.lock().settings.root.clone();
-        if let Some(root) = root.filter(|root| paths::openable(Path::new(root))) {
-            let mut inner = self.inner.lock();
+        let mut inner = self.inner.lock();
+        let root = inner
+            .settings
+            .root
+            .clone()
+            .filter(|root| paths::openable(Path::new(root)))
+            .or_else(|| tabs::first_openable(&inner.settings.tabs));
+        if let Some(root) = root {
+            inner.settings.root = Some(root.clone());
             self.show(&mut inner, &root);
         }
     }

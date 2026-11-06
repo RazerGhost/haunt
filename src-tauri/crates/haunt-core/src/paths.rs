@@ -24,6 +24,13 @@ pub fn canonical(path: &str) -> Option<String> {
     found.is_dir().then(|| plain(found).to_string_lossy().into_owned())
 }
 
+/// When a folder was made, in nanoseconds since 1970: what tells a folder from another one later made at the same
+/// path. None when it is missing, or its file system does not say (some on Linux).
+pub fn created(path: &str) -> Option<u64> {
+    let made = fs::metadata(path).ok()?.created().ok()?;
+    made.duration_since(std::time::UNIX_EPOCH).ok()?.as_nanos().try_into().ok()
+}
+
 /// A path from the window, relative to the repository, as a file inside it; None for anything that could reach out
 /// (an absolute path, `..`, a link that leads elsewhere).
 pub fn inside(root: &str, relative: &str) -> Option<PathBuf> {
