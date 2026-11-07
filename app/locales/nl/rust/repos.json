@@ -25,5 +25,6 @@
   "husky": "{name} (Husky)",
   "huskyNote": "Waar de hook hierboven aan doorgeeft.",
   "toolCommand": "Een opdracht is één regel van hoogstens 500 tekens.",
-  "typescriptUnusable": "De TypeScript van dit project ({version}) heeft geen compiler-API waarmee Haunt het kan lezen (TypeScript 7 heeft er geen), dus Haunt las het met zijn eigen TypeScript ({bundled})."
+  "typescriptUnusable": "De TypeScript van dit project ({version}) heeft geen compiler-API waarmee Haunt het kan lezen (TypeScript 7 heeft er geen), dus Haunt las het met zijn eigen TypeScript ({bundled}).",
+  "notMissing": "{path} staat er gewoon: hij is niet verplaatst."
 }

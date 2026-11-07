@@ -127,9 +127,16 @@ pub(super) fn first_openable(tabs: &[String]) -> Option<String> {
     tabs.iter().find(|tab| paths::openable(Path::new(tab))).cloned()
 }
 
-/// `tabs` with the ones that are `there` put in the order of `wanted`, and the others left in their places; None when
-/// `wanted` is not the same tabs as those that are there.
+/// `tabs` in the order of `wanted`: all of them, or only the ones that are `there` (the others then stay in their
+/// places); None when `wanted` is neither.
 fn reordered(tabs: &[String], there: impl Fn(&str) -> bool, wanted: &[String]) -> Option<Vec<String>> {
+    let mut all: Vec<&String> = tabs.iter().collect();
+    let mut every: Vec<&String> = wanted.iter().collect();
+    all.sort();
+    every.sort();
+    if all == every {
+        return Some(wanted.to_vec());
+    }
     let there: Vec<bool> = tabs.iter().map(|tab| there(tab)).collect();
     let mut shown: Vec<&String> = tabs.iter().zip(&there).filter(|(_, there)| **there).map(|(tab, _)| tab).collect();
     let mut asked: Vec<&String> = wanted.iter().collect();
@@ -159,9 +166,10 @@ mod tests {
         let there = |tab: &str| tab != "gone";
         assert_eq!(reordered(&all, there, &tabs(&["c", "a", "b"])), Some(tabs(&["c", "gone", "a", "b"])));
         assert_eq!(reordered(&all, there, &tabs(&["a", "b", "c"])), Some(all.clone()));
+        // All of them, the missing one too (the window shows it): as asked.
+        assert_eq!(reordered(&all, there, &tabs(&["gone", "c", "a", "b"])), Some(tabs(&["gone", "c", "a", "b"])));
         // Not the tabs that are there: one missing, one too many, one unknown.
         assert_eq!(reordered(&all, there, &tabs(&["a", "b"])), None);
-        assert_eq!(reordered(&all, there, &tabs(&["a", "b", "c", "gone"])), None);
         assert_eq!(reordered(&all, there, &tabs(&["a", "b", "d"])), None);
     }
 }

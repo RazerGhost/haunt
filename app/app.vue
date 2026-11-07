@@ -6,9 +6,12 @@ import { en, nl } from '@nuxt/ui/locale'
  * selected function on the right. Each tab remembers its screen.
  */
 const { selected, select, status } = useCode()
-const { picking, problems, rememberRoute } = useRepositories()
+const { picking, problems, gone, rememberRoute } = useRepositories()
 const route = useRoute()
 const choosing = computed(() => picking.value || status.value === 'no-root')
+// A missing repository is explained in place of everything else (MissingRepo), unless the repositories are asked for.
+const missing = computed(() => picking.value ? null : gone.value)
+const away = computed(() => choosing.value || !!missing.value)
 const isWide = ref(true)
 onMounted(() => {
   const query = window.matchMedia('(min-width: 1024px)')
@@ -41,17 +44,18 @@ useHead({ title: 'Haunt', htmlAttrs: { lang: language }, link: [{ rel: 'icon', t
           <p v-for="problem in problems" :key="problem">{{ said(problem) }}</p>
         </template>
       </UAlert>
-      <AppToolbar v-if="!choosing" />
-      <TrustBanner v-if="!choosing" />
-      <OperationBanner v-if="!choosing" />
-      <BisectBanner v-if="!choosing" />
+      <AppToolbar v-if="!away" />
+      <TrustBanner v-if="!away" />
+      <OperationBanner v-if="!away" />
+      <BisectBanner v-if="!away" />
       <div class="flex min-h-0 flex-1">
-        <AppSidebar v-if="!choosing" />
+        <AppSidebar v-if="!away" />
         <main class="min-w-0 flex-1 overflow-auto">
-          <RepositoryManager v-if="choosing" />
+          <MissingRepo v-if="missing" :key="missing" :path="missing" />
+          <RepositoryManager v-else-if="choosing" />
           <NuxtPage v-else />
         </main>
-        <aside v-if="selected && isWide && !choosing" class="w-96 shrink-0 overflow-auto border-l border-default">
+        <aside v-if="selected && isWide && !away" class="w-96 shrink-0 overflow-auto border-l border-default">
           <FunctionPanel />
         </aside>
       </div>

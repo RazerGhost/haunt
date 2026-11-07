@@ -188,6 +188,7 @@ pub fn run() {
             // The folder named on the command line (`haunt .`), or else the repository shown last time, starts
             // scanning while the window loads.
             let asked = std::env::args().skip(1).find(|arg| !arg.starts_with('-'));
+            repos.look_for_missing();
             std::thread::spawn(move || match asked.map(|folder| repos.open(&folder)) {
                 Some(Ok(_)) => {}
                 Some(Err(problem)) => {

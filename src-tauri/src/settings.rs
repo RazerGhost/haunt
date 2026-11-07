@@ -566,6 +566,42 @@ impl Settings {
         Some(next)
     }
 
+    /// The repository at `old` is at `new` now: its tabs (in their places, in every profile), the one shown, its
+    /// recent entries, its look and its trust go there. Where `new` was a tab already, the old one goes instead.
+    pub fn relocate(&mut self, old: &str, new: &str) {
+        let swap = |paths: &mut Vec<String>| {
+            let had_new = paths.iter().any(|path| path == new);
+            if had_new {
+                paths.retain(|path| path != old);
+            } else {
+                for path in paths.iter_mut().filter(|path| *path == old) {
+                    *path = new.to_owned();
+                }
+            }
+        };
+        let root = |root: &mut Option<String>| {
+            if root.as_deref() == Some(old) {
+                *root = Some(new.to_owned());
+            }
+        };
+        swap(&mut self.tabs);
+        swap(&mut self.recent);
+        root(&mut self.root);
+        for profile in &mut self.profiles {
+            swap(&mut profile.tabs);
+            swap(&mut profile.recent);
+            root(&mut profile.root);
+        }
+        if let Some(look) = self.tab_looks.remove(old) {
+            self.tab_looks.entry(new.to_owned()).or_insert(look);
+        }
+        // Trust goes with the folder you said it went to, marked as the folder there now.
+        if self.trusted.iter().any(|path| path == old) {
+            self.set_trust(old, false);
+            self.set_trust(new, true);
+        }
+    }
+
     /// Whether `root` is trusted: its path is, and it is the folder that was (made when it was). A file system that
     /// does not say when a folder was made leaves the path alone to decide.
     pub fn trusts(&self, root: &str) -> bool {
@@ -748,6 +784,37 @@ mod tests {
         settings.set_trust(&path, false);
         assert!(!settings.trusts(&path));
         assert!(settings.trusted_marks.is_empty());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_located_repository_keeps_its_place_look_and_trust() {
+        let dir = std::env::temp_dir().join(format!("haunt-settings-locate-{}", std::process::id()));
+        let new = dir.join("moved");
+        fs::create_dir_all(&new).unwrap();
+        let new = canonical(&new.to_string_lossy()).unwrap();
+        let old = "Z:/gone/repo";
+        let look = TabLook { pinned: true, color: "teal".into() };
+        let mut settings = Settings {
+            profile: FIRST_PROFILE.into(),
+            root: Some(old.into()),
+            tabs: vec![old.into(), "/a".into()],
+            recent: vec!["/a".into(), old.into()],
+            trusted: vec![old.into()],
+            tab_looks: HashMap::from([(old.to_owned(), look.clone())]),
+            ..Settings::default()
+        };
+        settings.relocate(old, &new);
+        assert_eq!(settings.tabs, [new.clone(), "/a".to_owned()], "in its place");
+        assert_eq!(settings.recent, ["/a".to_owned(), new.clone()]);
+        assert_eq!(settings.root.as_deref(), Some(new.as_str()));
+        assert_eq!(settings.tab_looks.get(&new), Some(&look));
+        assert!(settings.trusts(&new));
+        assert!(!settings.trusted.iter().any(|path| path == old));
+        // Located to a folder that is a tab already: the old tab goes.
+        settings.tabs.push("Z:/other".into());
+        settings.relocate("Z:/other", "/a");
+        assert_eq!(settings.tabs, [new.clone(), "/a".to_owned()]);
         let _ = fs::remove_dir_all(&dir);
     }
 

@@ -4,6 +4,7 @@
 //! a new one that reads everything. Every call names its repository; a call for one that is not shown is refused, so an
 //! answer can never land in the wrong tab.
 
+mod missing;
 mod news;
 mod recent;
 mod scans;
@@ -43,8 +44,14 @@ pub type Reply = Result<String, String>;
 #[derive(Debug, Clone, Serialize, Type)]
 pub struct RootInfo {
     pub root: Option<String>,
+    /// The tabs and recent repositories whose folders are there (what can be shown).
     pub tabs: Vec<String>,
     pub recent: Vec<String>,
+    /// Every tab and recent repository, in order, those whose folder is missing (`missing`) too.
+    pub all_tabs: Vec<String>,
+    pub all_recent: Vec<String>,
+    /// The tabs and recent repositories whose folder is missing (moved, deleted, a drive not connected).
+    pub missing: Vec<String>,
     pub trusted: bool,
     /// What the folder would run if trusted; empty when it has nothing to run.
     pub wants: Vec<Wanted>,
@@ -136,6 +143,8 @@ pub struct Repos {
     /// Some while the repository manager is open, with the repository folders' watcher (none while there is no folder
     /// to watch) (recent.rs).
     folder_watch: Mutex<Option<Option<Watcher>>>,
+    /// The tabs and recent repositories whose folders were missing at the last look (missing.rs).
+    missing: Mutex<Vec<String>>,
     me: Weak<Repos>,
 }
 
@@ -151,12 +160,13 @@ impl Repos {
             recent: recent::Remembered::default(),
             folders: crate::folders::Searched::default(),
             folder_watch: Mutex::new(None),
+            missing: Mutex::default(),
             me: me.clone(),
         })
     }
 
-    /// Shows the repository shown last time, if it can still be opened.
-    /// When its folder is missing (a drive unplugged), the first tab whose folder is there.
+    /// Shows the repository shown last time, if it can still be opened; when its folder is missing (a drive
+    /// unplugged), the first tab whose folder is there.
     pub fn start(&self) {
         let mut inner = self.inner.lock();
         let root = inner
@@ -188,9 +198,20 @@ impl Repos {
         let openable = |paths: &[String]| {
             paths.iter().filter(|path| paths::openable(Path::new(path))).cloned().collect::<Vec<_>>()
         };
+        let tabs = openable(&inner.settings.tabs);
+        let recent = openable(&inner.settings.recent);
+        let mut missing: Vec<String> = Vec::new();
+        for path in inner.settings.tabs.iter().chain(&inner.settings.recent) {
+            if !tabs.contains(path) && !recent.contains(path) && !missing.contains(path) {
+                missing.push(path.clone());
+            }
+        }
         RootInfo {
-            tabs: openable(&inner.settings.tabs),
-            recent: openable(&inner.settings.recent),
+            tabs,
+            recent,
+            all_tabs: inner.settings.tabs.clone(),
+            all_recent: inner.settings.recent.clone(),
+            missing,
             trusted: root.as_deref().is_some_and(|root| inner.settings.trusts(root)),
             wants: Vec::new(),
             root,

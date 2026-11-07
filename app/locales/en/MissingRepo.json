@@ -1,0 +1,14 @@
+{
+  "title": "{name} is not there",
+  "help": "Its folder is missing: it was moved, renamed or deleted, or it is on a drive that is not connected. Locate it where it is now, and its tab, pin and colour, trust, bookmarks and what you learned of it go with it.",
+  "waits": "Left as it is, it opens again by itself when its folder is back.",
+  "locate": "Locate…",
+  "locateTitle": "Where is {name} now?",
+  "typedPlaceholder": "Where its folder is now",
+  "removeTab": "Remove its tab",
+  "removeRecent": "Remove from recent",
+  "removeTitle": "Remove {name}?",
+  "removeHelp": "Its tab and recent entry go, with what Haunt kept of it here (bookmarks, pins, what you learned of it). Its folder is not touched. Trust stays in Settings, Trust.",
+  "remove": "Remove",
+  "back": "Repositories"
+}

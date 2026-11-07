@@ -11,10 +11,10 @@ import { repoTree, type RepoTree } from '~~/shared/repositories'
  */
 const picked = defineModel<string | null>('picked', { required: true })
 const { scan } = useCode()
-const { info: known, picking, chooseRoot, onNews } = useRepositories()
+const { info: known, picking, chooseRoot, onNews, showMissing } = useRepositories()
 const { times } = usePreferences()
 const toast = useToast()
-const info = computed(() => ({ root: known.value?.root ?? null, tabs: known.value?.tabs ?? [], recent: known.value?.recent ?? [] }))
+const info = computed(() => ({ root: known.value?.root ?? null, tabs: known.value?.all_tabs ?? [], recent: known.value?.all_recent ?? [], missing: known.value?.missing ?? [] }))
 
 const inApp = import.meta.client && '__TAURI__' in window
 const path = ref('')
@@ -222,15 +222,15 @@ onMounted(() => nextTick(() => pathBox.value?.inputRef?.focus()))
               class="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 px-2 py-1.5 text-left"
               :data-picked="picked === recent"
               :title="recent"
-              @click="picked = recent"
-              @dblclick="use(recent)"
+              @click="info.missing.includes(recent) ? showMissing(recent) : picked = recent"
+              @dblclick="info.missing.includes(recent) || use(recent)"
             >
               <UIcon :name="details.get(recent)?.branch ? 'i-lucide-folder-git-2' : 'i-lucide-folder'" class="size-4 text-muted" />
               <span class="grid min-w-0">
                 <span class="flex min-w-0 items-center gap-1.5">
                   <span class="truncate text-sm font-medium text-highlighted">{{ nameOf(recent) }}</span>
                   <UBadge v-if="info.tabs.includes(recent)" :label="t('RootPicker.inTab')" size="sm" variant="subtle" color="neutral" class="shrink-0" />
-                  <UBadge v-if="details.get(recent)?.openable === false" :label="t('RootPicker.notFound')" size="sm" variant="subtle" color="warning" class="shrink-0" />
+                  <UBadge v-if="info.missing.includes(recent) || details.get(recent)?.openable === false" :label="t('RootPicker.notFound')" size="sm" variant="subtle" color="warning" class="shrink-0" />
                 </span>
                 <span v-if="details.get(recent)?.branch" class="flex min-w-0 items-center gap-1 font-mono text-label text-muted"><UIcon name="i-lucide-git-branch" class="size-3 shrink-0" /><span class="truncate">{{ details.get(recent)!.branch }}</span></span>
               </span>

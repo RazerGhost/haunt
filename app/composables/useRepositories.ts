@@ -24,6 +24,12 @@ const systemTitleBar = ref(false)
 const transparent = ref(false)
 /** The repository screen is open on request (it also shows when no repository is open). */
 const picking = ref(false)
+/**
+ * A repository whose folder is missing, explained in place of the screen (MissingRepo): the shown one when its folder
+ * went (missing.rs), or a missing tab or recent repository clicked.
+ */
+const gone = ref<string | null>(null)
+watch(picking, (now) => { if (now) gone.value = null })
 /** Counts the 'git' news per part of git (HEAD, refs, the index, the stash), all in this one place. */
 const git = reactive<Record<GitPart, number>>({ head: 0, refs: 0, index: 0, stash: 0 })
 /** Changes when any of `parts` changed: what a view watches to read git again, for only the parts it shows. */
@@ -50,7 +56,13 @@ export async function startRepositories(): Promise<void> {
     // News for a repository that is no longer shown (an older tab's scanner, still finishing) is dropped here.
     if (news.repo !== null && news.repo !== repo.value && news.type !== 'root') return
     if (news.type === 'git') for (const part of news.parts) git[part]++
-    if (news.type === 'root' || news.type === 'trust') void loadInfo()
+    if (news.type === 'root' || news.type === 'trust' || news.type === 'tabs') void loadInfo()
+    // Its folder came back and it is shown again.
+    if (news.type === 'root' && news.root !== null && news.root === gone.value) gone.value = null
+    if (news.type === 'missing') {
+      gone.value = news.root
+      void loadInfo()
+    }
     if (news.type === 'desktop') desktop.value = news.desktop
     if (news.type === 'themeFile') {
       themeFile.value = news.state as ThemeFileState
@@ -99,6 +111,7 @@ export function useRepositories() {
       rememberRoute()
       info.value = await haunt.open(path)
       picking.value = false
+      gone.value = null
       void router.push(tabRoutes.value[info.value.root ?? ''] ?? '/commits')
       return null
     } catch (error) {
@@ -131,6 +144,42 @@ export function useRepositories() {
     }
   }
 
+  /** Shows why a tab or recent repository cannot open: its folder is missing. */
+  function showMissing(path: string): void {
+    gone.value = path
+    picking.value = false
+  }
+
+  /** The missing repository at `old` is at `path` now: moved there, with what the window keeps of it, and shown. */
+  async function relocate(old: string, path: string): Promise<string | null> {
+    try {
+      rememberRoute()
+      const route = tabRoutes.value[old]
+      info.value = await haunt.relocate(old, path)
+      const now = info.value.root
+      if (now) movePersisted(old, now)
+      gone.value = null
+      picking.value = false
+      void router.push(route ?? '/commits')
+      return null
+    } catch (error) {
+      return errorMessage(error, t('composables.useRepositories.notLocated'))
+    }
+  }
+
+  /** Takes a missing repository away: its tab, its recent entry, and what the window keeps of it. */
+  async function forgetMissing(path: string): Promise<void> {
+    try {
+      if (info.value?.all_tabs.includes(path)) info.value = await haunt.close(path)
+      if (info.value?.all_recent.includes(path)) info.value = await haunt.forgetRecent(path)
+      movePersisted(path, null)
+      gone.value = null
+      if (!info.value?.root) picking.value = true
+    } catch (error) {
+      toast.add({ title: t('composables.useRepositories.notClosed'), description: errorMessage(error, t('common.tryAgain')), color: 'error', icon: 'i-lucide-circle-alert' })
+    }
+  }
+
   /** Opens the tab closed last again; false when there is none. */
   async function reopenClosed(): Promise<boolean> {
     const path = closed.value.at(-1)
@@ -139,7 +188,7 @@ export function useRepositories() {
     return (await chooseRoot(path)) === null
   }
 
-  return { info, repo, problems, tiling, desktop, themeFile, systemTitleBar, picking, closed, gitChanged, chooseRoot, closeTab, reopenClosed, setTrust, rememberRoute, onNews }
+  return { info, repo, problems, tiling, desktop, themeFile, systemTitleBar, picking, gone, closed, gitChanged, chooseRoot, closeTab, reopenClosed, setTrust, rememberRoute, onNews, showMissing, relocate, forgetMissing }
 }
 
 /**

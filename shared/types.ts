@@ -141,6 +141,8 @@ export type ScanEvent =
   | { type: 'done', title: string, undo: string }
   /** A background search found a different list of repositories in a repository folder (folders.rs). */
   | { type: 'folders' }
+  | { type: 'tabs' }
+  | { type: 'missing', root: string }
   /** The desktop's light or dark, accent or window buttons changed (desktop.rs, Linux). */
   | { type: 'desktop', desktop: DesktopLook }
   /** theme.json changed, or stopped reading (theme_file.rs); its fields are app/bindings.ts `ThemeFileState`. */

@@ -49,5 +49,7 @@
   "worktree": "A worktree: a branch in its own folder",
   "closeTab": "Close {name}",
   "openRepositoryLabel": "Repositories: open, clone or make one",
-  "openHelp": "Open a repository, a recent one, or the tab closed last"
+  "openHelp": "Open a repository, a recent one, or the tab closed last",
+  "locate": "Locate its folder…",
+  "missing": "Its folder is missing"
 }

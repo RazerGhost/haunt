@@ -11,6 +11,8 @@ export const commands = {
 	info: () => __TAURI_INVOKE<RootInfo>("info"),
 	/**  The window got the focus again: what changed in git meanwhile, unseen, is news. */
 	recheck: (repo: string) => __TAURI_INVOKE<null>("recheck", { repo }),
+	/**  A tab or recent repository whose folder is missing is at `path` now: everything of it moves there. */
+	relocate: (old: string, path: string) => __TAURI_INVOKE<RootInfo>("relocate", { old, path }),
 	/**  While the repository manager is open: its folders are watched for new and removed repositories. */
 	watchRepositoryFolders: (on: boolean) => __TAURI_INVOKE<null>("watch_repository_folders", { on }),
 	/**  Removes the shown repository's index.lock, when a write said it is old (a git that stopped left it). */
@@ -1362,8 +1364,14 @@ export type Roles = {
 /**  The repository shown, the open tabs, the recent ones, whether its own code may run and what it would run. */
 export type RootInfo = {
 	root: string | null,
+	/**  The tabs and recent repositories whose folders are there (what can be shown). */
 	tabs: string[],
 	recent: string[],
+	/**  Every tab and recent repository, in order, those whose folder is missing (`missing`) too. */
+	all_tabs: string[],
+	all_recent: string[],
+	/**  The tabs and recent repositories whose folder is missing (moved, deleted, a drive not connected). */
+	missing: string[],
 	trusted: boolean,
 	/**  What the folder would run if trusted; empty when it has nothing to run. */
 	wants: Wanted[],

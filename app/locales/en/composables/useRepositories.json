@@ -1,5 +1,6 @@
 {
   "notOpened": "That folder could not be opened.",
   "notClosed": "Could not close the tab",
-  "trustNotChanged": "The trust could not be changed."
+  "trustNotChanged": "The trust could not be changed.",
+  "notLocated": "Haunt could not open that folder."
 }

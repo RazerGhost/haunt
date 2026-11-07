@@ -1,0 +1,14 @@
+{
+  "title": "{name} is er niet",
+  "help": "De map ontbreekt: hij is verplaatst, hernoemd of verwijderd, of staat op een schijf die niet aangesloten is. Zoek hem waar hij nu staat, en zijn tab, vastzetting en kleur, vertrouwen, bladwijzers en wat je ervan leerde gaan mee.",
+  "waits": "Laat je hem zo, dan opent hij vanzelf weer zodra de map terug is.",
+  "locate": "Zoeken…",
+  "locateTitle": "Waar staat {name} nu?",
+  "typedPlaceholder": "Waar de map nu staat",
+  "removeTab": "Tab verwijderen",
+  "removeRecent": "Uit recent verwijderen",
+  "removeTitle": "{name} verwijderen?",
+  "removeHelp": "De tab en het recente item gaan weg, met wat Haunt er hier van bijhield (bladwijzers, pins, wat je ervan leerde). De map zelf blijft onaangeroerd. Vertrouwen blijft in Instellingen, Vertrouwen.",
+  "remove": "Verwijderen",
+  "back": "Repository's"
+}

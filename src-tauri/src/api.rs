@@ -137,6 +137,8 @@ commands! {
     fn info(api) -> RootInfo { Ok(api.repos.info()) }
     /// The window got the focus again: what changed in git meanwhile, unseen, is news.
     fn recheck(api, repo: String) -> () { api.repos.recheck(&repo) }
+    /// A tab or recent repository whose folder is missing is at `path` now: everything of it moves there.
+    fn relocate(api, old: String, path: String) -> RootInfo { api.repos.relocate(&old, &path) }
     /// While the repository manager is open: its folders are watched for new and removed repositories.
     fn watch_repository_folders(api, on: bool) -> () { api.repos.watch_repository_folders(on); Ok(()) }
     /// Removes the shown repository's index.lock, when a write said it is old (a git that stopped left it).

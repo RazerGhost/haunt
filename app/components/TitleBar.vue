@@ -8,7 +8,7 @@
  * one shown (not a pinned one) and Alt 1 to 9 show the tab at that place (9 the last). With more than one profile, the profile in use is first in the row: a menu to switch, add,
  * rename or delete them (settings.rs keeps each profile's tabs).
  */
-const { info, picking, closed, systemTitleBar, chooseRoot, closeTab, reopenClosed } = useRepositories()
+const { info, picking, gone, closed, systemTitleBar, chooseRoot, closeTab, reopenClosed, showMissing } = useRepositories()
 const dialog = useDialog()
 const failure = useFailure()
 
@@ -84,14 +84,16 @@ const openMenu = computed(() => {
 const { inApp, mac } = useDesktop()
 
 const tabs = computed(() => {
-  const paths = info.value?.tabs ?? []
+  const paths = info.value?.all_tabs ?? []
   const name = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path
   return paths.map((path) => {
     // Two tabs with the same folder name also show the folder they are in.
     const parts = path.split(/[\\/]/).filter(Boolean)
     const label = paths.filter(other => name(other) === name(path)).length > 1 ? parts.slice(-2).join('/') : name(path)
     const look = info.value?.tab_looks[path]
-    return { path, label, active: path === info.value?.root && !picking.value, worktree: info.value?.worktrees.includes(path) ?? false, pinned: !!look?.pinned, color: look?.color ?? '' }
+    const missing = info.value?.missing.includes(path) ?? false
+    const active = gone.value ? path === gone.value : path === info.value?.root && !picking.value
+    return { path, label, missing, active, worktree: info.value?.worktrees.includes(path) ?? false, pinned: !!look?.pinned, color: look?.color ?? '' }
   })
 })
 
@@ -111,6 +113,13 @@ async function setLook(path: string, change: { pinned?: boolean, color?: string 
 
 const toast = useToast()
 function tabMenu(path: string) {
+  // A missing one: where it went, or away.
+  if (info.value?.missing.includes(path)) {
+    return [[
+      { label: t('TitleBar.locate'), icon: 'i-lucide-folder-search', onSelect: () => showMissing(path) },
+      { label: t('common.close'), icon: 'i-lucide-x', onSelect: () => closeTab(path) }
+    ]]
+  }
   const all = info.value?.tabs ?? []
   const at = all.indexOf(path)
   const closeAll = async (paths: string[]) => { for (const other of paths) await closeTab(other) }
@@ -167,16 +176,18 @@ const dragging = ref<string | null>(null)
 async function dropOn(path: string): Promise<void> {
   const moved = dragging.value
   dragging.value = null
-  const all = [...info.value?.tabs ?? []]
+  const all = [...info.value?.all_tabs ?? []]
   if (!moved || moved === path || !all.includes(moved)) return
   all.splice(all.indexOf(moved), 1)
-  all.splice(all.indexOf(path) + (all.indexOf(path) >= (info.value?.tabs ?? []).indexOf(moved) ? 1 : 0), 0, moved)
+  all.splice(all.indexOf(path) + (all.indexOf(path) >= (info.value?.all_tabs ?? []).indexOf(moved) ? 1 : 0), 0, moved)
   try {
     info.value = await haunt.reorderTabs(all)
   } catch { /* the tabs changed meanwhile: they show as they are */ }
 }
 
 function show(path: string): void {
+  if (info.value?.missing.includes(path)) return showMissing(path)
+  gone.value = null
   if (path === info.value?.root) picking.value = false
   else void chooseRoot(path)
 }
@@ -212,13 +223,13 @@ function show(path: string): void {
         <UTooltip :text="tab.pinned ? t('TitleBar.pinnedTitle', { name: tab.label, path: tab.path }) : undefined">
           <button type="button" class="flex min-w-0 flex-1 items-center gap-1.5 text-left" :title="tab.pinned ? undefined : tab.path" :aria-label="tab.pinned ? tab.label : undefined" :aria-current="tab.active ? 'page' : undefined" @click="show(tab.path)" @auxclick.middle="tab.pinned || closeTab(tab.path)">
             <UIcon
-              :name="tab.worktree ? 'i-lucide-git-fork' : 'i-lucide-folder-git-2'"
+              :name="tab.missing ? 'i-lucide-folder-x' : tab.worktree ? 'i-lucide-git-fork' : 'i-lucide-folder-git-2'"
               class="size-3.5 shrink-0"
-              :class="tab.color ? '' : tab.active ? 'text-highlighted' : 'text-dimmed'"
-              :style="tab.color ? { color: SHADES[tab.color] } : undefined"
-              :title="tab.worktree ? t('TitleBar.worktree') : undefined"
+              :class="tab.missing ? 'text-warning' : tab.color ? '' : tab.active ? 'text-highlighted' : 'text-dimmed'"
+              :style="tab.color && !tab.missing ? { color: SHADES[tab.color] } : undefined"
+              :title="tab.missing ? t('TitleBar.missing') : tab.worktree ? t('TitleBar.worktree') : undefined"
             />
-            <span v-if="!tab.pinned" class="truncate">{{ tab.label }}</span>
+            <span v-if="!tab.pinned" class="truncate" :class="{ 'italic opacity-70': tab.missing }">{{ tab.label }}</span>
           </button>
         </UTooltip>
         <UTooltip v-if="!tab.pinned" :text="t('TitleBar.closeTab', { name: tab.label })">
