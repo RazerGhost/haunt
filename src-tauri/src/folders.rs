@@ -243,7 +243,9 @@ mod tests {
             let _ = sender.lock().send(());
         })
         .unwrap();
+        // macOS's FSEvents may still report the folders made just before the watch started: let those pass first.
         std::thread::sleep(Duration::from_millis(200));
+        while receiver.recv_timeout(Duration::from_millis(1500)).is_ok() {}
         // A file is not news; a folder (a clone starting) is.
         std::fs::write(base.join("notes.txt"), "x").unwrap();
         assert!(receiver.recv_timeout(Duration::from_millis(1500)).is_err(), "a file is not a repository");

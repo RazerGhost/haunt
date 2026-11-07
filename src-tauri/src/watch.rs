@@ -379,7 +379,12 @@ pub fn git(folders: &GitFolders, on: impl Fn(Change) + Send + Sync + Clone + 'st
 /// folder came or went in one (a clone, a repository moved or deleted) or a `.git` did (`git init`), not for files.
 pub fn repository_folders(dirs: &[PathBuf], on: impl Fn() + Send + Sync + 'static) -> Option<Watcher> {
     let (first, rest) = dirs.split_first()?;
-    let classify = |path: &Path| {
+    let watched_dirs = dirs.to_vec();
+    let classify = move |path: &Path| {
+        // A watched folder itself (macOS reports a folder whose contents changed, a file too): not news of its own.
+        if watched_dirs.iter().any(|dir| dir == path) {
+            return None;
+        }
         let name = path.file_name()?.to_string_lossy();
         let folder = name == ".git" || path.is_dir() || !path.exists();
         (folder && (name == ".git" || !name.starts_with('.'))).then(|| Change::Scan(name.into_owned()))
