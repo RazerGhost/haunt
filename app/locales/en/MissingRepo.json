@@ -10,5 +10,6 @@
   "removeTitle": "Remove {name}?",
   "removeHelp": "Its tab and recent entry go, with what Haunt kept of it here (bookmarks, pins, what you learned of it). Its folder is not touched. Trust stays in Settings, Trust.",
   "remove": "Remove",
-  "back": "Repositories"
+  "back": "Repositories",
+  "since": "Missing since {since}. If it is still missing on {forget}, Haunt forgets it: its tab, recent entry and what it kept of it go (its trust stays in Settings, Trust)."
 }

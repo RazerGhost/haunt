@@ -28,6 +28,7 @@ haunt-core = { path = "crates/haunt-core" }
 notify = "=8.2.0"
 # Locks that stay usable after a panic in another thread (std's are poisoned for good); in the tree already.
 parking_lot = "=0.12.5"
+sha2 = "=0.10.9"
 notify-debouncer-full = "=0.7.0"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1.0.154", features = ["raw_value"] }

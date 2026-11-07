@@ -10,5 +10,6 @@
   "removeTitle": "{name} verwijderen?",
   "removeHelp": "De tab en het recente item gaan weg, met wat Haunt er hier van bijhield (bladwijzers, pins, wat je ervan leerde). De map zelf blijft onaangeroerd. Vertrouwen blijft in Instellingen, Vertrouwen.",
   "remove": "Verwijderen",
-  "back": "Repository's"
+  "back": "Repository's",
+  "since": "Ontbreekt sinds {since}. Ontbreekt hij op {forget} nog, dan vergeet Haunt hem: de tab, het recente item en wat het ervan bijhield gaan weg (het vertrouwen blijft in Instellingen, Vertrouwen)."
 }

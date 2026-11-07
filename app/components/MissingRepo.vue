@@ -16,6 +16,13 @@ const typed = ref('')
 const problem = ref('')
 const busy = ref(false)
 const inTab = computed(() => info.value?.all_tabs.includes(props.path) ?? false)
+/** Since when it is missing, and when Haunt forgets it if it stays missing (missing.rs). */
+const since = computed(() => {
+  const at = info.value?.missing_since[props.path]
+  if (at === undefined || !info.value) return null
+  const day = (seconds: number) => new Date(seconds * 1000).toLocaleDateString(locale(), { dateStyle: 'medium' })
+  return { since: day(at), forget: day(at + info.value.forget_after) }
+})
 
 async function locateAt(folder: string): Promise<void> {
   if (!folder.trim()) return
@@ -54,6 +61,7 @@ async function remove(): Promise<void> {
       </div>
       <p class="text-sm text-default">{{ t('MissingRepo.help') }}</p>
       <p class="text-sm text-muted">{{ t('MissingRepo.waits') }}</p>
+      <p v-if="since" class="text-sm text-muted">{{ t('MissingRepo.since', since) }}</p>
       <UInput v-if="!inApp" v-model="typed" :placeholder="t('MissingRepo.typedPlaceholder')" size="sm" @keydown.enter="locate" />
       <div class="flex flex-wrap gap-2">
         <UButton icon="i-lucide-folder-search" :label="t('MissingRepo.locate')" :loading="busy" @click="locate" />

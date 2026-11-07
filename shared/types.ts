@@ -143,6 +143,7 @@ export type ScanEvent =
   | { type: 'folders' }
   | { type: 'tabs' }
   | { type: 'missing', root: string }
+  | { type: 'forgotten' }
   /** The desktop's light or dark, accent or window buttons changed (desktop.rs, Linux). */
   | { type: 'desktop', desktop: DesktopLook }
   /** theme.json changed, or stopped reading (theme_file.rs); its fields are app/bindings.ts `ThemeFileState`. */

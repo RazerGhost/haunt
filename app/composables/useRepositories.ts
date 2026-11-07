@@ -44,6 +44,13 @@ const closed = ref<string[]>([])
 /** Where each tab was (its screen and what was selected), so going back to a tab goes back there. */
 const tabRoutes = usePersisted<Record<string, string>>('tab-routes', {}, value => !!value && typeof value === 'object' && !Array.isArray(value))
 
+/** Repositories Haunt forgot (missing for long, missing.rs): what the window keeps of them goes too. */
+async function forgetForgotten(): Promise<void> {
+  try {
+    for (const path of await haunt.takeForgotten()) movePersisted(path, null)
+  } catch { /* asked again at the next news */ }
+}
+
 async function loadInfo(): Promise<void> {
   try {
     info.value = await haunt.info()
@@ -59,6 +66,10 @@ export async function startRepositories(): Promise<void> {
     if (news.type === 'root' || news.type === 'trust' || news.type === 'tabs') void loadInfo()
     // Its folder came back and it is shown again.
     if (news.type === 'root' && news.root !== null && news.root === gone.value) gone.value = null
+    if (news.type === 'forgotten') {
+      void forgetForgotten()
+      void loadInfo()
+    }
     if (news.type === 'missing') {
       gone.value = news.root
       void loadInfo()
@@ -81,6 +92,7 @@ export async function startRepositories(): Promise<void> {
     transparent.value = started.transparent
   } catch { /* said again on the first call */ }
   await loadInfo()
+  void forgetForgotten()
   // Back in the window: what git did meanwhile that the watchers missed (a drive's files, a network share) comes as
   // the usual news, only for the parts that changed.
   window.addEventListener('focus', () => {
@@ -167,11 +179,10 @@ export function useRepositories() {
     }
   }
 
-  /** Takes a missing repository away: its tab, its recent entry, and what the window keeps of it. */
+  /** Takes a missing repository away: its tab, recent entries, look and saved call graph, and what the window keeps. */
   async function forgetMissing(path: string): Promise<void> {
     try {
-      if (info.value?.all_tabs.includes(path)) info.value = await haunt.close(path)
-      if (info.value?.all_recent.includes(path)) info.value = await haunt.forgetRecent(path)
+      info.value = await haunt.forgetRepo(path)
       movePersisted(path, null)
       gone.value = null
       if (!info.value?.root) picking.value = true

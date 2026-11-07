@@ -13,6 +13,12 @@ export const commands = {
 	recheck: (repo: string) => __TAURI_INVOKE<null>("recheck", { repo }),
 	/**  A tab or recent repository whose folder is missing is at `path` now: everything of it moves there. */
 	relocate: (old: string, path: string) => __TAURI_INVOKE<RootInfo>("relocate", { old, path }),
+	/**  Takes a missing repository away for good: its tab, recent entries, look and saved call graph. */
+	forgetRepo: (path: string) => __TAURI_INVOKE<RootInfo>("forget_repo", { path }),
+	/**  Repositories Haunt forgot (missing for long) since last asked: the window forgets what it keeps of them. */
+	takeForgotten: () => __TAURI_INVOKE<string[]>("take_forgotten"),
+	/**  Stops trusting every trusted folder that is missing, or that is another folder now. */
+	forgetStaleTrust: () => __TAURI_INVOKE<AppSettings>("forget_stale_trust"),
 	/**  While the repository manager is open: its folders are watched for new and removed repositories. */
 	watchRepositoryFolders: (on: boolean) => __TAURI_INVOKE<null>("watch_repository_folders", { on }),
 	/**  Removes the shown repository's index.lock, when a write said it is old (a git that stopped left it). */
@@ -1372,6 +1378,9 @@ export type RootInfo = {
 	all_recent: string[],
 	/**  The tabs and recent repositories whose folder is missing (moved, deleted, a drive not connected). */
 	missing: string[],
+	/**  When each missing one was first seen missing, in seconds since 1970; forgotten `forget_after` seconds later. */
+	missing_since: { [key in string]: number },
+	forget_after: number,
 	trusted: boolean,
 	/**  What the folder would run if trusted; empty when it has nothing to run. */
 	wants: Wanted[],
@@ -1564,6 +1573,8 @@ export type TrustedFolder = {
 	path: string,
 	/**  The folder is not there now (an unplugged drive, a deleted checkout). */
 	missing: boolean,
+	/**  Another folder is at its path now (made after it was trusted): it is not trusted until trusted again. */
+	replaced: boolean,
 };
 
 /**  Code of a folder that Haunt runs only once the folder is trusted. */

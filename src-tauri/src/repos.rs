@@ -52,6 +52,9 @@ pub struct RootInfo {
     pub all_recent: Vec<String>,
     /// The tabs and recent repositories whose folder is missing (moved, deleted, a drive not connected).
     pub missing: Vec<String>,
+    /// When each missing one was first seen missing, in seconds since 1970; forgotten `forget_after` seconds later.
+    pub missing_since: HashMap<String, u32>,
+    pub forget_after: u32,
     pub trusted: bool,
     /// What the folder would run if trusted; empty when it has nothing to run.
     pub wants: Vec<Wanted>,
@@ -211,6 +214,14 @@ impl Repos {
             recent,
             all_tabs: inner.settings.tabs.clone(),
             all_recent: inner.settings.recent.clone(),
+            missing_since: inner
+                .settings
+                .missing_since
+                .iter()
+                .filter(|(path, _)| missing.contains(path))
+                .map(|(path, since)| (path.clone(), u32::try_from(*since).unwrap_or(u32::MAX)))
+                .collect(),
+            forget_after: missing::FORGET_AFTER as u32,
             missing,
             trusted: root.as_deref().is_some_and(|root| inner.settings.trusts(root)),
             wants: Vec::new(),

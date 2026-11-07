@@ -245,6 +245,11 @@ pub struct Settings {
     pub tab_looks: HashMap<String, TabLook>,
     /// The folders the repository manager looks through for repositories, for every profile.
     pub repository_folders: Vec<String>,
+    /// When each tab or recent repository whose folder is missing was first seen missing, in seconds since 1970: one
+    /// missing for `FORGET_AFTER` is forgotten (missing.rs).
+    pub missing_since: HashMap<String, u64>,
+    /// Repositories forgotten while the window was not told yet: it forgets what it keeps of them (bookmarks, pins…).
+    pub forgotten: Vec<String>,
 }
 
 /// An editor's or terminal's command line as kept: trimmed, one line, at most 500 characters; None when it is not.
@@ -339,7 +344,15 @@ impl Settings {
             terminal_command: tool_command(&read.terminal_command).unwrap_or_default(),
             tab_looks,
             repository_folders,
+            missing_since: read
+                .missing_since
+                .into_iter()
+                .filter_map(|(path, since)| kept(&path).map(|path| (path, since)))
+                .collect(),
+            forgotten: read.forgotten.iter().filter_map(|path| kept(path)).collect(),
         };
+        let known: Vec<String> = settings.missing_since.keys().filter(|path| settings.knows(path)).cloned().collect();
+        settings.missing_since.retain(|path, _| known.contains(path));
         settings.pinned_first();
         settings
     }
@@ -434,6 +447,68 @@ impl Settings {
     /// Takes `root` off the recent list (its folder stays where it is).
     pub fn forget_recent(&mut self, root: &str) {
         self.recent.retain(|recent| recent != root);
+    }
+
+    /// Whether `path` is a tab, a recent repository or the one shown, in any profile.
+    pub fn knows(&self, path: &str) -> bool {
+        let named = |root: &Option<String>, tabs: &[String], recent: &[String]| {
+            root.as_deref() == Some(path) || tabs.iter().chain(recent).any(|known| known == path)
+        };
+        named(&self.root, &self.tabs, &self.recent)
+            || self.profiles.iter().any(|profile| named(&profile.root, &profile.tabs, &profile.recent))
+    }
+
+    /// Takes note of which tabs and recent repositories are `missing` now (`now`, in seconds): one newly missing from
+    /// now; one whose folder is `there` again, or that is no longer listed, no longer. (Another profile's are not looked
+    /// at each time, so they keep their time.) True when that changed anything.
+    pub fn note_missing(&mut self, missing: &[String], now: u64, there: impl Fn(&str) -> bool) -> bool {
+        let before = self.missing_since.len();
+        let back: Vec<String> = self
+            .missing_since
+            .keys()
+            .filter(|path| !missing.contains(path) && (there(path) || !self.knows(path)))
+            .cloned()
+            .collect();
+        for path in &back {
+            self.missing_since.remove(path);
+        }
+        for path in missing {
+            self.missing_since.entry(path.clone()).or_insert(now);
+        }
+        !back.is_empty() || self.missing_since.len() != before
+    }
+
+    /// The repositories missing for `after` seconds or more by `now`.
+    pub fn long_missing(&self, now: u64, after: u64) -> Vec<String> {
+        let mut long: Vec<String> = self
+            .missing_since
+            .iter()
+            .filter(|(_, since)| now.saturating_sub(**since) >= after)
+            .map(|(path, _)| path.clone())
+            .collect();
+        long.sort();
+        long
+    }
+
+    /// Forgets a repository: its tabs and recent entries in every profile, its look, when it went missing; the one
+    /// shown when it was that one becomes the first tab. `tell` keeps it for the window to forget its own data too.
+    pub fn forget_repo(&mut self, path: &str, tell: bool) {
+        let drop = |root: &mut Option<String>, tabs: &mut Vec<String>, recent: &mut Vec<String>| {
+            tabs.retain(|tab| tab != path);
+            recent.retain(|known| known != path);
+            if root.as_deref() == Some(path) {
+                *root = tabs.first().cloned();
+            }
+        };
+        drop(&mut self.root, &mut self.tabs, &mut self.recent);
+        for profile in &mut self.profiles {
+            drop(&mut profile.root, &mut profile.tabs, &mut profile.recent);
+        }
+        self.tab_looks.remove(path);
+        self.missing_since.remove(path);
+        if tell && !self.forgotten.iter().any(|known| known == path) {
+            self.forgotten.push(path.to_owned());
+        }
     }
 
     /// Adds a folder for the repository manager to look through; an existing folder only, once.
@@ -595,6 +670,7 @@ impl Settings {
         if let Some(look) = self.tab_looks.remove(old) {
             self.tab_looks.entry(new.to_owned()).or_insert(look);
         }
+        self.missing_since.remove(old);
         // Trust goes with the folder you said it went to, marked as the folder there now.
         if self.trusted.iter().any(|path| path == old) {
             self.set_trust(old, false);
@@ -816,6 +892,39 @@ mod tests {
         settings.relocate("Z:/other", "/a");
         assert_eq!(settings.tabs, [new.clone(), "/a".to_owned()]);
         let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_repository_missing_for_long_is_forgotten_everywhere() {
+        let mut settings = Settings {
+            profile: FIRST_PROFILE.into(),
+            root: Some("/gone".into()),
+            tabs: vec!["/gone".into(), "/here".into()],
+            recent: vec!["/gone".into()],
+            tab_looks: HashMap::from([("/gone".to_owned(), TabLook { pinned: true, color: String::new() })]),
+            profiles: vec![Profile { name: "Work".into(), tabs: vec!["/gone".into()], ..Profile::default() }],
+            ..Settings::default()
+        };
+        let there = |path: &str| path == "/here";
+        assert!(settings.note_missing(&["/gone".to_owned()], 100, there));
+        assert!(!settings.note_missing(&["/gone".to_owned()], 200, there), "the first time it was missing is kept");
+        assert!(settings.long_missing(150, 100).is_empty());
+        assert_eq!(settings.long_missing(200, 100), ["/gone"]);
+        // Not looked at in this profile (another profile's tab): kept, as its folder is not back.
+        assert!(!settings.note_missing(&[], 300, there));
+        assert_eq!(settings.missing_since.get("/gone"), Some(&100));
+        settings.forget_repo("/gone", true);
+        assert_eq!(settings.tabs, ["/here"]);
+        assert!(settings.recent.is_empty());
+        assert_eq!(settings.root.as_deref(), Some("/here"));
+        assert!(settings.profiles[0].tabs.is_empty());
+        assert!(settings.tab_looks.is_empty() && settings.missing_since.is_empty());
+        assert_eq!(settings.forgotten, ["/gone"]);
+        // Back before it was forgotten: no longer missing.
+        settings.tabs.push("/back".into());
+        settings.note_missing(&["/back".to_owned()], 400, |_| false);
+        assert!(settings.note_missing(&[], 500, |_| true));
+        assert!(settings.missing_since.is_empty());
     }
 
     #[test]

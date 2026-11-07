@@ -139,6 +139,12 @@ commands! {
     fn recheck(api, repo: String) -> () { api.repos.recheck(&repo) }
     /// A tab or recent repository whose folder is missing is at `path` now: everything of it moves there.
     fn relocate(api, old: String, path: String) -> RootInfo { api.repos.relocate(&old, &path) }
+    /// Takes a missing repository away for good: its tab, recent entries, look and saved call graph.
+    fn forget_repo(api, path: String) -> RootInfo { Ok(api.repos.forget_repo(&path)) }
+    /// Repositories Haunt forgot (missing for long) since last asked: the window forgets what it keeps of them.
+    fn take_forgotten(api) -> Vec<String> { Ok(api.repos.take_forgotten()) }
+    /// Stops trusting every trusted folder that is missing, or that is another folder now.
+    fn forget_stale_trust(api) -> AppSettings { Ok(api.repos.forget_stale_trust()) }
     /// While the repository manager is open: its folders are watched for new and removed repositories.
     fn watch_repository_folders(api, on: bool) -> () { api.repos.watch_repository_folders(on); Ok(()) }
     /// Removes the shown repository's index.lock, when a write said it is old (a git that stopped left it).

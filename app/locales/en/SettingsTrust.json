@@ -3,5 +3,9 @@
   "intro": "A trusted folder may run its own code: TypeScript and architecture scripts when scanning, git hooks and filters when writing. Pull and push need trust.",
   "none": "No folder is trusted.",
   "notFound": "Not found",
-  "stop": "Stop trusting"
+  "stop": "Stop trusting",
+  "replaced": "Another folder",
+  "replacedHelp": "A different folder is at this path now (made after it was trusted), so it is not trusted.",
+  "forgetStale": "Forget missing and replaced ({count})",
+  "forgetStaleHelp": "Stops trusting the folders that are not there, or are another folder now."
 }

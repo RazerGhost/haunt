@@ -37,6 +37,8 @@ pub struct TrustedFolder {
     pub path: String,
     /// The folder is not there now (an unplugged drive, a deleted checkout).
     pub missing: bool,
+    /// Another folder is at its path now (made after it was trusted): it is not trusted until trusted again.
+    pub replaced: bool,
 }
 
 /// Where Haunt keeps its files; null where there is none (the logs while Haunt is worked on).
@@ -74,7 +76,10 @@ impl Repos {
                 .settings
                 .trusted
                 .iter()
-                .map(|path| TrustedFolder { path: path.clone(), missing: !Path::new(path).is_dir() })
+                .map(|path| {
+                    let missing = !Path::new(path).is_dir();
+                    TrustedFolder { path: path.clone(), missing, replaced: !missing && !inner.settings.trusts(path) }
+                })
                 .collect(),
             version: env!("CARGO_PKG_VERSION").into(),
             folders: AppFolders {

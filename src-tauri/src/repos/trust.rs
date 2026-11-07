@@ -81,6 +81,21 @@ impl Repos {
         self.app_settings()
     }
 
+    /// Stops trusting every trusted folder that is missing or is another folder now (Settings, Trust).
+    pub fn forget_stale_trust(&self) -> AppSettings {
+        let stale: Vec<String> = self
+            .app_settings()
+            .trusted
+            .into_iter()
+            .filter(|folder| folder.missing || folder.replaced)
+            .map(|folder| folder.path)
+            .collect();
+        for path in &stale {
+            self.forget_trust(path);
+        }
+        self.app_settings()
+    }
+
     /// Whether the shown repository's own code may run (its hooks and filters, for writing); refused for another one.
     pub fn trusted(&self, repo: &str) -> Result<bool, String> {
         let inner = self.inner.lock();

@@ -3,5 +3,9 @@
   "intro": "Een vertrouwde map mag zijn eigen code draaien: TypeScript en architectuurscripts bij het scannen, git hooks en filters bij het schrijven. Pull en push vragen om vertrouwen.",
   "none": "Er is geen map vertrouwd.",
   "notFound": "Niet gevonden",
-  "stop": "Niet meer vertrouwen"
+  "stop": "Niet meer vertrouwen",
+  "replaced": "Andere map",
+  "replacedHelp": "Op dit pad staat nu een andere map (gemaakt na het vertrouwen), dus die wordt niet vertrouwd.",
+  "forgetStale": "Ontbrekende en vervangen vergeten ({count})",
+  "forgetStaleHelp": "Stopt met het vertrouwen van mappen die er niet zijn, of nu een andere map zijn."
 }
