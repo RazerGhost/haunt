@@ -6,5 +6,8 @@
   "trusted": "This folder is trusted",
   "tryNow": "Try again now.",
   "fallback": "Git could not do that.",
-  "trustAction": "Trust this folder…"
+  "trustAction": "Trust this folder…",
+  "removeLock": "Remove lock",
+  "lockRemoved": "The lock is removed",
+  "lockNotRemoved": "Lock not removed"
 }

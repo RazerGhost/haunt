@@ -10,7 +10,7 @@ use serde_json::json;
 use super::{git_dir, Inner, Kept, Reply, Repos, Shown, KEPT, RUNNING};
 use crate::paths;
 use crate::sidecar::{Said, Shape, Sidecar};
-use crate::watch::{self, Change, GitPart};
+use crate::watch::{self, Change, GitFolders, GitPart};
 
 impl Repos {
     /// The shown repository's scanner, as the generation it was started as.
@@ -149,7 +149,7 @@ impl Repos {
         let scanner = kept.and_then(|kept| kept.scanner.take()).filter(|(sidecar, _)| sidecar.running());
         let base = PathBuf::from(root);
         let on = self.handler(root);
-        let git_dir = git_dir(root);
+        let git = git_dir(root).map(GitFolders::of);
         let (sidecar, generation) = match scanner {
             Some((sidecar, generation)) => (Some(sidecar), generation),
             None => (None, 0),
@@ -163,7 +163,9 @@ impl Repos {
             watch_root: watch::root(&base, on.clone()),
             watch_folders: Vec::new(),
             watching: Vec::new(),
-            watch_git: git_dir.map(|dir| watch::git(&dir, on.clone())).unwrap_or_default(),
+            watch_git: git.as_ref().map(|git| watch::git(git, on.clone())).unwrap_or_default(),
+            stamps: git.as_ref().map(|git| git.stamps(&base)).unwrap_or_default(),
+            git,
             #[cfg(debug_assertions)]
             watch_sidecar: self.context.script.parent().and_then(|dir| watch::sidecar(dir, on.clone())),
         });
@@ -177,6 +179,64 @@ impl Repos {
         if let Some(shape) = inner.shown.as_ref().and_then(|shown| shown.code.shape.clone()) {
             self.watch_folders(inner, &shape, false);
         }
+    }
+
+    /// Looks for what changed in git while the watchers did not see it (the window gets the focus again): the parts
+    /// whose files changed since the last news are news. A git folder that came, went or moved is watched again.
+    pub fn recheck(&self, repo: &str) -> Result<(), String> {
+        let mut inner = self.inner.lock();
+        self.check(&inner, repo)?;
+        let found = git_dir(repo).map(GitFolders::of);
+        let Some(shown) = inner.shown.as_mut() else { return Ok(()) };
+        if found != shown.git {
+            self.rearm_git(&mut inner);
+            return Ok(());
+        }
+        let Some(git) = &shown.git else { return Ok(()) };
+        let stamps = git.stamps(Path::new(repo));
+        let before = std::mem::replace(&mut shown.stamps, stamps);
+        if before[4] != stamps[4] {
+            self.all_of_git(repo);
+            return Ok(());
+        }
+        let parts: Vec<&str> = GitPart::ALL
+            .iter()
+            .zip(before.iter().zip(&stamps))
+            .filter(|(_, (before, now))| before != now)
+            .map(|(part, _)| part.name())
+            .collect();
+        if !parts.is_empty() {
+            self.events.send(Some(repo), json!({ "type": "git", "parts": parts }));
+        }
+        Ok(())
+    }
+
+    /// The shown repository's git folder came, went or moved (`git init` in it): watched again, and all of git is news.
+    fn rearm_git(&self, inner: &mut Inner) {
+        let Some(root) = inner.shown.as_ref().map(|shown| shown.root.clone()) else { return };
+        let on = self.handler(&root);
+        let git = git_dir(&root).map(GitFolders::of);
+        let Some(shown) = inner.shown.as_mut() else { return };
+        shown.watch_git = git.as_ref().map(|git| watch::git(git, on)).unwrap_or_default();
+        shown.stamps = git.as_ref().map(|git| git.stamps(Path::new(&root))).unwrap_or_default();
+        shown.git = git;
+        self.all_of_git(&root);
+    }
+
+    /// Takes note of how git looks now, after the watchers told of a change, so the focus does not tell of it again.
+    fn restamp(&self, inner: &mut Inner) {
+        if let Some(shown) = inner.shown.as_mut() {
+            if let Some(git) = &shown.git {
+                shown.stamps = git.stamps(Path::new(&shown.root));
+            }
+        }
+    }
+
+    /// Every part of git is news, its config read again first.
+    fn all_of_git(&self, root: &str) {
+        crate::git::forget_config(root);
+        let parts: Vec<&str> = GitPart::ALL.iter().map(|part| part.name()).collect();
+        self.events.send(Some(root), json!({ "type": "git", "parts": parts }));
     }
 
     /// What a file change in the shown repository asks for.
@@ -198,12 +258,13 @@ impl Repos {
                     repos.scan(&mut inner, &folder);
                 }
                 Change::Restart(reason) => repos.restart(&mut inner, &reason),
+                Change::GitFolder => repos.rearm_git(&mut inner),
                 Change::GitConfig => {
-                    crate::git::forget_config(&root);
-                    let parts: Vec<&str> = GitPart::ALL.iter().map(|part| part.name()).collect();
-                    repos.events.send(Some(&root), json!({ "type": "git", "parts": parts }));
+                    repos.restamp(&mut inner);
+                    repos.all_of_git(&root);
                 }
                 Change::Git(parts) => {
+                    repos.restamp(&mut inner);
                     let parts: Vec<&str> = parts.iter().map(|part| part.name()).collect();
                     if !repos.just_announced(&root, &parts) {
                         repos.events.send(Some(&root), json!({ "type": "git", "parts": parts }));

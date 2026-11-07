@@ -439,4 +439,14 @@ fn lists_submodules_and_updates_them_only_when_trusted() {
     assert_eq!(crate::git::submodules(&r.root).unwrap()[0].state, crate::git::submodules::SubmoduleState::Moved);
     Writer::new(&r.root, true).update_submodules(&["libs/lib".into()], &quiet).unwrap();
     assert_eq!(crate::git::submodules(&r.root).unwrap()[0].state, crate::git::submodules::SubmoduleState::Current);
+    assert!(!crate::git::submodules(&r.root).unwrap()[0].url_changed);
+
+    // Its address changed in .gitmodules (the library moved): said, and synced only when trusted.
+    let moved = format!("{lib_path}-moved");
+    r.sh(&["config", "-f", ".gitmodules", "submodule.libs/lib.url", &moved]);
+    assert!(crate::git::submodules(&r.root).unwrap()[0].url_changed);
+    assert!(Writer::new(&r.root, false).sync_submodules(&[]).unwrap_err().contains("trusted"));
+    Writer::new(&r.root, true).sync_submodules(&["libs/lib".into()]).unwrap();
+    assert!(!crate::git::submodules(&r.root).unwrap()[0].url_changed);
+    assert_eq!(r.sh(&["config", "--local", "submodule.libs/lib.url"]).trim(), moved);
 }

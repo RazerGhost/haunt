@@ -25,7 +25,7 @@ use crate::paths;
 use crate::settings::Settings;
 use crate::sidecar::{Shape, Sidecar};
 use crate::startup::Runtime;
-use crate::watch::Watcher;
+use crate::watch::{GitFolders, Watcher};
 
 pub use recent::{check_folder, FolderCheck, RecentRepo};
 pub use settings::{AppFolder, AppSettings};
@@ -96,6 +96,10 @@ struct Shown {
     watching: Vec<String>,
     #[allow(dead_code)]
     watch_git: Vec<Watcher>,
+    /// Its git folders, while it is in a repository, and what each part of git looked like when last told
+    /// (`GitFolders::stamps`): a part that changed unseen by the watchers is news when the window gets the focus.
+    git: Option<GitFolders>,
+    stamps: [u64; 5],
     #[cfg(debug_assertions)]
     #[allow(dead_code)]
     watch_sidecar: Option<Watcher>,
@@ -129,6 +133,9 @@ pub struct Repos {
     recent: recent::Remembered,
     /// The repository folders as last searched (folders.rs), served at once and searched again in the background.
     folders: crate::folders::Searched,
+    /// Some while the repository manager is open, with the repository folders' watcher (none while there is no folder
+    /// to watch) (recent.rs).
+    folder_watch: Mutex<Option<Option<Watcher>>>,
     me: Weak<Repos>,
 }
 
@@ -143,6 +150,7 @@ impl Repos {
             announced: Mutex::default(),
             recent: recent::Remembered::default(),
             folders: crate::folders::Searched::default(),
+            folder_watch: Mutex::new(None),
             me: me.clone(),
         })
     }

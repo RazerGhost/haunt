@@ -21,5 +21,9 @@
   "uncommittedHelp": "{said} Verwijderen gooit ze voorgoed weg.",
   "removeAnyway": "Verwijderen met wijzigingen",
   "notPruned": "Niet opgeruimd",
-  "notPrunedHelp": "Git kon ze niet opruimen."
+  "notPrunedHelp": "Git kon ze niet opruimen.",
+  "repaired": "De worktrees zijn hersteld",
+  "notRepaired": "Niet hersteld",
+  "notRepairedHelp": "Git kon ze niet herstellen (git worktree repair vraagt git 2.29 of nieuwer).",
+  "locateTitle": "Waar staat de worktree van {name} nu?"
 }

@@ -34,6 +34,9 @@ pub struct Submodule {
     /// The commit checked out in its folder, when it is.
     pub checked_out: Option<String>,
     pub state: SubmoduleState,
+    /// `.gitmodules` gives another address than the one this clone uses (it changed since): `sync_submodules` takes
+    /// the new one.
+    pub url_changed: bool,
 }
 
 /// The submodules of `root`, by path.
@@ -55,6 +58,14 @@ pub fn submodules(root: &str) -> Result<Vec<Submodule>, String> {
                 slot.1 = value.to_owned();
             }
         }
+    }
+    // The addresses this clone uses, in its own config (set when each was first cloned, or synced since).
+    let mut used: HashMap<String, String> = HashMap::new();
+    let config = git(root, &["config", "--local", "-z", "--get-regexp", r"^submodule\..*\.url$"]).unwrap_or_default();
+    for entry in config.split('\0').filter(|entry| !entry.is_empty()) {
+        let Some((key, value)) = entry.split_once('\n') else { continue };
+        let Some(name) = key.strip_prefix("submodule.").and_then(|rest| rest.strip_suffix(".url")) else { continue };
+        used.insert(name.to_owned(), value.to_owned());
     }
     let mut out = Vec::new();
     for entry in listing.split('\0') {
@@ -83,7 +94,10 @@ pub fn submodules(root: &str) -> Result<Vec<Submodule>, String> {
             Some(sha) if *sha == recorded => SubmoduleState::Current,
             Some(_) => SubmoduleState::Moved,
         };
-        out.push(Submodule { path: path.to_owned(), name, url, recorded, checked_out, state });
+        // A relative address (../other.git) is kept resolved in the config: not compared.
+        let relative = url.starts_with("./") || url.starts_with("../");
+        let url_changed = !relative && used.get(&name).is_some_and(|used| *used != url);
+        out.push(Submodule { path: path.to_owned(), name, url, recorded, checked_out, state, url_changed });
     }
     out.sort_by(|a, b| a.path.cmp(&b.path));
     Ok(out)

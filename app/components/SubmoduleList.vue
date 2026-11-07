@@ -5,7 +5,8 @@ import type { Submodule } from '~/bindings'
  * The sidebar's submodules (src-tauri/crates/haunt-core/src/git/submodules.rs): other repositories this one has at a
  * fixed commit. Each shows whether it is checked out at that commit, at another, or not at all; click one to open it in
  * its own tab, and Update checks them out at the recorded commits, cloning the missing ones (only in a trusted folder:
- * it clones from the addresses in .gitmodules). Shown only when there are any.
+ * it clones from the addresses in .gitmodules). One whose address changed in .gitmodules is marked, and Sync address
+ * takes the new one (asking to trust the folder first, as Update does). Shown only when there are any.
  */
 const { repo, info, gitChanged, chooseRoot } = useRepositories()
 const network = useNetwork()
@@ -46,10 +47,21 @@ async function update(paths: string[]): Promise<void> {
     failure.failed(t('SubmoduleList.notUpdated'), error)
   }
 }
+async function sync(paths: string[]): Promise<void> {
+  const at = repo.value
+  if (!at || !(await failure.trustFirst())) return
+  try {
+    await haunt.syncSubmodules(at, paths)
+    await load()
+  } catch (error) {
+    failure.failed(t('SubmoduleList.notSynced'), error)
+  }
+}
 function menu(item: Submodule) {
   return [[
     { label: t('SubmoduleList.open'), icon: 'i-lucide-folder-git-2', disabled: item.state === 'missing', onSelect: () => chooseRoot(folderOf(item)) },
-    { label: item.state === 'missing' ? t('SubmoduleList.clone') : t('SubmoduleList.checkOut'), icon: 'i-lucide-refresh-cw', disabled: item.state === 'current', onSelect: () => update([item.path]) }
+    { label: item.state === 'missing' ? t('SubmoduleList.clone') : t('SubmoduleList.checkOut'), icon: 'i-lucide-refresh-cw', disabled: item.state === 'current', onSelect: () => update([item.path]) },
+    ...item.urlChanged ? [{ label: t('SubmoduleList.sync'), icon: 'i-lucide-link', onSelect: () => sync([item.path]) }] : []
   ], [
     { label: t('SubmoduleList.copyAddress'), icon: 'i-lucide-copy', disabled: !item.url, onSelect: () => navigator.clipboard?.writeText(item.url) }
   ]]
@@ -73,11 +85,12 @@ function menu(item: Submodule) {
           <button
             type="button"
             class="flex w-full items-center gap-1.5 rounded py-1 pr-2 pl-5 text-left text-ui hover:bg-elevated"
-            :title="`${item.path}: ${t(`SubmoduleList.state.${item.state}`)}${item.url ? `\n${t('SubmoduleList.from', { url: item.url })}` : ''}`"
+            :title="`${item.path}: ${t(`SubmoduleList.state.${item.state}`)}${item.url ? `\n${t('SubmoduleList.from', { url: item.url })}` : ''}${item.urlChanged ? `\n${t('SubmoduleList.urlChangedHelp')}` : ''}`"
             @click="item.state === 'missing' ? update([item.path]) : chooseRoot(folderOf(item))"
           >
             <UIcon :name="STATE[item.state].icon" class="size-3.5 shrink-0" :class="item.state === 'current' ? 'text-dimmed' : 'text-warning'" />
             <span class="min-w-0 flex-1 truncate">{{ item.path }}</span>
+            <span v-if="item.urlChanged" class="text-label text-warning">{{ t('SubmoduleList.urlChanged') }}</span>
             <span v-if="item.state !== 'current'" class="text-label text-warning">{{ item.state === 'missing' ? t('SubmoduleList.notThere') : t('SubmoduleList.moved') }}</span>
           </button>
         </UContextMenu>

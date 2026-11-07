@@ -22,5 +22,6 @@
   "noBranch": "Er is geen branch {name}.",
   "forwardCurrent": "{name} is de branch waar je op staat: pull die in plaats daarvan.",
   "forwardNoUpstream": "{name} volgt geen remote branch.",
-  "forwardApart": "{name} en {remote}/{branch} zijn uit elkaar gegaan, dus {name} is gelaten zoals hij was. Schakel ernaar over en pull om te mergen of te rebasen."
+  "forwardApart": "{name} en {remote}/{branch} zijn uit elkaar gegaan, dus {name} is gelaten zoals hij was. Schakel ernaar over en pull om te mergen of te rebasen.",
+  "syncUntrusted": "Submodules synchroniseren neemt de adressen uit de .gitmodules van deze repository over, waar git later van fetcht, dus dat gebeurt alleen in een vertrouwde map. Vertrouw deze map om ze te synchroniseren."
 }

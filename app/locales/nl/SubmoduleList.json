@@ -15,5 +15,9 @@
   },
   "from": "Van {url}",
   "notThere": "ontbreekt",
-  "moved": "verplaatst"
+  "moved": "verplaatst",
+  "sync": "Adres synchroniseren",
+  "notSynced": "Het adres van de submodule is niet gesynchroniseerd",
+  "urlChanged": "nieuw adres",
+  "urlChangedHelp": ".gitmodules geeft een nieuw adres: Adres synchroniseren om het te gebruiken"
 }

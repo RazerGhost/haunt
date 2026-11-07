@@ -1,14 +1,15 @@
 /*
  * A toast for what went wrong, in git's words, with what helps next: Copy (to paste it somewhere), and, when the
  * write was refused because the folder is not trusted, Trust this folder (asked first, saying what trusting means),
- * instead of finding the shield in the toolbar. `trustFirst` asks the same before an action that needs a trusted folder
+ * instead of finding the shield in the toolbar; when a write found an old .git/index.lock (a git that stopped left it),
+ * Remove lock. `trustFirst` asks the same before an action that needs a trusted folder
  * (pull, push, updating submodules, running tests), so those stay clickable in a folder not trusted yet. It stays until closed or acted on, and the same failure again does not
  * add a second copy (its id is its words). Every command is also in Activity, in Local changes.
  */
 export function useFailure() {
   const toast = useToast()
   const dialog = useDialog()
-  const { info, setTrust } = useRepositories()
+  const { info, repo, setTrust } = useRepositories()
 
   /** Whether the folder is trusted now: at once when it was, else after asking (false when declined or it failed). */
   async function trustFirst(): Promise<boolean> {
@@ -28,9 +29,24 @@ export function useFailure() {
     if (await trustFirst()) toast.add({ title: t('composables.useFailure.trusted'), description: t('composables.useFailure.tryNow'), icon: 'i-lucide-shield-check' })
   }
 
-  function show(title: string, description: string, untrusted: boolean): void {
+  /** Removes the old .git/index.lock a write failed on; true when it is gone. `id`: the failure's toast, closed then. */
+  async function removeLock(id?: string): Promise<boolean> {
+    if (!repo.value) return false
+    try {
+      await haunt.removeStaleLock(repo.value)
+      if (id) toast.remove(id)
+      toast.add({ title: t('composables.useFailure.lockRemoved'), description: t('composables.useFailure.tryNow'), icon: 'i-lucide-lock-open' })
+      return true
+    } catch (error) {
+      failed(t('composables.useFailure.lockNotRemoved'), error)
+      return false
+    }
+  }
+
+  function show(title: string, description: string, untrusted: boolean, staleLock = false): void {
+    const id = `failure\n${title}\n${description}`
     toast.add({
-      id: `failure\n${title}\n${description}`,
+      id,
       title,
       description,
       color: 'error',
@@ -39,6 +55,7 @@ export function useFailure() {
       close: false,
       actions: [
         ...untrusted ? [{ label: t('composables.useFailure.trustAction'), color: 'neutral' as const, variant: 'outline' as const, onClick: () => { void trust() } }] : [],
+        ...staleLock ? [{ label: t('composables.useFailure.removeLock'), icon: 'i-lucide-lock-open', color: 'neutral' as const, variant: 'outline' as const, closeOnClick: false, onClick: () => { void removeLock(id) } }] : [],
         { label: t('common.copy'), icon: 'i-lucide-copy', color: 'neutral' as const, variant: 'ghost' as const, closeOnClick: false, onClick: () => { void navigator.clipboard?.writeText(`${title}\n${description}`) } },
         { label: t('common.close'), color: 'neutral' as const, variant: 'ghost' as const }
       ]
@@ -48,8 +65,8 @@ export function useFailure() {
   /** Shows `error` (or `fallback` when it says nothing) under `title`. */
   function failed(title: string, error: unknown, fallback = t('composables.useFailure.fallback')): void {
     const description = errorMessage(error, fallback)
-    show(title, description, /trusted folder|Trust this folder/i.test(description))
+    show(title, description, /trusted folder|Trust this folder/i.test(description), staleLock(error))
   }
 
-  return { failed, trustFirst }
+  return { failed, trustFirst, removeLock }
 }

@@ -26,6 +26,8 @@ pub enum Change {
     GitConfig,
     /// A folder was made where each folder is watched on its own (Linux): the folders are watched again, then scanned.
     NewFolder(String),
+    /// The root's `.git` came or went (`git init`, a clone moved in): its git folder is found and watched again.
+    GitFolder,
 }
 
 /// Whether each folder is watched on its own. On Linux a recursive watch is one inotify watch per folder underneath,
@@ -173,6 +175,13 @@ pub fn root(root: &Path, on: impl Fn(Change) + Send + Sync + 'static) -> Option<
             if name.contains(['/', '\\']) {
                 return None;
             }
+            if name == ".git" {
+                return Some(Change::GitFolder);
+            }
+            // A submodule added, removed or moved: the submodules are read with the index.
+            if name == ".gitmodules" {
+                return Some(Change::Git(vec![GitPart::Index]));
+            }
             // haunt.config.json may name another architecture script: start afresh.
             if name == "haunt.config.json" {
                 Some(Change::Restart(name))
@@ -240,36 +249,146 @@ pub fn folders(
         .collect()
 }
 
+/// The files git leaves while a merge, a rebase, a cherry-pick, a revert or a bisect is under way; they come and go
+/// with the operation, which is read with HEAD.
+const UNDER_WAY: [&str; 7] =
+    ["MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "rebase-merge", "rebase-apply", "BISECT_LOG", "BISECT_START"];
+
 /// Which part of git a changed path in the git folder is (`name` relative to it, with forward slashes).
 fn git_change(name: &str) -> Option<Change> {
     let part = match name {
-        "config" => return Some(Change::GitConfig),
+        "config" | "config.worktree" => return Some(Change::GitConfig),
         "HEAD" | "ORIG_HEAD" => GitPart::Head,
+        _ if UNDER_WAY.contains(&name) || name.starts_with("BISECT_") => GitPart::Head,
         "index" => GitPart::Index,
         "FETCH_HEAD" | "packed-refs" => GitPart::Refs,
         "refs/stash" => GitPart::Stash,
         _ if name.starts_with("refs/") => GitPart::Refs,
+        // A worktree added or removed: the worktrees are read with the refs.
+        "worktrees" => GitPart::Refs,
+        _ if name.starts_with("worktrees/") && name.matches('/').count() == 1 => GitPart::Refs,
         _ => return None,
     };
     Some(Change::Git(vec![part]))
 }
 
-/// The repository's git folder: HEAD (a branch switch), the index (staging, a commit), its config, and refs (a
-/// commit, a fetch, a new branch, a stash). One watcher for both, so a commit is mostly one piece of news (the debouncer
-/// reports each path once it has been quiet, so two paths can land a tick apart; each view reads again only for its parts).
-pub fn git(dir: &Path, on: impl Fn(Change) + Send + Sync + Clone + 'static) -> Vec<Watcher> {
-    let base = dir.to_path_buf();
-    let classify = move |path: &Path| git_change(&relative(&base, path)?.to_string_lossy().replace('\\', "/"));
-    let Some(mut watched) = watcher(Duration::from_millis(400), dir, RecursiveMode::NonRecursive, classify, on) else {
+/// What a changed path in the common git folder is, for a linked worktree: only what the worktrees share (the
+/// branches, the config, the worktrees); the HEAD and index there are the main worktree's.
+fn common_change(name: &str) -> Option<Change> {
+    let shared = matches!(name, "config" | "packed-refs" | "worktrees")
+        || name.starts_with("refs/")
+        || name.starts_with("worktrees/");
+    shared.then(|| git_change(name)).flatten()
+}
+
+/// A repository's git folder, and its common folder: the same folder, except for a linked worktree, whose branches,
+/// tags, config and other worktrees are in the main repository's git folder.
+#[derive(Debug, Clone, PartialEq)]
+pub struct GitFolders {
+    pub git: PathBuf,
+    pub common: PathBuf,
+}
+
+impl GitFolders {
+    pub fn of(git: PathBuf) -> GitFolders {
+        let common = std::fs::read_to_string(git.join("commondir"))
+            .ok()
+            .and_then(|common| std::fs::canonicalize(git.join(common.trim())).ok())
+            .map(crate::paths::plain)
+            .unwrap_or_else(|| git.clone());
+        GitFolders { git, common }
+    }
+
+    /// What each part of git looks like on disk, in `GitPart::ALL`'s order and then the config: a part whose stamp
+    /// changed, changed. Only the times and sizes of the files git writes for it are read, which is cheap enough for
+    /// each time the window gets the focus.
+    pub fn stamps(&self, root: &Path) -> [u64; 5] {
+        use std::hash::{Hash, Hasher};
+        let stamp = |files: &[PathBuf]| {
+            let mut hasher = std::collections::hash_map::DefaultHasher::new();
+            for file in files {
+                let meta = std::fs::metadata(file).ok();
+                file.hash(&mut hasher);
+                meta.as_ref().map(|meta| meta.len()).hash(&mut hasher);
+                meta.and_then(|meta| meta.modified().ok()).hash(&mut hasher);
+            }
+            hasher.finish()
+        };
+        let (git, common) = (&self.git, &self.common);
+        let mut head = vec![git.join("HEAD"), git.join("ORIG_HEAD")];
+        head.extend(UNDER_WAY.iter().map(|name| git.join(name)));
+        // Every branch and tag file, and the worktrees there are.
+        let mut refs = vec![common.join("packed-refs"), git.join("FETCH_HEAD")];
+        let worktrees = common.join("worktrees");
+        let mut folders = vec![common.join("refs"), worktrees.clone()];
+        while let Some(folder) = folders.pop() {
+            let Ok(entries) = std::fs::read_dir(&folder) else { continue };
+            for entry in entries.flatten() {
+                let inside = entry.file_type().is_ok_and(|kind| kind.is_dir()) && folder != worktrees;
+                if inside {
+                    folders.push(entry.path());
+                } else {
+                    refs.push(entry.path());
+                }
+            }
+        }
+        refs.sort();
+        [
+            stamp(&head),
+            stamp(&refs),
+            stamp(&[git.join("index"), root.join(".gitmodules")]),
+            stamp(&[common.join("refs").join("stash"), common.join("logs").join("refs").join("stash")]),
+            stamp(&[common.join("config"), git.join("config.worktree")]),
+        ]
+    }
+}
+
+/// The repository's git folder: HEAD (a branch switch), the index (staging, a commit), its config, refs (a commit, a
+/// fetch, a new branch, a stash), its worktrees, and the files of a merge, rebase or bisect under way. For a linked
+/// worktree also the common folder, where the branches are. One watcher for all, so a commit is mostly one piece of
+/// news (the debouncer reports each path once it has been quiet, so two paths can land a tick apart; each view reads
+/// again only for its parts).
+pub fn git(folders: &GitFolders, on: impl Fn(Change) + Send + Sync + Clone + 'static) -> Vec<Watcher> {
+    let (git, common) = (folders.git.clone(), folders.common.clone());
+    let classify = move |path: &Path| {
+        let name = |base: &Path| relative(base, path).map(|name| name.to_string_lossy().replace('\\', "/"));
+        match name(&git) {
+            Some(name) => git_change(&name),
+            None => common_change(&name(&common)?),
+        }
+    };
+    let Some(mut watched) =
+        watcher(Duration::from_millis(400), &folders.git, RecursiveMode::NonRecursive, classify, on)
+    else {
         return Vec::new();
     };
-    let refs = dir.join("refs");
-    if refs.is_dir() {
-        let _ = watched
-            .watch(&refs, RecursiveMode::Recursive)
-            .map_err(|error| eprintln!("[haunt] cannot watch {}: {error}", refs.display()));
+    let mut also = |path: PathBuf, mode: RecursiveMode| {
+        if path.is_dir() {
+            let _ = watched.watch(&path, mode).map_err(|error| report(&path, error));
+        }
+    };
+    if folders.common != folders.git {
+        also(folders.common.clone(), RecursiveMode::NonRecursive);
     }
+    also(folders.common.join("refs"), RecursiveMode::Recursive);
+    also(folders.common.join("worktrees"), RecursiveMode::NonRecursive);
     vec![watched]
+}
+
+/// The folders the repository manager lists repositories from (`folders::looked_in`), each on its own: `on` when a
+/// folder came or went in one (a clone, a repository moved or deleted) or a `.git` did (`git init`), not for files.
+pub fn repository_folders(dirs: &[PathBuf], on: impl Fn() + Send + Sync + 'static) -> Option<Watcher> {
+    let (first, rest) = dirs.split_first()?;
+    let classify = |path: &Path| {
+        let name = path.file_name()?.to_string_lossy();
+        let folder = name == ".git" || path.is_dir() || !path.exists();
+        (folder && (name == ".git" || !name.starts_with('.'))).then(|| Change::Scan(name.into_owned()))
+    };
+    let mut watched = watcher(Duration::from_millis(800), first, RecursiveMode::NonRecursive, classify, move |_| on())?;
+    for dir in rest {
+        let _ = watched.watch(dir, RecursiveMode::NonRecursive).map_err(|error| report(dir, error));
+    }
+    Some(watched)
 }
 
 /// One file, by watching its folder alone (an editor or a tool may write a new file in its place): `on` after each
@@ -410,6 +529,72 @@ mod tests {
         assert_eq!(part("config"), Some(Change::GitConfig));
         assert_eq!(part("objects/ab/cdef"), None);
         assert_eq!(part("index.lock"), None);
+        // A merge, rebase or bisect starting or ending is read with HEAD.
+        assert_eq!(part("MERGE_HEAD"), Some(Change::Git(vec![GitPart::Head])));
+        assert_eq!(part("rebase-merge"), Some(Change::Git(vec![GitPart::Head])));
+        assert_eq!(part("BISECT_EXPECTED_REV"), Some(Change::Git(vec![GitPart::Head])));
+        // A worktree added or removed, not what changes inside one.
+        assert_eq!(part("worktrees/feature"), Some(Change::Git(vec![GitPart::Refs])));
+        assert_eq!(part("worktrees/feature/HEAD"), None);
+        assert_eq!(part("config.worktree"), Some(Change::GitConfig));
+    }
+
+    #[test]
+    fn a_linked_worktree_takes_only_what_is_shared_from_the_common_folder() {
+        assert_eq!(common_change("refs/heads/main"), Some(Change::Git(vec![GitPart::Refs])));
+        assert_eq!(common_change("packed-refs"), Some(Change::Git(vec![GitPart::Refs])));
+        assert_eq!(common_change("config"), Some(Change::GitConfig));
+        assert_eq!(common_change("worktrees/other"), Some(Change::Git(vec![GitPart::Refs])));
+        // The main worktree's own.
+        assert_eq!(common_change("HEAD"), None);
+        assert_eq!(common_change("index"), None);
+        assert_eq!(common_change("MERGE_HEAD"), None);
+    }
+
+    #[test]
+    fn stamps_change_with_the_part_that_changed() {
+        let dir = std::env::temp_dir().join(format!("haunt-watch-stamps-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let git = dir.join(".git");
+        let heads = git.join("refs").join("heads");
+        std::fs::create_dir_all(&heads).unwrap();
+        std::fs::write(git.join("HEAD"), "ref: refs/heads/main\n").unwrap();
+        let folders = GitFolders::of(git.clone());
+        assert_eq!(folders.common, git, "not a linked worktree");
+        let changed = |before: [u64; 5]| {
+            let now = folders.stamps(&dir);
+            (0..5).filter(|at| before[*at] != now[*at]).collect::<Vec<_>>()
+        };
+        let before = folders.stamps(&dir);
+        assert!(changed(before).is_empty(), "nothing changed, the same stamps");
+        std::fs::write(heads.join("feature"), "0000000000000000000000000000000000000000\n").unwrap();
+        assert_eq!(changed(before), [1], "a new branch: the refs");
+        let before = folders.stamps(&dir);
+        std::fs::create_dir(git.join("rebase-merge")).unwrap();
+        assert_eq!(changed(before), [0], "a rebase under way: HEAD's part");
+        let before = folders.stamps(&dir);
+        std::fs::write(dir.join(".gitmodules"), "[submodule]").unwrap();
+        assert_eq!(changed(before), [2], "a submodule: the index's part");
+        let before = folders.stamps(&dir);
+        std::fs::create_dir_all(git.join("worktrees").join("feature")).unwrap();
+        assert_eq!(changed(before), [1], "a worktree: the refs");
+        let before = folders.stamps(&dir);
+        std::fs::write(git.join("config"), "[core]").unwrap();
+        assert_eq!(changed(before), [4], "the config");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_linked_worktree_finds_its_common_folder() {
+        let dir = std::env::temp_dir().join(format!("haunt-watch-common-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let own = dir.join(".git").join("worktrees").join("feature");
+        std::fs::create_dir_all(&own).unwrap();
+        std::fs::write(own.join("commondir"), "../..\n").unwrap();
+        let folders = GitFolders::of(crate::paths::plain(std::fs::canonicalize(&own).unwrap()));
+        let common = crate::paths::plain(std::fs::canonicalize(dir.join(".git")).unwrap());
+        assert_eq!(folders.common, common);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
@@ -420,7 +605,7 @@ mod tests {
         let git_dir = crate::paths::plain(std::fs::canonicalize(&dir).unwrap());
         let (sender, receiver) = channel();
         let sender = std::sync::Arc::new(parking_lot::Mutex::new(sender));
-        let _watchers = git(Path::new(&git_dir), move |change: Change| {
+        let _watchers = git(&GitFolders::of(git_dir), move |change: Change| {
             let _ = sender.lock().send(change);
         });
         std::thread::sleep(Duration::from_millis(200));

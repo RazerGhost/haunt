@@ -92,6 +92,41 @@ impl Drop for TempIndex {
 
 /// How long a write waits for another git's `index.lock`.
 const LOCK_WAIT: Duration = Duration::from_secs(3);
+/// An `index.lock` untouched this long is most likely left by a git that stopped (it crashed, it was killed): no git
+/// command holds it that long, except `git commit` while its editor is open.
+const STALE_LOCK: Duration = Duration::from_secs(10 * 60);
+/// The repository's `index.lock`, where git puts it (a worktree has its own).
+fn index_lock(root: &str) -> Result<std::path::PathBuf, String> {
+    let lock = read(root, &["rev-parse", "--git-path", "index.lock"])?;
+    Ok(Path::new(root).join(lock.trim()))
+}
+
+/// How long ago a lock was last written; None when it is gone, or the clock or file system cannot say.
+fn lock_age(lock: &Path) -> Option<Duration> {
+    std::fs::metadata(lock).ok()?.modified().ok()?.elapsed().ok()
+}
+
+/// Removes the repository's `index.lock` when it is old (`STALE_LOCK`), asked from the window after a write said so;
+/// a lock that is new (another git is at work after all) is refused and left alone. Removing one that is gone already
+/// is done.
+pub fn remove_stale_lock(root: &str) -> Result<(), String> {
+    let lock = index_lock(root)?;
+    match lock_age(&lock) {
+        None if !lock.exists() => Ok(()),
+        Some(age) if age >= STALE_LOCK => std::fs::remove_file(&lock).or_else(|error| {
+            if lock.exists() {
+                Err(said!("write.lockNotRemoved", "The lock could not be removed: {error}", error = error))
+            } else {
+                Ok(())
+            }
+        }),
+        _ => Err(said!(
+            "write.lockInUse",
+            "The lock changed a moment ago: another git is at work in this repository. Haunt leaves the lock alone."
+        )),
+    }
+}
+
 /// How long a discard can be brought back.
 const KEEP_DISCARDS: Duration = Duration::from_secs(30 * 24 * 60 * 60);
 const DISCARDED: &str = "refs/haunt/discarded/";
@@ -361,13 +396,20 @@ impl<'a> Writer<'a> {
         );
     }
 
-    /// Waits while another git holds the index lock; Haunt never deletes the lock itself.
+    /// Waits while another git holds the index lock. Haunt never deletes the lock on its own: an old one is said to
+    /// be old, and the window offers to remove it (`remove_stale_lock`).
     fn wait_for_lock(&self) -> Result<(), String> {
-        let lock = read(self.root, &["rev-parse", "--git-path", "index.lock"])?;
-        let lock = Path::new(self.root).join(lock.trim());
+        let lock = index_lock(self.root)?;
         let started = Instant::now();
         while lock.exists() {
             if started.elapsed() > LOCK_WAIT {
+                if let Some(age) = lock_age(&lock).filter(|age| *age >= STALE_LOCK) {
+                    return Err(said!(
+                        "write.staleLock",
+                        ".git/index.lock has not changed for {minutes} minutes: a git that stopped (it crashed, it was closed) most likely left it behind, and git cannot write until it is gone. If no git is running (a terminal, an editor writing a commit message, another git tool), remove the lock.",
+                        minutes = age.as_secs() / 60
+                    ));
+                }
                 return Err(said!(
                     "write.locked",
                     "Another git is busy in this repository (it holds .git/index.lock). Try again when it is done; Haunt leaves the lock alone."

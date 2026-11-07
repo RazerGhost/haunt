@@ -9,5 +9,10 @@
   "locked": "(vergrendeld)",
   "detached": "{commit} (detached)",
   "thisFolder": "deze map",
-  "prune": "Ontbrekende opruimen"
+  "prune": "Ontbrekende opruimen",
+  "locate": "Map zoeken…",
+  "repair": "Koppeling herstellen",
+  "repairAll": "Koppelingen herstellen",
+  "broken": "koppeling kapot",
+  "linkBroken": "(de .git leidt niet meer naar deze repository: de repository is verplaatst)"
 }

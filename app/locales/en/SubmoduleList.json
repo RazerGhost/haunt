@@ -15,5 +15,9 @@
   },
   "from": "From {url}",
   "notThere": "not there",
-  "moved": "moved"
+  "moved": "moved",
+  "sync": "Sync its address",
+  "notSynced": "The submodule's address was not synced",
+  "urlChanged": "new address",
+  "urlChangedHelp": ".gitmodules gives a new address: Sync its address to use it"
 }

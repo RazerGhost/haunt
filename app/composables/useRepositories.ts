@@ -69,6 +69,11 @@ export async function startRepositories(): Promise<void> {
     transparent.value = started.transparent
   } catch { /* said again on the first call */ }
   await loadInfo()
+  // Back in the window: what git did meanwhile that the watchers missed (a drive's files, a network share) comes as
+  // the usual news, only for the parts that changed.
+  window.addEventListener('focus', () => {
+    if (repo.value) haunt.recheck(repo.value).catch(() => { /* another tab by now */ })
+  })
 }
 
 /** Runs `listener` on every piece of news about the shown repository; returns a function that stops it. */

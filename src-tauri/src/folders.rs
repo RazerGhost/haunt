@@ -5,7 +5,7 @@
 //! once (`Searched`), and searched again in the background now and then.
 
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -144,7 +144,17 @@ fn look(dir: &Path, depth: usize, found: &mut Vec<String>) -> bool {
     if depth >= DEPTH {
         return false;
     }
-    let Ok(entries) = std::fs::read_dir(dir) else { return false };
+    for child in children(dir) {
+        if look(&child, depth + 1, found) {
+            return true;
+        }
+    }
+    false
+}
+
+/// The folders in `dir` a search looks through, sorted: not hidden, not ignored, not links.
+fn children(dir: &Path) -> Vec<PathBuf> {
+    let Ok(entries) = std::fs::read_dir(dir) else { return Vec::new() };
     let mut children: Vec<_> = entries
         .filter_map(|entry| entry.ok())
         // A link is not followed: it could lead back up, or to the same repository twice.
@@ -157,12 +167,32 @@ fn look(dir: &Path, depth: usize, found: &mut Vec<String>) -> bool {
         .map(|entry| entry.path())
         .collect();
     children.sort();
-    for child in children {
-        if look(&child, depth + 1, found) {
-            return true;
-        }
+    children
+}
+
+/// The folders a search of `path` looks into for repositories (`path` first): where a new clone, a `git init` or a
+/// repository moved away shows, for watching while the repository manager is open. Not the repositories' own.
+pub fn looked_in(path: &str) -> Vec<PathBuf> {
+    const MOST_WATCHED: usize = 2000;
+    let mut out: Vec<(PathBuf, usize)> = Vec::new();
+    let root = PathBuf::from(path);
+    if root.is_dir() && !root.join(".git").exists() {
+        out.push((root, 0));
     }
-    false
+    let mut at = 0;
+    while at < out.len() && out.len() < MOST_WATCHED {
+        let (dir, depth) = out[at].clone();
+        if depth + 1 < DEPTH {
+            for child in children(&dir) {
+                if !child.join(".git").exists() {
+                    out.push((child, depth + 1));
+                }
+            }
+        }
+        at += 1;
+    }
+    out.truncate(MOST_WATCHED);
+    out.into_iter().map(|(dir, _)| dir).collect()
 }
 
 #[cfg(test)]
@@ -192,6 +222,33 @@ mod tests {
         assert_eq!(names, ["app", "client/site"]);
         assert!(!folder.missing && !folder.cut);
         assert!(read(&base.join("gone").to_string_lossy()).missing);
+        // Watched while the manager is open: the folders searched, not the repositories nor what a search skips.
+        let mut watched: Vec<String> = looked_in(&base.to_string_lossy())
+            .iter()
+            .map(|dir| dir.strip_prefix(&base).unwrap().to_string_lossy().replace('\\', "/"))
+            .collect();
+        watched.sort();
+        assert_eq!(watched, ["", "client", "empty"]);
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn a_new_clone_in_a_watched_folder_is_noticed() {
+        let base = std::env::temp_dir().join(format!("haunt-folders-watch-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&base);
+        std::fs::create_dir_all(base.join("client")).unwrap();
+        let (sender, receiver) = std::sync::mpsc::channel();
+        let sender = Mutex::new(sender);
+        let _watcher = crate::watch::repository_folders(&looked_in(&base.to_string_lossy()), move || {
+            let _ = sender.lock().send(());
+        })
+        .unwrap();
+        std::thread::sleep(Duration::from_millis(200));
+        // A file is not news; a folder (a clone starting) is.
+        std::fs::write(base.join("notes.txt"), "x").unwrap();
+        assert!(receiver.recv_timeout(Duration::from_millis(1500)).is_err(), "a file is not a repository");
+        std::fs::create_dir_all(base.join("client").join("new").join(".git")).unwrap();
+        assert!(receiver.recv_timeout(Duration::from_secs(5)).is_ok());
         let _ = std::fs::remove_dir_all(&base);
     }
 

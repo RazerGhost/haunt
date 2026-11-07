@@ -15,6 +15,8 @@ const commitBox = shallowRef<CommitBox | null>(null)
 const activity = shallowRef<Activity[]>([])
 const busy = ref(false)
 const problem = ref('')
+/** The last write failed on an old .git/index.lock: the problem offers to remove it. */
+const lockLeft = ref(false)
 
 export function startLocalChanges(): void {
   const { repo, gitChanged } = repositories
@@ -76,12 +78,14 @@ export function useLocalChanges() {
     const at = repo.value
     busy.value = true
     problem.value = ''
+    lockLeft.value = false
     try {
       const answer = await write(at)
       if (answer !== null && typeof answer === 'object' && 'staged' in answer && repo.value === at) result.value = { status: answer as LocalStatus }
       return true
     } catch (error) {
       problem.value = errorMessage(error, t('composables.useLocalChanges.fallback'))
+      lockLeft.value = staleLock(error)
       return false
     } finally {
       busy.value = false
@@ -114,6 +118,7 @@ export function useLocalChanges() {
     activity,
     busy,
     problem,
+    lockLeft,
     stage: (paths: string[]) => run(at => haunt.stage(at, paths)),
     unstage: (paths: string[]) => run(at => haunt.unstage(at, paths)),
     lines: (path: string, picked: LineRef[], action: LinesAction) => action === 'discard'

@@ -558,6 +558,23 @@ impl Writer<'_> {
         Err(said(&ran.stderr))
     }
 
+    /// Takes the submodules' addresses from `.gitmodules` again (`git submodule sync`), all of them or `paths`, after
+    /// they changed there. Only config is written (nothing is fetched); only in a trusted folder, as updating them.
+    pub fn sync_submodules(&self, paths: &[String]) -> Result<(), String> {
+        if !self.trusted {
+            return Err(said!(
+                "network.syncUntrusted",
+                "Syncing submodules takes the addresses in this repository's .gitmodules, which git later fetches from, so it runs only in a trusted folder. Trust this folder to sync them."
+            ));
+        }
+        let paths = paths.iter().map(|path| crate::git::local::checked(path)).collect::<Result<Vec<_>, _>>()?;
+        let queue = queue(self.root);
+        let _turn = queue.lock();
+        let mut args = vec!["submodule", "sync", "--"];
+        args.extend(paths.iter().copied());
+        self.git(&args, None, &[], None).map(drop)
+    }
+
     /// Checks the submodules out at the commits the repository records, cloning the ones not there yet (`paths`, or all
     /// when empty). Only in a trusted folder: it clones from the URLs in `.gitmodules` and checks files out.
     pub fn update_submodules(&self, paths: &[String], progress: &dyn Fn(&str)) -> Result<(), String> {

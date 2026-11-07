@@ -135,6 +135,12 @@ commands! {
     /// What is missing on this machine (a JavaScript runtime, git), said once at start.
     fn startup(api) -> Startup { Ok(Startup { problems: api.problems.clone(), tiling: crate::startup::tiling(), desktop: crate::desktop::current(), theme_file: crate::theme_file::current(), system_title_bar: api.repos.system_title_bar(), transparent: crate::theme_file::transparent_window() }) }
     fn info(api) -> RootInfo { Ok(api.repos.info()) }
+    /// The window got the focus again: what changed in git meanwhile, unseen, is news.
+    fn recheck(api, repo: String) -> () { api.repos.recheck(&repo) }
+    /// While the repository manager is open: its folders are watched for new and removed repositories.
+    fn watch_repository_folders(api, on: bool) -> () { api.repos.watch_repository_folders(on); Ok(()) }
+    /// Removes the shown repository's index.lock, when a write said it is old (a git that stopped left it).
+    fn remove_stale_lock(api, repo: String) -> () { api.repos.require(&repo)?; crate::git::write::remove_stale_lock(&repo) }
     fn open(api, path: String) -> RootInfo { api.repos.open(&path) }
     fn close(api, path: String) -> RootInfo { Ok(api.repos.close(&path)) }
     /// The recent repositories, with each one's branch, uncommitted files and last commit.
@@ -394,6 +400,7 @@ commands! {
     /// The repository's submodules, with the commit each is checked out at.
     fn submodules(api, repo: String) -> Vec<crate::git::Submodule> { api.repos.require(&repo)?; crate::git::submodules(&repo) }
     /// Checks submodules out at the recorded commits, cloning missing ones (all when `paths` is empty); trusted only.
+    fn sync_submodules(api, repo: String, paths: Vec<String>) -> () { api.write(&repo, &["index"], |writer| writer.sync_submodules(&paths)) }
     fn update_submodules(api, repo: String, paths: Vec<String>) -> () {
         api.network(&repo, "submodules", &["head", "index"], |writer, progress| writer.update_submodules(&paths, progress))
     }
@@ -481,6 +488,7 @@ commands! {
     fn remove_worktree(api, repo: String, path: String, force: bool) -> () { api.write(&repo, &["refs"], |writer| writer.remove_worktree(&path, force)) }
     /// Forgets the worktrees whose folders are gone.
     fn prune_worktrees(api, repo: String) -> () { api.write(&repo, &["refs"], |writer| writer.prune_worktrees()) }
+    fn repair_worktrees(api, repo: String, paths: Vec<String>) -> () { api.write(&repo, &["refs"], |writer| writer.repair_worktrees(&paths)) }
     fn rename_branch(api, repo: String, from: String, to: String) -> () {
         let undo = Undo::RenameBack { from: from.clone(), to: to.clone() };
         api.undoable(&repo, &["head", "refs"], undo, |_| said!("api.renamed", "Renamed {from} to {to}", from = from, to = to), |writer| writer.rename_branch(&from, &to))

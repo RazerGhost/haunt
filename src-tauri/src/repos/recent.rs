@@ -197,12 +197,45 @@ impl Repos {
         })
     }
 
+    /// Watches the repository folders while the repository manager is open (`on`), so a new clone or a repository
+    /// moved away shows at once; a change searches them again (the window hears "folders" when the list changed) and
+    /// watches the folders as they are now.
+    pub fn watch_repository_folders(&self, on: bool) {
+        let mut watching = self.folder_watch.lock();
+        *watching = on.then(|| self.folders_watcher());
+    }
+
+    /// The folders changed while the manager is open: watched as they are now.
+    fn rewatch_folders(&self) {
+        let mut watching = self.folder_watch.lock();
+        if let Some(watcher) = watching.as_mut() {
+            *watcher = self.folders_watcher();
+        }
+    }
+
+    fn folders_watcher(&self) -> Option<crate::watch::Watcher> {
+        let folders = self.inner.lock().settings.repository_folders.clone();
+        let dirs: Vec<std::path::PathBuf> =
+            folders.iter().flat_map(|folder| crate::folders::looked_in(folder)).collect();
+        let me = self.me.clone();
+        crate::watch::repository_folders(&dirs, move || {
+            let Some(repos) = me.upgrade() else { return };
+            // Not on the watcher's own thread: watching again drops this watcher.
+            std::thread::spawn(move || {
+                // Still open: the folders as they are now (a new folder is watched too).
+                repos.rewatch_folders();
+                repos.searched_folders(true);
+            });
+        })
+    }
+
     pub fn add_repository_folder(&self, path: &str) -> Result<Vec<crate::folders::RepoFolder>, String> {
         {
             let mut inner = self.inner.lock();
             inner.settings.add_repository_folder(path)?;
             inner.settings.save(&self.context.settings);
         }
+        self.rewatch_folders();
         Ok(self.searched_folders(true))
     }
 
@@ -212,6 +245,7 @@ impl Repos {
             inner.settings.remove_repository_folder(path);
             inner.settings.save(&self.context.settings);
         }
+        self.rewatch_folders();
         self.searched_folders(true)
     }
 

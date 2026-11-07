@@ -92,6 +92,9 @@ async function loadFolders(change?: Promise<RepoFolder[]>) {
 onMounted(() => void loadFolders())
 // A background search found a different list of repositories in a folder.
 onBeforeUnmount(onNews((news) => { if (news.type === 'folders') void loadFolders() }))
+// While this is open, a new clone or a repository moved away in the folders shows at once.
+onMounted(() => void haunt.watchRepositoryFolders(true).catch(() => {}))
+onBeforeUnmount(() => void haunt.watchRepositoryFolders(false).catch(() => {}))
 async function addFolder() {
   const chosen = inApp ? await chooseFolder(t('RootPicker.addFolder')) : path.value.trim()
   if (chosen) await loadFolders(haunt.addRepositoryFolder(chosen))

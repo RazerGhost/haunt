@@ -2,7 +2,8 @@
 /*
  * The sidebar's worktrees (useWorktrees): this repository's folders with a branch checked out each. Click one to open
  * it in its tab; right-click to open or remove it; + makes a new one. Shown once there is more than the repository's
- * own folder, and always with its + in the section's header.
+ * own folder, and always with its + in the section's header. One whose folder moved away can be located; ones that no
+ * longer lead back to the repository (it moved) are marked, with Repair.
  */
 const { repo } = useRepositories()
 const worktrees = useWorktrees()
@@ -11,10 +12,15 @@ const props = defineProps<{ shut: boolean }>()
 const emit = defineEmits<{ toggle: [] }>()
 const others = computed(() => worktrees.list.value.filter(worktree => !worktree.main))
 const prunable = computed(() => worktrees.list.value.some(worktree => worktree.prunable))
+const broken = computed(() => worktrees.list.value.filter(worktree => worktree.broken).map(worktree => worktree.path))
 const nameOf = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path
 function menu(worktree: (typeof worktrees.list.value)[number]) {
   return [
-    [{ label: t('WorktreeList.open'), icon: 'i-lucide-folder-git-2', disabled: worktree.prunable, onSelect: () => worktrees.open(worktree.path) }],
+    [
+      { label: t('WorktreeList.open'), icon: 'i-lucide-folder-git-2', disabled: worktree.prunable || worktree.broken, onSelect: () => worktrees.open(worktree.path) },
+      ...worktree.prunable ? [{ label: t('WorktreeList.locate'), icon: 'i-lucide-folder-search', onSelect: () => worktrees.locate(worktree) }] : [],
+      ...worktree.broken ? [{ label: t('WorktreeList.repair'), icon: 'i-lucide-wrench', onSelect: () => worktrees.repair([worktree.path]) }] : []
+    ],
     // Not the folder on screen: switch to another tab to remove it.
     [{ label: worktree.path === repo.value ? t('WorktreeList.removeElsewhere') : t('WorktreeList.remove'), icon: 'i-lucide-trash-2', color: 'error' as const, disabled: worktree.main || worktree.path === repo.value, onSelect: () => worktrees.remove(worktree) }]
   ]
@@ -39,18 +45,20 @@ function menu(worktree: (typeof worktrees.list.value)[number]) {
             type="button"
             class="flex w-full items-center gap-1.5 rounded py-1 pr-2 pl-5 text-left text-ui hover:bg-elevated disabled:opacity-60"
             :class="{ 'bg-elevated font-medium text-highlighted': worktree.path === repo }"
-            :title="`${worktree.path}${worktree.prunable ? ` ${t('WorktreeList.folderGone')}` : ''}${worktree.locked !== null ? ` ${t('WorktreeList.locked')}` : ''}`"
+            :title="`${worktree.path}${worktree.prunable ? ` ${t('WorktreeList.folderGone')}` : ''}${worktree.broken ? ` ${t('WorktreeList.linkBroken')}` : ''}${worktree.locked !== null ? ` ${t('WorktreeList.locked')}` : ''}`"
             :disabled="worktree.prunable"
             @click="worktree.path !== repo && worktrees.open(worktree.path)"
           >
             <UIcon :name="worktree.main ? 'i-lucide-folder-git-2' : 'i-lucide-git-fork'" class="size-3.5 shrink-0 text-dimmed" />
             <span class="min-w-0 flex-1 truncate" :class="{ 'line-through': worktree.prunable }">{{ worktree.branch ?? t('WorktreeList.detached', { commit: worktree.head.slice(0, 7) }) }}</span>
+            <span v-if="worktree.broken" class="text-label text-warning">{{ t('WorktreeList.broken') }}</span>
             <span class="min-w-0 truncate text-label text-muted">{{ worktree.path === repo ? t('WorktreeList.thisFolder') : nameOf(worktree.path) }}</span>
           </button>
         </UContextMenu>
       </li>
-      <li v-if="prunable" class="pl-5">
-        <UButton :label="t('WorktreeList.prune')" size="xs" color="neutral" variant="ghost" @click="worktrees.prune()" />
+      <li v-if="prunable || broken.length" class="flex gap-1 pl-5">
+        <UButton v-if="broken.length" :label="t('WorktreeList.repairAll')" size="xs" color="neutral" variant="ghost" @click="worktrees.repair(broken)" />
+        <UButton v-if="prunable" :label="t('WorktreeList.prune')" size="xs" color="neutral" variant="ghost" @click="worktrees.prune()" />
       </li>
     </ul>
   </section>

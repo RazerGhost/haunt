@@ -9,6 +9,12 @@ export const commands = {
 	/**  What is missing on this machine (a JavaScript runtime, git), said once at start. */
 	startup: () => __TAURI_INVOKE<Startup>("startup"),
 	info: () => __TAURI_INVOKE<RootInfo>("info"),
+	/**  The window got the focus again: what changed in git meanwhile, unseen, is news. */
+	recheck: (repo: string) => __TAURI_INVOKE<null>("recheck", { repo }),
+	/**  While the repository manager is open: its folders are watched for new and removed repositories. */
+	watchRepositoryFolders: (on: boolean) => __TAURI_INVOKE<null>("watch_repository_folders", { on }),
+	/**  Removes the shown repository's index.lock, when a write said it is old (a git that stopped left it). */
+	removeStaleLock: (repo: string) => __TAURI_INVOKE<null>("remove_stale_lock", { repo }),
 	open: (path: string) => __TAURI_INVOKE<RootInfo>("open", { path }),
 	close: (path: string) => __TAURI_INVOKE<RootInfo>("close", { path }),
 	/**  The recent repositories, with each one's branch, uncommitted files and last commit. */
@@ -145,6 +151,7 @@ export const commands = {
 	/**  The repository's submodules, with the commit each is checked out at. */
 	submodules: (repo: string) => __TAURI_INVOKE<Submodule[]>("submodules", { repo }),
 	/**  Checks submodules out at the recorded commits, cloning missing ones (all when `paths` is empty); trusted only. */
+	syncSubmodules: (repo: string, paths: string[]) => __TAURI_INVOKE<null>("sync_submodules", { repo, paths }),
 	updateSubmodules: (repo: string, paths: string[]) => __TAURI_INVOKE<null>("update_submodules", { repo, paths }),
 	/**  Where HEAD, or a local branch, pointed before, newest first, with the commits only the reflog keeps marked. */
 	reflog: (repo: string, reference: string) => __TAURI_INVOKE<Reflog>("reflog", { repo, reference }),
@@ -187,6 +194,7 @@ export const commands = {
 	removeWorktree: (repo: string, path: string, force: boolean) => __TAURI_INVOKE<null>("remove_worktree", { repo, path, force }),
 	/**  Forgets the worktrees whose folders are gone. */
 	pruneWorktrees: (repo: string) => __TAURI_INVOKE<null>("prune_worktrees", { repo }),
+	repairWorktrees: (repo: string, paths: string[]) => __TAURI_INVOKE<null>("repair_worktrees", { repo, paths }),
 	renameBranch: (repo: string, from: string, to: string) => __TAURI_INVOKE<null>("rename_branch", { repo, from, to }),
 	/**  How many commits only this branch has: what deleting it would lose. */
 	unmerged: (repo: string, name: string) => __TAURI_INVOKE<number>("unmerged", { repo, name }),
@@ -1474,6 +1482,11 @@ export type Submodule = {
 	/**  The commit checked out in its folder, when it is. */
 	checkedOut: string | null,
 	state: SubmoduleState,
+	/**
+	 *  `.gitmodules` gives another address than the one this clone uses (it changed since): `sync_submodules` takes
+	 *  the new one.
+	 */
+	urlChanged: boolean,
 };
 
 export type SubmoduleState = 
@@ -1595,7 +1608,12 @@ export type Worktree = {
 	main: boolean,
 	/**  Locked against pruning and removal (`git worktree lock`), with the reason given. */
 	locked: string | null,
-	/**  Its folder is gone: `prune` forgets it. */
+	/**  Its folder is gone: `prune` forgets it, or `repair_worktrees` finds it where it went. */
 	prunable: boolean,
+	/**
+	 *  Its folder is there, but its `.git` file no longer leads to this repository (the repository's folder moved):
+	 *  git cannot work in it until `repair_worktrees` writes the way back.
+	 */
+	broken: boolean,
 };
 

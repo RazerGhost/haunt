@@ -5,7 +5,8 @@ import type { Worktree } from '~/bindings'
  * by side, each in a folder of its own, opened in tabs of their own. A new one goes beside the repository's folder by
  * default (`<folder>-<branch>`), and opens in a tab once it is made; removing one takes its folder away (its branch
  * stays), closing its tab first, and one with changes not committed asks again first. The worktree on screen is removed
- * from another tab.
+ * from another tab. After a folder moved, Repair writes the links between the repository and its worktrees again: the
+ * worktrees that no longer lead back (the repository moved), or one found at its new place (Locate…).
  */
 
 const list = shallowRef<Worktree[]>([])
@@ -104,6 +105,25 @@ export function useWorktrees() {
     await load()
   }
 
+  /** Writes the links again for `paths`: worktrees that no longer lead back, or a worktree's folder where it is now. */
+  async function repair(paths: string[]): Promise<void> {
+    if (!repo.value || !paths.length) return
+    try {
+      await haunt.repairWorktrees(repo.value, paths)
+      await load()
+      toast.add({ title: t('composables.useWorktrees.repaired'), icon: 'i-lucide-git-fork', color: 'success' })
+    } catch (error) {
+      failure.failed(t('composables.useWorktrees.notRepaired'), error, t('composables.useWorktrees.notRepairedHelp'))
+    }
+  }
+
+  /** A worktree whose folder is gone: where it went, picked, then repaired there. */
+  async function locate(worktree: Worktree): Promise<void> {
+    const { open } = await import('@tauri-apps/plugin-dialog')
+    const chosen = await open({ directory: true, title: t('composables.useWorktrees.locateTitle', { name: worktree.branch ?? folderName(worktree.path) }) })
+    if (typeof chosen === 'string') await repair([chosen])
+  }
+
   async function prune(): Promise<void> {
     if (!repo.value) return
     try {
@@ -114,5 +134,5 @@ export function useWorktrees() {
     }
   }
 
-  return { list, load, add, remove, prune, open: chooseRoot, changed: gitChanged('refs', 'head') }
+  return { list, load, add, remove, repair, locate, prune, open: chooseRoot, changed: gitChanged('refs', 'head') }
 }

@@ -9,5 +9,10 @@
   "locked": "(locked)",
   "detached": "{commit} (detached)",
   "thisFolder": "this folder",
-  "prune": "Prune missing"
+  "prune": "Prune missing",
+  "locate": "Locate its folder…",
+  "repair": "Repair its link",
+  "repairAll": "Repair links",
+  "broken": "link broken",
+  "linkBroken": "(its .git no longer leads to this repository: the repository moved)"
 }

@@ -6,5 +6,8 @@
   "trusted": "Deze map wordt vertrouwd",
   "tryNow": "Probeer het nu opnieuw.",
   "fallback": "Dat lukte git niet.",
-  "trustAction": "Deze map vertrouwen…"
+  "trustAction": "Deze map vertrouwen…",
+  "removeLock": "Lock verwijderen",
+  "lockRemoved": "De lock is verwijderd",
+  "lockNotRemoved": "Lock niet verwijderd"
 }

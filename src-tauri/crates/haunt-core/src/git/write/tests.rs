@@ -253,6 +253,28 @@ fn a_held_index_lock_makes_a_write_wait_and_fail_and_stays() {
     assert!(activity.iter().any(|entry| entry.command.starts_with("git add -A -- a.txt") && entry.ok));
 }
 
+#[test]
+fn an_old_index_lock_is_said_to_be_old_and_removed_only_when_asked() {
+    let r = repo();
+    r.write("a.txt", "changed\n");
+    let lock = r.path(".git/index.lock");
+    fs::write(&lock, "").unwrap();
+    // A new lock: another git is at work, so it is not removed.
+    assert!(super::remove_stale_lock(&r.root).unwrap_err().contains("write.lockInUse"));
+    assert!(lock.exists());
+    // An hour old: the write says so, and still leaves it.
+    let hour_ago = std::time::SystemTime::now() - std::time::Duration::from_secs(60 * 60);
+    fs::File::options().write(true).open(&lock).unwrap().set_modified(hour_ago).unwrap();
+    let error = Writer::new(&r.root, true).stage(&paths(&["a.txt"])).unwrap_err();
+    assert!(error.contains("write.staleLock"), "{error}");
+    assert!(lock.exists(), "a write leaves the lock alone");
+    // Asked: removed, and the write goes through. Asked again, with it gone: done.
+    super::remove_stale_lock(&r.root).unwrap();
+    assert!(!lock.exists());
+    super::remove_stale_lock(&r.root).unwrap();
+    Writer::new(&r.root, true).stage(&paths(&["a.txt"])).unwrap();
+}
+
 /* ---------- branches, stashes and tags ---------- */
 
 mod refs {
@@ -479,6 +501,34 @@ mod worktrees {
         assert!(worktrees(&r.root).unwrap().iter().any(|worktree| worktree.prunable));
         writer.prune_worktrees().unwrap();
         assert_eq!(worktrees(&r.root).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn repairs_worktrees_after_a_folder_moved() {
+        let r = repo();
+        r.sh(&["branch", "feature"]);
+        let place = tempfile::tempdir().unwrap();
+        let there = place.path().join("repo-feature").to_string_lossy().into_owned();
+        let writer = Writer::new(&r.root, false);
+        let folder = writer.add_worktree(&there, "feature", false, None).unwrap();
+        assert!(worktrees(&r.root).unwrap().iter().all(|worktree| !worktree.broken));
+
+        // The worktree's folder moved: prunable here, and found again at its new place.
+        let elsewhere = place.path().join("moved-feature");
+        std::fs::rename(&folder, &elsewhere).unwrap();
+        assert!(worktrees(&r.root).unwrap().iter().any(|worktree| worktree.prunable));
+        let elsewhere = crate::paths::canonical(&elsewhere.to_string_lossy()).unwrap();
+        writer.repair_worktrees(std::slice::from_ref(&elsewhere)).unwrap();
+        let listed = worktrees(&r.root).unwrap();
+        assert!(listed.iter().any(|worktree| worktree.path == elsewhere && !worktree.prunable && !worktree.broken));
+
+        // Its .git file no longer leads back (as when the repository's folder moved): broken, until repaired.
+        let dot_git = std::path::Path::new(&elsewhere).join(".git");
+        std::fs::write(&dot_git, "gitdir: /no/such/repository/.git/worktrees/repo-feature\n").unwrap();
+        assert!(worktrees(&r.root).unwrap().iter().any(|worktree| worktree.broken));
+        writer.repair_worktrees(&[elsewhere]).unwrap();
+        assert!(worktrees(&r.root).unwrap().iter().all(|worktree| !worktree.broken && !worktree.prunable));
+        assert!(writer.repair_worktrees(&["relative".into()]).is_err());
     }
 }
 

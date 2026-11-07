@@ -21,5 +21,9 @@
   "uncommittedHelp": "{said} Removing it throws them away for good.",
   "removeAnyway": "Remove with its changes",
   "notPruned": "Not pruned",
-  "notPrunedHelp": "Git could not prune them."
+  "notPrunedHelp": "Git could not prune them.",
+  "repaired": "The worktrees are repaired",
+  "notRepaired": "Not repaired",
+  "notRepairedHelp": "Git could not repair them (git worktree repair needs git 2.29 or later).",
+  "locateTitle": "Where is the worktree of {name} now?"
 }

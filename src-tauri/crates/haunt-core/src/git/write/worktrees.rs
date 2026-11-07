@@ -21,8 +21,11 @@ pub struct Worktree {
     pub main: bool,
     /// Locked against pruning and removal (`git worktree lock`), with the reason given.
     pub locked: Option<String>,
-    /// Its folder is gone: `prune` forgets it.
+    /// Its folder is gone: `prune` forgets it, or `repair_worktrees` finds it where it went.
     pub prunable: bool,
+    /// Its folder is there, but its `.git` file no longer leads to this repository (the repository's folder moved):
+    /// git cannot work in it until `repair_worktrees` writes the way back.
+    pub broken: bool,
 }
 
 /// The worktrees of the repository at `root`, its own folder first.
@@ -37,6 +40,7 @@ pub fn worktrees(root: &str) -> Result<Vec<Worktree>, String> {
             main: found.is_empty(),
             locked: None,
             prunable: false,
+            broken: false,
         };
         for line in block.lines() {
             if let Some(path) = line.strip_prefix("worktree ") {
@@ -56,7 +60,28 @@ pub fn worktrees(root: &str) -> Result<Vec<Worktree>, String> {
             found.push(worktree);
         }
     }
+    let common = read(root, &["rev-parse", "--git-common-dir"])
+        .ok()
+        .and_then(|common| std::fs::canonicalize(std::path::Path::new(root).join(common.trim())).ok());
+    if let Some(common) = common {
+        for worktree in found.iter_mut().filter(|worktree| !worktree.main && !worktree.prunable) {
+            worktree.broken = !leads_back(std::path::Path::new(&worktree.path), &common);
+        }
+    }
     Ok(found)
+}
+
+/// Whether the worktree in `folder` leads back to the repository whose common git folder is `common`: its `.git` file
+/// names a git folder that is there, and whose `commondir` is `common`.
+fn leads_back(folder: &std::path::Path, common: &std::path::Path) -> bool {
+    let Ok(text) = std::fs::read_to_string(folder.join(".git")) else {
+        // A folder `.git` (made a repository of its own) or none: not a link that can be repaired.
+        return true;
+    };
+    let Some(gitdir) = text.strip_prefix("gitdir:").map(str::trim) else { return true };
+    let gitdir = folder.join(gitdir);
+    let Ok(back) = std::fs::read_to_string(gitdir.join("commondir")) else { return false };
+    std::fs::canonicalize(gitdir.join(back.trim())).is_ok_and(|found| found == common)
 }
 
 impl Writer<'_> {
@@ -117,6 +142,20 @@ impl Writer<'_> {
                 error
             }
         })
+    }
+
+    /// Writes the links between the repository and its worktrees again (`git worktree repair`): after the
+    /// repository's folder moved (`paths`: the worktrees that no longer lead back), or a worktree's folder moved
+    /// (`paths`: where it is now).
+    pub fn repair_worktrees(&self, paths: &[String]) -> Result<(), String> {
+        if paths.is_empty() || paths.iter().any(|path| !std::path::Path::new(path).is_absolute()) {
+            return Err(said!("worktrees.notFull", "A worktree's folder is a full path."));
+        }
+        let queue = queue(self.root);
+        let _turn = queue.lock();
+        let mut args = vec!["worktree", "repair", "--end-of-options"];
+        args.extend(paths.iter().map(String::as_str));
+        self.git(&args, None, &[], None).map(drop)
     }
 
     /// Forgets the worktrees whose folders are gone.

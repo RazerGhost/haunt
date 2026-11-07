@@ -22,5 +22,6 @@
   "noBranch": "There is no branch {name}.",
   "forwardCurrent": "{name} is the branch you are on: pull it instead.",
   "forwardNoUpstream": "{name} tracks no remote branch.",
-  "forwardApart": "{name} and {remote}/{branch} went apart, so {name} was left as it is. Switch to it and pull to merge or rebase."
+  "forwardApart": "{name} and {remote}/{branch} went apart, so {name} was left as it is. Switch to it and pull to merge or rebase.",
+  "syncUntrusted": "Syncing submodules takes the addresses in this repository's .gitmodules, which git later fetches from, so it runs only in a trusted folder. Trust this folder to sync them."
 }

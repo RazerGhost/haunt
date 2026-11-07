@@ -15,9 +15,14 @@ import type { LineRef, LocalFile } from '~/bindings'
  * until Amend opens it. Right-click a file to ignore it (an untracked one: the file,
  * its extension or its folder, added to .gitignore) or to stash just it; Stash… stashes the files ticked.
  */
-const { status, discarded, problem, busy, stage, unstage, lines, discard, restoreAll, ignore, stashFiles } = useLocalChanges()
+const { status, discarded, problem, lockLeft, busy, stage, unstage, lines, discard, restoreAll, ignore, stashFiles } = useLocalChanges()
 // Several of Recently discarded, picked to bring back together.
 const discardedPick = useMultiSelect(() => discarded.value, entry => entry.id, 'discarded')
+const failure = useFailure()
+// The write failed on an old .git/index.lock: removed when asked, and the problem goes with it.
+async function removeLock(): Promise<void> {
+  if (await failure.removeLock()) problem.value = ''
+}
 
 const picked = ref<{ path: string, staged: boolean } | null>(null)
 const unstaged = computed(() => status.value?.unstaged ?? [])
@@ -378,7 +383,17 @@ async function confirmStash(): Promise<void> {
     </aside>
 
     <div class="flex min-h-0 flex-col">
-      <UAlert v-if="problem" class="m-2" color="error" variant="subtle" icon="i-lucide-circle-alert" :description="problem" :close="true" @update:open="problem = ''" />
+      <UAlert
+        v-if="problem"
+        class="m-2"
+        color="error"
+        variant="subtle"
+        icon="i-lucide-circle-alert"
+        :description="problem"
+        :actions="lockLeft ? [{ label: t('composables.useFailure.removeLock'), icon: 'i-lucide-lock-open', color: 'neutral', variant: 'outline', onClick: removeLock }] : undefined"
+        :close="true"
+        @update:open="problem = ''"
+      />
       <LocalDiff
         v-if="current"
         ref="diffView"
