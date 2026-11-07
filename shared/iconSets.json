@@ -145,7 +145,8 @@
     "user-round-plus",
     "user-round-search",
     "wrench",
-    "x"
+    "x",
+    "zoom-in"
   ],
   "sets": {
     "bootstrap": {
@@ -271,7 +272,8 @@
       "lucide-user-round-plus": "bi:person-add",
       "lucide-user-round-search": "bi:person",
       "lucide-wrench": "bi:wrench",
-      "lucide-x": "bi:x"
+      "lucide-x": "bi:x",
+      "lucide-zoom-in": "bi:zoom-in"
     },
     "phosphor": {
       "lucide-archive": "ph:archive",
@@ -521,7 +523,8 @@
       "lucide-user-round": "tabler:user",
       "lucide-user-round-plus": "tabler:user-plus",
       "lucide-user-round-search": "tabler:user-search",
-      "lucide-x": "tabler:x"
+      "lucide-x": "tabler:x",
+      "lucide-zoom-in": "tabler:zoom-in"
     },
     "remix": {
       "lucide-archive": "ri:archive-line",
@@ -644,7 +647,8 @@
       "lucide-user-round-plus": "ri:user-add-line",
       "lucide-user-round-search": "ri:user-search-line",
       "lucide-wrench": "ri:wrench-line",
-      "lucide-x": "ri:close-line"
+      "lucide-x": "ri:close-line",
+      "lucide-zoom-in": "ri:zoom-in-line"
     },
     "material": {
       "lucide-archive": "material-symbols:archive-outline",
@@ -766,7 +770,8 @@
       "lucide-user-round": "material-symbols:person-outline",
       "lucide-user-round-plus": "material-symbols:person-add-outline",
       "lucide-user-round-search": "material-symbols:person-search-outline",
-      "lucide-x": "material-symbols:close-outline"
+      "lucide-x": "material-symbols:close-outline",
+      "lucide-zoom-in": "material-symbols:zoom-in-outline"
     },
     "heroicons": {
       "lucide-archive": "heroicons:archive-box",
@@ -993,7 +998,8 @@
       "lucide-user-round-plus": "iconoir:user-plus",
       "lucide-user-round-search": "iconoir:user-scan",
       "lucide-wrench": "iconoir:wrench",
-      "lucide-x": "iconoir:x"
+      "lucide-x": "iconoir:x",
+      "lucide-zoom-in": "iconoir:zoom-in"
     }
   }
 }

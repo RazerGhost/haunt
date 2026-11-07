@@ -1,6 +1,6 @@
 /*
  * Starts the window's connection to Haunt's Rust side, in a fixed order: the repositories (and their news) first, and
- * the profile's look (with the icon sets kept on this computer); then
+ * the profile's look (with the icon sets kept on this computer) and the zoom; then
  * what reads the shown repository: its code (and the functions you learned of it), its refs, its changes (by function,
  * and as files) and its hotspots; and
  * what listens for git's progress and questions during a fetch, pull or push, the merge or rebase that has not
@@ -10,6 +10,7 @@ export default defineNuxtPlugin(async () => {
   await startRepositories()
   await startIconSets()
   startAppearance()
+  startZoom()
   startCode()
   startFamiliarity()
   startRefs()

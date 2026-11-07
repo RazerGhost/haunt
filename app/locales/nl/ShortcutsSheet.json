@@ -46,6 +46,9 @@
     "codeMode": "Codemodus",
     "find": "Een functie zoeken",
     "reviewNext": "Review: volgende functie",
-    "reviewPrevious": "Review: vorige functie"
+    "reviewPrevious": "Review: vorige functie",
+    "zoomIn": "Inzoomen",
+    "zoomOut": "Uitzoomen",
+    "zoomReset": "Terug naar 100%"
   }
 }

@@ -46,6 +46,9 @@
     "codeMode": "Code mode",
     "find": "Find a function",
     "reviewNext": "Review: next function",
-    "reviewPrevious": "Review: previous function"
+    "reviewPrevious": "Review: previous function",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zoomReset": "Zoom back to 100%"
   }
 }
