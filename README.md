@@ -19,8 +19,9 @@ code until you trust its folder.
   and patches. Undo for discards, dropped stashes and resets.
 - **Changes by function.** Every commit, range or set of local changes, read function by function: what was added,
   changed, moved or removed, what calls it, which tests reach it, and a risk line that says where to look first.
-- **Maps of the code.** Layers, a zoomable canvas of boxes in boxes, call paths from the entry points, the imports
-  between parts with their rule breaks and cycles, unused code, and the HTTP routes with their handlers.
+- **Maps of the code.** A graph of files and their functions with the calls between them, the parts in a column per
+  layer with the imports between them, their rule breaks and cycles, call paths from the entry points, unused code,
+  and the HTTP routes with their handlers.
 - **History that follows the code.** A function's history across renames and moves, where it came from, blame that
   steps back, who knows each part, and release notes between two tags.
 - **Reviews without switching branches.** Pull requests fetched as refs and read with every lens, a branch reviewed

@@ -10,10 +10,7 @@ const bookmarks = useBookmarks()
 
 const fn = computed(() => (typeof route.query.fn === 'string' ? route.query.fn : undefined))
 const views = computed(() => [
-  { label: t('CodeSidebar.layers'), icon: 'i-lucide-layers', what: t('CodeSidebar.layersWhat'), to: { path: '/layers', query: { fn: fn.value } }, path: '/layers' },
-  { label: t('CodeSidebar.canvas'), icon: 'i-lucide-boxes', what: t('CodeSidebar.canvasWhat'), to: { path: '/canvas', query: { fn: fn.value } }, path: '/canvas' },
-  { label: t('CodeSidebar.calls'), icon: 'i-lucide-git-fork', what: t('CodeSidebar.callsWhat'), to: { path: '/calls', query: { fn: fn.value } }, path: '/calls' },
-  { label: t('CodeSidebar.imports'), icon: 'i-lucide-network', what: t('CodeSidebar.importsWhat'), to: { path: '/imports' }, path: '/imports' },
+  { label: t('CodeSidebar.graph'), icon: 'i-lucide-workflow', what: t('CodeSidebar.graphWhat'), to: { path: '/graph', query: { fn: fn.value } }, path: '/graph' },
   { label: t('CodeSidebar.unused'), icon: 'i-lucide-ghost', what: t('CodeSidebar.unusedWhat'), to: { path: '/unused' }, path: '/unused' },
   { label: t('CodeSidebar.routes'), icon: 'i-lucide-route', what: t('CodeSidebar.routesWhat'), to: { path: '/routes' }, path: '/routes' }
 ])
@@ -32,7 +29,7 @@ const layers = computed(() => {
     }))
     .filter(layer => layer.parts.length)
 })
-const partShown = computed(() => (route.path === '/layers' && typeof route.query.part === 'string' ? route.query.part : null))
+const partShown = computed(() => (route.path === '/graph' && typeof route.query.part === 'string' ? route.query.part : null))
 const shut = usePersisted<Record<string, boolean>>('code-sidebar-shut', {}, value => !!value && typeof value === 'object' && !Array.isArray(value))
 const toggle = (id: string) => { shut.value = { ...shut.value, [id]: !shut.value[id] } }
 </script>
@@ -43,12 +40,12 @@ const toggle = (id: string) => { shut.value = { ...shut.value, [id]: !shut.value
       v-for="view in views"
       :key="view.path"
       :to="view.to"
-      class="grid grid-cols-[1rem_minmax(0,1fr)] items-center gap-x-2 rounded-md px-2 py-1"
+      :title="view.what"
+      class="flex items-center gap-2 rounded-md px-2 py-1"
       :class="route.path === view.path ? 'bg-elevated text-highlighted' : 'text-default hover:bg-elevated/60'"
     >
-      <UIcon :name="view.icon" class="size-4 text-muted" />
+      <UIcon :name="view.icon" class="size-4 shrink-0 text-muted" />
       <span class="truncate text-ui" :class="{ 'font-medium': route.path === view.path }">{{ view.label }}</span>
-      <span class="col-start-2 truncate text-label text-muted">{{ view.what }}</span>
     </NuxtLink>
   </div>
 
@@ -111,7 +108,7 @@ const toggle = (id: string) => { shut.value = { ...shut.value, [id]: !shut.value
     <ul v-if="!shut[layer.id]" class="grid grid-cols-[minmax(0,1fr)]">
       <li v-for="part in layer.parts" :key="part.name">
         <NuxtLink
-          :to="{ path: '/layers', query: { part: part.name } }"
+          :to="{ path: '/graph', query: { part: part.name } }"
           class="flex items-center gap-1.5 rounded py-1 pr-2 pl-5 text-ui hover:bg-elevated"
           :class="{ 'bg-elevated text-highlighted': partShown === part.name }"
           :title="`${part.name} · ${t('CodeSidebar.functions', { count: part.functions })}`"

@@ -1,0 +1,38 @@
+{
+  "affected": "calls changed",
+  "callCounts": "called from {callers}, calls {callees}",
+  "callback": "(callback)",
+  "changed": "changed",
+  "changedSince": "Changed since you learned it",
+  "entry": "entry",
+  "fewer": "Only the ones on a line",
+  "fit": "Fit everything in view",
+  "focusFile": "Show the graph of {path}",
+  "focusPart": "Show the graph of the part {name}",
+  "idle": {
+    "one": "Not on a call ({count} file)",
+    "other": "Not on a call ({count} files)"
+  },
+  "idleHelp": "Files of this part with no call to or from the rest: click one to see its functions",
+  "innerCalls": {
+    "one": "{count} call within this file: hover to see it",
+    "other": "{count} calls within this file: hover to see them"
+  },
+  "lines": "lines {from}–{to}",
+  "more": "{count} more · Show",
+  "moreFiles": {
+    "one": "{count} more file",
+    "other": "{count} more files"
+  },
+  "notLearned": "Not learned yet",
+  "partFiles": {
+    "one": "{count} file without imports between parts · open the part",
+    "other": "{count} files without imports between parts · open the part"
+  },
+  "shut": "Show the name only",
+  "test": "test",
+  "understood": "Understood",
+  "unshut": "Show the rows",
+  "zoomIn": "Zoom in",
+  "zoomOut": "Zoom out"
+}

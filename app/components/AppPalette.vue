@@ -121,10 +121,7 @@ const groups = computed(() => {
         { label: t('AppPalette.grep'), suffix: t('AppPalette.grepHelp'), icon: 'i-lucide-text-search', to: '/grep' },
         ...branch ? [{ label: t('AppPalette.review', { name: branch.name }), suffix: t('AppPalette.reviewHelp'), icon: 'i-lucide-list-checks', to: '/review' }] : [],
         ...operation.value ? [{ label: t('AppPalette.conflicts', { title: said(operation.value.title) }), icon: 'i-lucide-git-merge', to: '/conflicts' }] : [],
-        { label: t('AppPalette.layers'), icon: 'i-lucide-layers', to: '/layers' },
-        { label: t('AppPalette.canvas'), icon: 'i-lucide-boxes', to: '/canvas' },
-        { label: t('AppPalette.calls'), icon: 'i-lucide-git-fork', to: '/calls' },
-        { label: t('AppPalette.imports'), icon: 'i-lucide-network', to: '/imports' },
+        { label: t('AppPalette.graph'), suffix: t('AppPalette.graphHelp'), icon: 'i-lucide-workflow', to: '/graph' },
         { label: t('AppPalette.unused'), icon: 'i-lucide-ghost', to: '/unused' },
         { label: t('AppPalette.routes'), suffix: t('AppPalette.routesHelp'), icon: 'i-lucide-route', to: '/routes' }
       ].map(item => ({ ...item, onSelect: () => run(() => router.push(item.to)) }))
@@ -153,7 +150,7 @@ const groups = computed(() => {
         icon: 'i-lucide-pin',
         onSelect: () => run(() => {
           select(pin.found!.fn.id)
-          return router.push({ path: '/calls', query: { center: pin.found!.fn.id, fn: pin.found!.fn.id } })
+          return router.push({ path: '/graph', query: { center: pin.found!.fn.id, fn: pin.found!.fn.id } })
         })
       }))
     },
@@ -178,7 +175,7 @@ const groups = computed(() => {
         icon: 'i-lucide-square-function',
         onSelect: () => run(() => {
           select(fn.id)
-          return router.push({ path: '/calls', query: { center: fn.id, fn: fn.id } })
+          return router.push({ path: '/graph', query: { center: fn.id, fn: fn.id } })
         })
       }))
     }

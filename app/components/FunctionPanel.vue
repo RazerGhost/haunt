@@ -66,8 +66,8 @@ const reach = computed(() => affected.value.get(selected.value?.fn.id ?? ''))
 
     <div class="flex flex-wrap gap-2">
       <UButton icon="i-lucide-square-arrow-out-up-right" :label="t('FunctionPanel.openInEditor')" size="sm" @click="open(selected.file.path, selected.fn.line)" />
-      <UButton icon="i-lucide-git-fork" :label="t('FunctionPanel.callGraph')" size="sm" color="neutral" variant="outline" :to="{ path: '/calls', query: { fn: selected.fn.id } }" />
-      <UButton icon="i-lucide-layers" :label="t('FunctionPanel.inPart')" size="sm" color="neutral" variant="ghost" :to="{ path: '/layers', query: { part: selected.file.part, fn: selected.fn.id } }" />
+      <UButton icon="i-lucide-git-fork" :label="t('FunctionPanel.callGraph')" size="sm" color="neutral" variant="outline" :to="{ path: '/graph', query: { center: selected.fn.id, fn: selected.fn.id } }" />
+      <UButton icon="i-lucide-layers" :label="t('FunctionPanel.inPart')" size="sm" color="neutral" variant="ghost" :to="{ path: '/graph', query: { part: selected.file.part, fn: selected.fn.id } }" />
       <UButton icon="i-lucide-user-round-search" :label="t('FunctionPanel.blame')" size="sm" color="neutral" variant="ghost" :to="{ path: '/blame', query: { path: selected.file.path, fn: selected.fn.id } }" />
       <UButton :icon="pins.isPinned(selected) ? 'i-lucide-pin-off' : 'i-lucide-pin'" :label="pins.isPinned(selected) ? t('FunctionPanel.unpin') : t('FunctionPanel.pin')" size="sm" color="neutral" variant="ghost" :title="pins.isPinned(selected) ? t('FunctionPanel.unpinHelp') : t('FunctionPanel.pinHelp')" @click="pins.toggle(selected)" />
       <UButton :icon="learned ? 'i-lucide-x' : 'i-lucide-graduation-cap'" :label="learned ? t('FunctionPanel.unmark') : t('FunctionPanel.markUnderstood')" size="sm" color="neutral" variant="ghost" :title="learned ? t('FunctionPanel.unmarkHelp') : t('FunctionPanel.markUnderstoodHelp')" @click="toggleLearned" />

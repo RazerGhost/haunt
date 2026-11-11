@@ -1,0 +1,152 @@
+{
+  "affected": "calls a changed one",
+  "around": "Around",
+  "aroundHelp": "Callers to the left, what it calls to the right",
+  "back": "Back",
+  "bookmark": "Bookmark this file",
+  "breaksCount": {
+    "one": "{count} rule break",
+    "other": "{count} rule breaks"
+  },
+  "calledFrom": "called from {count}",
+  "callsCount": "calls {count}",
+  "changed": "changed",
+  "changedSince": "changed since",
+  "config": {
+    "after": ", only through those files. Parts no rule matches sit above and are not checked.",
+    "afterConfig": ": a part may use lower layers, and parts of its own layer listed in",
+    "afterUses": "; with",
+    "before": "Rules from"
+  },
+  "cycles": {
+    "one": "{count} runtime cycle",
+    "other": "{count} runtime cycles"
+  },
+  "direction": {
+    "both": "Callers and callees",
+    "callees": "Callees",
+    "callers": "Callers"
+  },
+  "empty": "Nothing to draw here.",
+  "entriesHelp": "Functions nothing calls that call others: where the code is entered.",
+  "export": "Export",
+  "exportTitle": "Export the graph",
+  "exported": "Graph exported",
+  "familiarity": "Familiarity",
+  "familiarityHelp": "Mark functions by whether you learned them: hollow not yet, green understood, amber changed since",
+  "familiarityLegend": "What the colours mean",
+  "gone": "That function is not in the scan any more. Pick another on the left.",
+  "hotspots": "Hotspots",
+  "hotspotsHelp": {
+    "one": "Tint files by how often they changed in the last {count} day",
+    "other": "Tint files by how often they changed in the last {count} days"
+  },
+  "imports": "Imports",
+  "importsCount": {
+    "one": "{count} import between parts",
+    "other": "{count} imports between parts"
+  },
+  "importsHelp": "Draw the imports between the files shown as well (blue; red and amber when they break the project's rules)",
+  "inCycle": "{name} is called only from inside a cycle (functions that call each other), never from an entry point; its direct callers are shown.",
+  "includeTests": "Include tests",
+  "includeTestsHelp": "Count tests and the helpers only tests call (test-helpers.ts and the like) in the lists and graphs",
+  "isEntry": "{name} is an entry point: nothing in the scan calls it.",
+  "itCalls": {
+    "one": "It calls {count} function.",
+    "other": "It calls {count} functions."
+  },
+  "itCallsNothing": "It calls nothing in the scan.",
+  "known": "{count} known (accepted for now)",
+  "leftOut": {
+    "one": "{count} more file reached is left out.",
+    "other": "{count} more files reached are left out."
+  },
+  "matching": "Matching functions",
+  "matchingFiles": "Files",
+  "newBreaks": {
+    "one": "{count} new rule break",
+    "other": "{count} new rule breaks"
+  },
+  "none": {
+    "after": "(see Haunt's README).",
+    "before": "Arrows show imports between parts. To check them against your own layers, add a"
+  },
+  "notExported": "The graph could not be exported",
+  "notLearned": "not learned",
+  "onlyBreaks": "Only rule breaks",
+  "openFile": "Open the file in the editor",
+  "overTime": "Over time",
+  "paths": "Paths",
+  "pathsHelp": "How the code reaches it, top to bottom",
+  "png": "PNG image",
+  "predict": "Predict",
+  "predictAgain": "Try again",
+  "predictClear": "Clear",
+  "predictDone": "Every place is filled: reveal the paths, or click a place to change it.",
+  "predictFill": "Pick the function for place {number}: from the list below, or from the list on the left (search for any function).",
+  "predictHelp": "Hide the functions between the entry points and this one, and fill them in yourself",
+  "predictNothing": "Nothing to predict here: the entry points call it directly, or it is an entry point itself.",
+  "predictScore": "{right} of {count} right",
+  "predictUnpick": "Take this pick out",
+  "project": "Project",
+  "reach": {
+    "both": {
+      "one": "{count} step either way",
+      "other": "{count} steps either way"
+    },
+    "callees": {
+      "one": "Callees, {count} step",
+      "other": "Callees, {count} steps"
+    },
+    "callers": {
+      "one": "Callers, {count} step",
+      "other": "Callers, {count} steps"
+    }
+  },
+  "reachBelow": {
+    "one": "{count} step below",
+    "other": "{count} steps below"
+  },
+  "reached": {
+    "one": "{name} is reached from {count} entry point in {steps}.",
+    "other": "{name} is reached from {count} entry points in {steps}."
+  },
+  "reachedShortest": {
+    "one": "{name} is reached from {count} entry point in {steps} (the 12 shortest paths shown).",
+    "other": "{name} is reached from {count} entry points in {steps} (the 12 shortest paths shown)."
+  },
+  "recentEmpty": "The functions you put in the middle show here.",
+  "reveal": "Reveal",
+  "rules": "The rules and runtime cycles",
+  "rulesError": "The layer rules could not be read",
+  "runtimeCycles": "Runtime cycles",
+  "scanning": "Scanning",
+  "script": {
+    "after": "(it runs because the folder is trusted). Parts it does not name sit above and are not checked.",
+    "before": "Rules from the architecture script named in"
+  },
+  "show": "Show",
+  "showMenu": "Show",
+  "shown": "{files} and {functions} shown.",
+  "startFrom": "Start from",
+  "steps": {
+    "one": "{count} step",
+    "other": "{count} steps"
+  },
+  "stepsBelow": "Steps below",
+  "stepsLabel": "Steps",
+  "stepsRange": "{shortest} to {longest} steps",
+  "svg": "SVG image",
+  "tab": {
+    "called": "Most called",
+    "entries": "Entry points",
+    "recent": "Recent"
+  },
+  "trail": "Trail",
+  "typeOnly": "Type-only imports (dashed)",
+  "unbookmark": "Remove the bookmark",
+  "understood": "understood",
+  "waiting": "Waiting for the call graph.",
+  "whoKnows": "Who knows it",
+  "working": "Working out the call graph…"
+}

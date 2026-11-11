@@ -117,7 +117,7 @@ function answer(route: Route, knew: boolean): void {
 const covered = (route: Route) => hide.value && !revealed.value.has(keyOf(route)) && next(route, handlerOf(route)).length > 0
 const knewCount = computed(() => [...answered.value.values()].filter(item => item === 'knew').length)
 function paths(id: string): void {
-  void router.push({ path: '/calls', query: { center: id, fn: id } })
+  void router.push({ path: '/graph', query: { center: id, fn: id } })
 }
 const trying = ref(false)
 const tried = shallowRef<Route | null>(null)
