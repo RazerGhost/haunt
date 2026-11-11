@@ -33,5 +33,8 @@
   "commit": "Committen",
   "trust": "Deze map vertrouwen…",
   "commitAndPush": "Committen en pushen",
-  "commitAndPushHelp": "Commit, en pusht dan de branch (Ctrl Shift Enter)"
+  "commitAndPushHelp": "Commit, en pusht dan de branch (Ctrl Shift Enter)",
+  "detached": "Je staat niet op een branch: deze commit hoort dan bij geen enkele branch.",
+  "branchFirst": "Maak eerst een branch",
+  "onto": "Commits gaan naar {branch}"
 }

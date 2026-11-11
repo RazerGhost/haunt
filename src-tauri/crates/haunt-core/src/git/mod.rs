@@ -10,6 +10,7 @@ pub mod grep;
 mod health;
 mod history;
 pub mod knowledge;
+mod landed;
 pub mod local;
 mod log;
 pub mod objects;
@@ -31,6 +32,7 @@ pub use history::{
     churn, file_blame, file_history, first_parent_changes, first_parents, function_history, last_mention, line_history,
     parent_and_size, HISTORY_COMMITS,
 };
+pub use landed::{landed, Landed, LandedBranch, LandedCommit};
 pub use log::log;
 #[cfg(test)]
 pub use objects::file_diff;

@@ -21,5 +21,6 @@
   "unmerged": "{name} has commits no other branch has. Deleting it loses them; confirm to go ahead.",
   "nothingToStash": "There are no changes to stash.",
   "stashGone": "That stash is not there any more.",
-  "stashUnknown": "That stash is not known."
+  "stashUnknown": "That stash is not known.",
+  "noUpstream": "{name} tracks no remote branch."
 }

@@ -258,6 +258,8 @@ commands! {
         let old = old.unwrap_or_else(|| path.clone());
         crate::git::file_diff_with(&repo, from.as_deref(), &to, &path, &old, context, ignore_space)
     }
+    /// The commits of other branches whose changes the main line already has (cherry-picked, rebased or squash-merged).
+    fn landed(api, repo: String) -> crate::git::Landed { api.repos.require(&repo)?; crate::git::landed(&repo) }
     /// The local branches whose commits are all on the current branch, but the current one.
     fn merged_branches(api, repo: String) -> Vec<String> { api.repos.require(&repo)?; crate::git::merged_branches(&repo) }
     /// A function's history, carried on past the commits that moved it here from another file.
@@ -500,6 +502,10 @@ commands! {
     fn rename_branch(api, repo: String, from: String, to: String) -> () {
         let undo = Undo::RenameBack { from: from.clone(), to: to.clone() };
         api.undoable(&repo, &["head", "refs"], undo, |_| said!("api.renamed", "Renamed {from} to {to}", from = from, to = to), |writer| writer.rename_branch(&from, &to))
+    }
+    /// Keeps a copy of a branch as `backup`, then moves the branch to the remote branch it tracks.
+    fn match_upstream(api, repo: String, name: String, backup: String) -> () {
+        api.write(&repo, &["head", "refs", "index"], |writer| writer.match_upstream(&name, &backup))
     }
     /// How many commits only this branch has: what deleting it would lose.
     fn unmerged(api, repo: String, name: String) -> u32 { api.repos.require(&repo)?; Writer::new(&repo, false).unmerged(&name) }

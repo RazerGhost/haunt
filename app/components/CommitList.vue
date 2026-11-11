@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { GraphLayout, type GraphRow } from '~~/shared/graph'
-import type { LogCommit, LogQuery } from '~~/shared/types'
+import type { Decoration, LogCommit, LogQuery } from '~~/shared/types'
 
 /*
  * The commit list with its graph, newest first. Pages of 300 load as you scroll; only the rows on screen are drawn, so
  * a long history stays quick. Click a commit to see it; Ctrl-click (⌘ on macOS) a second one to compare the two.
  * Up and down move the selection. Read again after a commit, fetch or branch switch, keeping the rows already loaded.
+ * Commits whose changes the main line already has under another sha (useLanded) are dimmed, with a link to that commit;
+ * `hideLanded` leaves out the branches it has in full.
  */
-const props = defineProps<{ from?: string, author?: string, message?: string, path?: string, changed?: string, merges?: 'only' | 'none', selected: string | null, compare: string | null }>()
+const props = defineProps<{ from?: string, not?: string, hideLanded?: boolean, author?: string, message?: string, path?: string, changed?: string, merges?: 'only' | 'none', selected: string | null, compare: string | null }>()
 const emit = defineEmits<{ select: [sha: string, compare: boolean] }>()
 const { repo, gitChanged } = useRepositories()
 // A commit, a switch or a fetch; staging alone does not change the list.
@@ -40,7 +42,10 @@ const { times, order } = usePreferences()
 const refActions = useRefActions()
 const undo = useOperation()
 const webs = useWeb()
-const { current, localChanges } = useRefs()
+const { current, localChanges, refs } = useRefs()
+const landed = useLanded()
+/** The branches left out: those the main line has in full, when asked and the whole list is shown. */
+const hidden = computed(() => (props.hideLanded && !props.from ? landed.whole.value.map(branch => branch.reference) : []))
 const patches = usePatches()
 /** A commit's whole message (subject and body), for the menu's Copy the message. */
 async function copyMessage(sha: string): Promise<void> {
@@ -90,7 +95,7 @@ const height = ref(600)
 async function page(fresh: boolean, limit = PAGE): Promise<void> {
   if (loading.value && !fresh) return
   try {
-    const query: LogQuery = { from: props.from ? [props.from] : undefined, author: props.author || undefined, message: props.message || undefined, path: props.path || undefined, by_date: order.value === 'date', merges: props.merges ?? null, changed: props.changed || null, skip: fresh ? 0 : commits.value.length, limit }
+    const query: LogQuery = { from: props.from ? [props.from, ...(props.not ? [`^${props.not}`] : [])] : undefined, hide: hidden.value.length ? hidden.value : null, author: props.author || undefined, message: props.message || undefined, path: props.path || undefined, by_date: order.value === 'date', merges: props.merges ?? null, changed: props.changed || null, skip: fresh ? 0 : commits.value.length, limit }
     const found = await ask.run(at => haunt.log(at, query))
     if (found === undefined) return
     if (fresh) layout = new GraphLayout()
@@ -103,7 +108,7 @@ async function page(fresh: boolean, limit = PAGE): Promise<void> {
   }
 }
 // Where each list was scrolled, by repository and filter, so going back to a tab finds its place.
-const place = computed(() => JSON.stringify([repo.value, props.from, props.author, props.message, props.path, props.changed, props.merges, order.value]))
+const place = computed(() => JSON.stringify([repo.value, props.from, props.not, hidden.value, props.author, props.message, props.path, props.changed, props.merges, order.value]))
 watch(place, async (now) => {
   commits.value = []
   rows.value = []
@@ -166,6 +171,46 @@ function move(step: number): void {
   if (el && (index * ROW < el.scrollTop || (index + 1) * ROW > el.scrollTop + el.clientHeight)) el.scrollTop = index * ROW - el.clientHeight / 2
 }
 
+/* The refs on a row: a local branch and its remote branch on the same commit are one chip (with a cloud); long names
+ * are cut in the middle; past three, the rest fold into "+N". */
+interface Chip { kind: Decoration['kind'], name: string, upstream?: string }
+const upstreamOf = computed(() => new Map((refs.value?.branches ?? []).flatMap(branch => (branch.upstream ? [[branch.name, branch.upstream] as const] : []))))
+const CHIPS = 3
+function chipsOf(commit: LogCommit): { shown: Chip[], more: Chip[] } {
+  const remotes = new Set(commit.refs.filter(ref => ref.kind === 'remote').map(ref => ref.name))
+  const joined = new Set<string>()
+  const branches: Chip[] = commit.refs.filter(ref => ref.kind === 'branch').map((ref) => {
+    const upstream = upstreamOf.value.get(ref.name)
+    if (upstream && remotes.has(upstream)) {
+      joined.add(upstream)
+      return { kind: 'branch', name: ref.name, upstream }
+    }
+    return { kind: 'branch', name: ref.name }
+  })
+  branches.sort((a, b) => Number(b.name === current.value?.name) - Number(a.name === current.value?.name))
+  const all: Chip[] = [
+    ...branches,
+    ...commit.refs.filter(ref => ref.kind === 'remote' && !joined.has(ref.name)).map(ref => ({ kind: ref.kind, name: ref.name })),
+    ...commit.refs.filter(ref => ref.kind === 'tag').map(ref => ({ kind: ref.kind, name: ref.name }))
+  ]
+  if (all.length <= CHIPS) return { shown: all, more: [] }
+  return { shown: all.slice(0, CHIPS - 1), more: all.slice(CHIPS - 1) }
+}
+function chipTitle(chip: Chip): string {
+  if (chip.kind === 'branch') return chip.upstream ? t('CommitList.branchWithRemote', { name: chip.name, upstream: chip.upstream }) : t('CommitList.branchNamed', { name: chip.name })
+  return chip.kind === 'remote' ? t('CommitList.remoteBranchNamed', { name: chip.name }) : t('CommitList.tagNamed', { name: chip.name })
+}
+
+/* When one person wrote nearly every commit loaded, the author column is only initials: the same name on every row
+ * says nothing. */
+const oneAuthor = computed(() => {
+  const list = commits.value
+  if (list.length < 20) return false
+  const counts = new Map<string, number>()
+  for (const commit of list) counts.set(commit.email, (counts.get(commit.email) ?? 0) + 1)
+  return Math.max(...counts.values()) / list.length >= 0.9
+})
+
 function when(seconds: number): string {
   if (times.value === 'date') return new Date(seconds * 1000).toLocaleString(locale(), { dateStyle: 'short', timeStyle: 'short' })
   const minutes = Math.floor((Date.now() / 1000 - seconds) / 60)
@@ -180,10 +225,10 @@ function when(seconds: number): string {
 <template>
   <div class="flex min-h-0 flex-col">
     <UAlert v-if="problem" class="m-3" color="error" variant="subtle" icon="i-lucide-circle-alert" :description="problem" />
-    <p v-else-if="!loading && !commits.length" class="p-6 text-center text-sm text-muted">{{ props.author || props.message || props.path || props.changed || props.merges ? t('CommitList.noMatch') : t('CommitList.noCommits') }}</p>
+    <p v-else-if="!loading && !commits.length" class="p-6 text-center text-sm text-muted">{{ props.not ? t('CommitList.nothingOnlyHere', { from: props.from ?? '', not: props.not }) : props.author || props.message || props.path || props.changed || props.merges ? t('CommitList.noMatch') : t('CommitList.noCommits') }}</p>
     <!-- The work not committed yet, above the history: one click to Local changes. -->
     <NuxtLink
-      v-if="localChanges && !props.from && !props.author && !props.message && !props.path && !props.changed && !props.merges"
+      v-if="localChanges && !props.from && !props.not && !props.author && !props.message && !props.path && !props.changed && !props.merges"
       to="/local"
       class="flex shrink-0 items-center gap-2 border-b border-default px-3 py-1.5 text-ui hover:bg-elevated/60"
     >
@@ -218,22 +263,41 @@ function when(seconds: number): string {
           @contextmenu="menuFor = commits[at]!"
         >
           <GraphCell :row="rows[at]!" :width="lanesOf(at)" :merge="commits[at]!.parents.length > 1" :head="commits[at]!.refs.some(ref => ref.kind === 'head')" />
-          <span class="flex min-w-0 flex-1 items-center gap-1.5">
-            <template v-for="ref in commits[at]!.refs.filter(r => r.kind !== 'head')" :key="`${ref.kind}:${ref.name}`">
+          <span class="flex min-w-0 flex-1 items-center gap-1.5" :class="{ 'opacity-55': landed.commits.value.has(commits[at]!.sha) }">
+            <span v-if="commits[at]!.refs.some(r => r.kind !== 'head')" class="flex max-w-[40%] min-w-0 shrink-0 items-center gap-1 overflow-hidden">
               <span
-                class="flex shrink-0 items-center gap-0.5 rounded px-1.5 text-label leading-4 font-medium"
-                :class="ref.kind === 'branch' ? 'bg-(--ui-primary)/10 text-highlighted' : ref.kind === 'remote' ? 'border border-default text-muted' : 'bg-warning/15 text-warning'"
-                :title="ref.kind === 'branch' ? t('CommitList.branch') : ref.kind === 'remote' ? t('CommitList.remoteBranch') : t('CommitList.tag')"
+                v-for="chip in chipsOf(commits[at]!).shown"
+                :key="`${chip.kind}:${chip.name}`"
+                class="flex min-w-0 shrink-0 items-center gap-0.5 rounded px-1.5 text-label leading-4 font-medium whitespace-nowrap"
+                :class="chip.kind === 'branch' ? 'bg-(--ui-primary)/10 text-highlighted' : chip.kind === 'remote' ? 'border border-default text-muted' : 'bg-warning/15 text-warning'"
+                :title="chipTitle(chip)"
               >
-                <UIcon v-if="ref.kind === 'tag'" name="i-lucide-tag" class="size-2.5" />
-                <UIcon v-else-if="ref.kind === 'remote'" name="i-lucide-cloud" class="size-2.5" />
-                <span :class="{ 'font-bold': ref.kind === 'branch' && commits[at]!.refs.some(r => r.kind === 'head') }">{{ ref.name }}</span>
+                <UIcon v-if="chip.kind === 'tag'" name="i-lucide-tag" class="size-2.5" />
+                <UIcon v-else-if="chip.kind === 'remote'" name="i-lucide-cloud" class="size-2.5" />
+                <span :class="{ 'font-bold': chip.kind === 'branch' && chip.name === current?.name }">{{ middle(chip.name) }}</span>
+                <UIcon v-if="chip.upstream" name="i-lucide-cloud" class="size-2.5 text-muted" />
               </span>
-            </template>
+              <span
+                v-if="chipsOf(commits[at]!).more.length"
+                class="shrink-0 rounded border border-default px-1 text-label leading-4 text-muted"
+                :title="chipsOf(commits[at]!).more.map(chip => chip.name).join('\n')"
+              >+{{ chipsOf(commits[at]!).more.length }}</span>
+            </span>
             <span class="truncate" :class="commits[at]!.sha === props.selected ? 'text-highlighted' : ''" :title="commits[at]!.subject">{{ commits[at]!.subject }}</span>
           </span>
-          <UIcon v-if="commits[at]!.signed" name="i-lucide-shield-check" class="size-3.5 shrink-0 text-dimmed" :title="t('CommitList.signed')" />
-          <span class="w-36 shrink-0 truncate text-muted" :title="commits[at]!.email">{{ commits[at]!.author }}</span>
+          <button
+            v-if="landed.commits.value.has(commits[at]!.sha)"
+            type="button"
+            class="flex shrink-0 items-center gap-0.5 rounded px-1 text-label text-success hover:bg-elevated"
+            :title="t('CommitList.landed', { base: landed.base.value ?? 'main', sha: landed.commits.value.get(commits[at]!.sha)!.slice(0, 7) })"
+            @click.stop="emit('select', landed.commits.value.get(commits[at]!.sha)!, false)"
+          >
+            <UIcon name="i-lucide-check-check" class="size-3.5" />{{ t('CommitList.inBase', { base: landed.base.value ?? 'main' }) }}
+          </button>
+          <span v-if="oneAuthor" class="grid w-8 shrink-0 place-items-center" :title="`${commits[at]!.author} <${commits[at]!.email}>`">
+            <span class="grid size-5 place-items-center rounded-full bg-elevated text-[10px] font-semibold text-muted">{{ initials(commits[at]!.author) }}</span>
+          </span>
+          <span v-else class="w-36 shrink-0 truncate text-muted" :title="commits[at]!.email">{{ commits[at]!.author }}</span>
           <span class="shrink-0 text-right text-muted tabular-nums" :class="times === 'date' ? 'w-32' : 'w-20'" :title="new Date(commits[at]!.time * 1000).toLocaleString(locale())">{{ when(commits[at]!.time) }}</span>
           <span class="w-16 shrink-0 text-right font-mono text-dimmed">{{ commits[at]!.sha.slice(0, 7) }}</span>
         </div>

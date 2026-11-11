@@ -6,7 +6,7 @@
   "notDeleted": "Niet verwijderd: {names}.",
   "reflog": "git bewaart hun commits nog een tijd in de reflog.",
   "title": "Branches opruimen",
-  "description": "Gemergede branches, en branches waarvan de remote weg is.",
+  "description": "Gemergede branches, branches die al in de hoofdlijn zitten, en branches waarvan de remote weg is.",
   "nothing": "Niets op te ruimen.",
   "merged": "gemerged",
   "goneOnly": {
@@ -17,5 +17,7 @@
   "delete": {
     "one": "{count} branch verwijderen",
     "other": "{count} branches verwijderen"
-  }
+  },
+  "landed": "in {base}",
+  "landedHelp": "Gesquasht of gerebased: alle wijzigingen zitten erin, onder andere sha's"
 }
