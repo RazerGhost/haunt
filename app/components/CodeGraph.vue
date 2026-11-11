@@ -645,8 +645,8 @@ const lookOf = (row: GraphRow) => rowLooks.value.get(row.id) ?? NO_LOOK
               <span v-else class="size-2 shrink-0 rounded-full" :style="{ background: layerColorOf(card) }" />
               <button type="button" class="flex min-w-0 flex-1 items-baseline gap-1.5 text-left" :title="card.kind === 'file' ? card.name : headerTitle(card)" @click="emit('header', card)">
                 <template v-if="card.kind === 'file'">
-                  <span class="shrink-0 font-mono text-xs font-semibold text-highlighted hover:underline">{{ baseOf(card.name) }}</span>
-                  <span class="min-w-0 truncate font-mono text-label text-muted" dir="rtl">{{ folderOf(card.name) }}</span>
+                  <span class="min-w-0 truncate font-mono text-xs font-semibold text-highlighted hover:underline">{{ baseOf(card.name) }}</span>
+                  <span class="min-w-0 shrink-[4] truncate font-mono text-label text-muted" dir="rtl">{{ folderOf(card.name) }}</span>
                 </template>
                 <span v-else-if="card.kind === 'idle'" class="truncate text-xs text-muted">{{ t('CodeGraph.idle', { count: card.rows.length }) }}</span>
                 <span v-else class="truncate font-mono text-xs font-semibold text-highlighted hover:underline">{{ card.name }}</span>
@@ -706,8 +706,8 @@ const lookOf = (row: GraphRow) => rowLooks.value.get(row.id) ?? NO_LOOK
                       <span v-if="row.kind === 'file'" class="size-2.5 shrink-0 rounded-[2px] border border-(--ui-text-dimmed)" />
                       <span v-else-if="lookOf(row).letter" class="grid size-4 shrink-0 place-items-center rounded font-mono text-[10px] font-bold" :class="lookOf(row).tint">{{ lookOf(row).letter }}</span>
                       <span class="flex min-w-0 flex-1 items-baseline gap-1.5">
-                        <span class="shrink-0 truncate font-mono text-xs" :class="[row.context ? '' : 'text-highlighted', center === row.id ? 'font-semibold' : '']">{{ lookOf(row).name }}</span>
-                        <span v-if="lookOf(row).folder" class="min-w-0 truncate font-mono text-[10px] text-dimmed" dir="rtl">{{ lookOf(row).folder }}</span>
+                        <span class="min-w-0 truncate font-mono text-xs" :class="[row.context ? '' : 'text-highlighted', center === row.id ? 'font-semibold' : '']">{{ lookOf(row).name }}</span>
+                        <span v-if="lookOf(row).folder" class="min-w-0 shrink-[4] truncate font-mono text-[10px] text-dimmed" dir="rtl">{{ lookOf(row).folder }}</span>
                       </span>
                       <span v-if="entries?.has(row.id)" class="shrink-0 rounded bg-info/15 px-1 text-[10px] text-info">{{ t('CodeGraph.entry') }}</span>
                       <span v-if="changedById.has(row.id)" class="shrink-0 rounded bg-warning/15 px-1 text-[10px] text-warning">{{ t('CodeGraph.changed') }}</span>
