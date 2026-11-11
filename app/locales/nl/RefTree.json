@@ -27,5 +27,12 @@
   "deleteSeveral": {
     "one": "{count} branch verwijderen",
     "other": "{count} branches verwijderen"
-  }
+  },
+  "cleanUp": "Branches opruimen…",
+  "matchUpstream": "Kopie bewaren, dan gelijkzetten met {upstream}…",
+  "goneHelp": "{upstream} is weg van de remote, vaak na een merge daar. Klik om op te ruimen.",
+  "localOnly": "Alleen hier: hij volgt geen remote branch",
+  "apart": "Ver uit elkaar met {upstream}: {ahead} alleen hier, {behind} alleen daar",
+  "inStep": "Gelijk aan {upstream}",
+  "inBase": "Alle wijzigingen zitten al in {base} (gesquasht of gerebased): kan opgeruimd worden"
 }

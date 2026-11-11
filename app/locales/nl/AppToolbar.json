@@ -37,5 +37,13 @@
   "connecting": "Verbinden…",
   "stopGit": "git stoppen",
   "find": "Functie zoeken",
-  "clearSearch": "Zoekopdracht wissen"
+  "clearSearch": "Zoekopdracht wissen",
+  "detachedFrom": "Detached op {commit} ({from})",
+  "detachedTip": "Je staat op commit {commit}, niet op een branch. Commits die je hier maakt horen bij geen enkele branch: maak een branch om ze te houden, of ga terug naar een branch.",
+  "apartTip": "Hij is ver uit elkaar gegroeid met {upstream}: zie de melding boven Alle commits.",
+  "backTo": "Terug naar {name}",
+  "branchHere": "Nieuwe branch hier…",
+  "switchTo": "Overschakelen naar {name}",
+  "seeLocal": "Lokale wijzigingen",
+  "findCommit": "Zoek een commit"
 }

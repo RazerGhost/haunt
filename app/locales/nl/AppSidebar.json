@@ -64,5 +64,11 @@
   "pushTags": {
     "one": "{count} tag pushen",
     "other": "{count} tags pushen"
-  }
+  },
+  "toClean": {
+    "one": "{count} op te ruimen",
+    "other": "{count} op te ruimen"
+  },
+  "toCleanHelp": "Branches die weg zijn van de remote, of al in de hoofdlijn zitten",
+  "remotesHelp": "Remote branches die geen lokale branch volgt; de andere staan bij hun lokale branch"
 }

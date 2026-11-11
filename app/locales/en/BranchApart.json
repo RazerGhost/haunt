@@ -1,0 +1,13 @@
+{
+  "title": "{name} and {upstream} went different ways",
+  "counts": "{ahead} commits are only here and {behind} only on {upstream}.",
+  "rewritten": "{count} of the {ahead} are already on {upstream} under other shas, so its history was most likely rewritten (rebased or squashed).",
+  "pullWould": "A pull would merge or rebase all of them onto {upstream}.",
+  "onlyHere": {
+    "one": "Show the {count} commit only here",
+    "other": "Show the {count} commits only here"
+  },
+  "match": "Keep a copy, then match {upstream}…",
+  "matchHelp": "{name} is kept under another name first, so nothing is lost.",
+  "rebase": "Rebase onto {upstream}…"
+}

@@ -29,10 +29,13 @@
     "other": "{count} files not committed yet, on {branch}"
   },
   "commits": "Commits",
-  "branch": "Branch",
-  "remoteBranch": "Remote branch",
-  "tag": "Tag",
   "searchFiles": "Search the files here…",
-  "signed": "Signed: the commit's details check the signature",
-  "shaCopied": "Copied {sha}"
+  "shaCopied": "Copied {sha}",
+  "branchNamed": "Branch {name}",
+  "branchWithRemote": "Branch {name}, the same as {upstream}",
+  "remoteBranchNamed": "Remote branch {name}",
+  "tagNamed": "Tag {name}",
+  "nothingOnlyHere": "{from} has no commits that {not} has not.",
+  "landed": "Its changes are already in {base}, as {sha}. Click to see that commit.",
+  "inBase": "in {base}"
 }

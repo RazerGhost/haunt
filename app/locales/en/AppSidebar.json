@@ -64,5 +64,11 @@
   "pushTags": {
     "one": "Push {count} tag",
     "other": "Push {count} tags"
-  }
+  },
+  "toClean": {
+    "one": "{count} to clean up",
+    "other": "{count} to clean up"
+  },
+  "toCleanHelp": "Branches gone from the remote, or already in the main line",
+  "remotesHelp": "Remote branches no local branch tracks; the others show on their local branch"
 }

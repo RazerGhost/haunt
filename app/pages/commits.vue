@@ -1,15 +1,20 @@
 <script setup lang="ts">
 /*
  * The commit list: filters on top, the commits with their graph, and the picked commit below with its
- * lenses. The filters and the picked commits are in the address (?from, author, message, path, commit, compare), so
- * each tab comes back to them.
+ * lenses. The filters and the picked commits are in the address (?from, not, author, message, path, commit, compare,
+ * landed), so each tab comes back to them. The message filter is typed in the toolbar's search (AppToolbar).
  */
 const route = useRoute()
 const router = useRouter()
-const { refs } = useRefs()
+const { refs, current } = useRefs()
+const landed = useLanded()
 
 const param = (name: string) => (typeof route.query[name] === 'string' ? route.query[name] as string : '')
 const from = computed(() => param('from'))
+/** Leaves out what this has: `from=main&not=origin/main` lists the commits only main has. */
+const not = computed(() => param('not'))
+/** `landed=hide`: the branches the main line already has in full are left out of the whole list. */
+const hideLanded = computed({ get: () => param('landed') === 'hide', set: (value: boolean) => set({ landed: value ? 'hide' : null }) })
 const author = computed(() => param('author'))
 const message = computed(() => param('message'))
 const path = computed(() => param('path'))
@@ -31,12 +36,20 @@ function set(values: Record<string, string | null>): void {
 
 // The select needs a value for "every branch"; no branch can be called this.
 const ALL = '*all*'
-const branches = computed(() => [
-  { value: ALL, label: t('pages.commits.allBranches') },
-  ...(refs.value?.branches.map(branch => ({ value: branch.name, label: branch.name })) ?? []),
-  ...(refs.value?.remotes.flatMap(remote => remote.branches.map(branch => ({ value: `${remote.name}/${branch.name}`, label: `${remote.name}/${branch.name}` }))) ?? [])
-])
-const branch = computed({ get: () => from.value || ALL, set: value => set({ from: value === ALL ? null : value }) })
+// Local branches and remote branches apart, each group with its heading; the menu can be searched.
+const branches = computed(() => {
+  const remote = refs.value?.remotes.flatMap(one => one.branches.map(branch => `${one.name}/${branch.name}`)) ?? []
+  const groups: { type?: 'label', value?: string, label: string }[][] = [[{ value: ALL, label: t('pages.commits.allBranches') }]]
+  if (refs.value?.branches.length) groups.push([{ type: 'label', label: t('pages.commits.local') }, ...refs.value.branches.map(branch => ({ value: branch.name, label: branch.name }))])
+  if (remote.length) groups.push([{ type: 'label', label: t('pages.commits.remote') }, ...remote.map(name => ({ value: name, label: name }))])
+  return groups
+})
+const branch = computed({ get: () => from.value || ALL, set: (value: string) => set({ from: value === ALL ? null : value, not: null }) })
+/** The branch whose distance from its remote branch is worth a word above the list: the one listed, else yours. */
+const apartName = computed(() => {
+  if (!from.value) return current.value?.name ?? null
+  return refs.value?.branches.some(one => one.name === from.value) ? from.value : null
+})
 
 // The text filters apply once you stop typing.
 const typed = reactive({ author: author.value, message: message.value, path: path.value, changed: changed.value })
@@ -52,15 +65,15 @@ watch([author, message, path, changed], ([nowAuthor, nowMessage, nowPath, nowCha
   if ((typed.path.trim() || '') !== (nowPath || '')) typed.path = nowPath || ''
   if ((typed.changed || '') !== (nowChanged || '')) typed.changed = nowChanged || ''
 })
-const filtered = computed(() => !!(from.value || author.value || message.value || path.value || changed.value || merges.value))
+const filtered = computed(() => !!(from.value || not.value || author.value || message.value || path.value || changed.value || merges.value || hideLanded.value))
 /** How many of the filters in More filters are on. */
-const moreOn = computed(() => [author.value, path.value, changed.value, merges.value].filter(Boolean).length)
+const moreOn = computed(() => [author.value, path.value, changed.value, merges.value, hideLanded.value].filter(Boolean).length)
 function clear(): void {
   typed.author = ''
   typed.message = ''
   typed.path = ''
   typed.changed = ''
-  set({ from: null, author: null, message: null, path: null, changed: null, merges: null })
+  set({ from: null, not: null, author: null, message: null, path: null, changed: null, merges: null, landed: null })
 }
 
 function pick(sha: string, add: boolean): void {
@@ -89,8 +102,15 @@ function drag(start: PointerEvent): void {
 <template>
   <div class="flex h-full flex-col">
     <div class="flex flex-wrap items-center gap-2 border-b border-default px-3 py-1.5">
-      <USelect v-model="branch" :items="branches" size="xs" class="w-48" :aria-label="t('pages.commits.branch')" />
-      <UInput v-model="typed.message" icon="i-lucide-message-square" :placeholder="t('pages.commits.message')" size="xs" class="w-44" :aria-label="t('pages.commits.byMessage')" />
+      <USelectMenu v-model="branch" :items="branches" value-key="value" size="xs" class="w-48" :search-input="{ placeholder: t('pages.commits.findBranch') }" :aria-label="t('pages.commits.branch')" />
+      <UBadge v-if="not" color="neutral" variant="subtle" size="md" class="gap-1">
+        {{ t('pages.commits.notOn', { name: not }) }}
+        <UButton icon="i-lucide-x" size="xs" color="neutral" variant="link" class="p-0" :aria-label="t('pages.commits.allOf', { name: from })" @click="set({ not: null })" />
+      </UBadge>
+      <UBadge v-if="message" color="neutral" variant="subtle" size="md" class="max-w-56 gap-1">
+        <UIcon name="i-lucide-search" class="size-3 shrink-0" /><span class="truncate">{{ message }}</span>
+        <UButton icon="i-lucide-x" size="xs" color="neutral" variant="link" class="p-0" :aria-label="t('pages.commits.clearMessage')" @click="typed.message = ''; set({ message: null })" />
+      </UBadge>
       <!-- The rarer filters in one place, with how many are on: the row stays one line in a narrower window. -->
       <UPopover :content="{ align: 'start' }">
         <UButton :label="t('pages.commits.moreFilters')" icon="i-lucide-list-filter" size="xs" :color="moreOn ? 'primary' : 'neutral'" :variant="moreOn ? 'soft' : 'outline'">
@@ -103,14 +123,16 @@ function drag(start: PointerEvent): void {
             <UInput v-model="typed.changed" icon="i-lucide-text-search" :placeholder="t('pages.commits.changed')" size="sm" :ui="{ base: 'font-mono' }" :aria-label="t('pages.commits.byChanged')" />
             <p class="text-label text-muted">{{ t('pages.commits.changedHelp') }}</p>
             <USelect v-model="mergeChoice" :items="MERGES" size="sm" :aria-label="t('pages.commits.merges')" />
+            <USwitch v-model="hideLanded" size="sm" :label="t('pages.commits.hideLanded', { base: landed.base.value ?? 'main' })" :description="t('pages.commits.hideLandedHelp')" />
           </div>
         </template>
       </UPopover>
       <UButton v-if="filtered" :label="t('pages.commits.clear')" icon="i-lucide-x" size="xs" color="neutral" variant="ghost" @click="clear" />
       <UButton v-if="refs?.sha" label="HEAD" icon="i-lucide-crosshair" size="xs" color="neutral" variant="ghost" :title="t('pages.commits.pickHead')" @click="pick(refs.sha!, false)" />
     </div>
+    <BranchApart v-if="apartName" :name="apartName" />
     <div ref="area" class="flex min-h-0 flex-1 flex-col">
-      <CommitList :from="from" :author="author" :message="message" :path="path" :changed="changed" :merges="merges" :selected="selected" :compare="compare" class="min-h-0" :style="{ flex: selected ? `${1 - share} 1 0` : '1 1 0' }" @select="pick" />
+      <CommitList :from="from" :not="not" :hide-landed="hideLanded" :author="author" :message="message" :path="path" :changed="changed" :merges="merges" :selected="selected" :compare="compare" class="min-h-0" :style="{ flex: selected ? `${1 - share} 1 0` : '1 1 0' }" @select="pick" />
       <!-- The details take room only once a commit is picked; until then the list has it all. -->
       <template v-if="selected">
         <div

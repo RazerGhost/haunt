@@ -29,10 +29,13 @@
     "other": "{count} bestanden nog niet gecommit, op {branch}"
   },
   "commits": "Commits",
-  "branch": "Branch",
-  "remoteBranch": "Remote branch",
-  "tag": "Tag",
   "searchFiles": "In de bestanden hier zoeken…",
-  "signed": "Ondertekend: de details van de commit controleren de handtekening",
-  "shaCopied": "{sha} gekopieerd"
+  "shaCopied": "{sha} gekopieerd",
+  "branchNamed": "Branch {name}",
+  "branchWithRemote": "Branch {name}, gelijk aan {upstream}",
+  "remoteBranchNamed": "Remote branch {name}",
+  "tagNamed": "Tag {name}",
+  "nothingOnlyHere": "{from} heeft geen commits die {not} niet heeft.",
+  "landed": "De wijzigingen zitten al in {base}, als {sha}. Klik om die commit te zien.",
+  "inBase": "in {base}"
 }

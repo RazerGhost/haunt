@@ -37,5 +37,13 @@
   "connecting": "Connecting…",
   "stopGit": "Stop git",
   "find": "Find a function",
-  "clearSearch": "Clear the search"
+  "clearSearch": "Clear the search",
+  "detachedFrom": "Detached at {commit} ({from})",
+  "detachedTip": "You are on commit {commit}, not on a branch. Commits made here belong to no branch: make a branch to keep them, or go back to one.",
+  "apartTip": "It went far apart from {upstream}: see the note above All commits.",
+  "backTo": "Back to {name}",
+  "branchHere": "New branch here…",
+  "switchTo": "Switch to {name}",
+  "seeLocal": "Local changes",
+  "findCommit": "Find a commit"
 }

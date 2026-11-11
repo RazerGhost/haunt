@@ -58,6 +58,11 @@ const drag = useRefDrag()
 const network = useNetwork()
 const worktrees = useWorktrees()
 const isCurrent = (ref: Leaf) => isBranch(ref) && ref.current
+const landed = useLanded()
+/** A local branch the main line has in full (squash-merged or rebased in), though git does not count it as merged. */
+const inBase = (ref: Leaf) => isBranch(ref) && !ref.current && landed.whole.value.some(one => one.reference === `refs/heads/${ref.name}`)
+// Branch cleanup, opened from a gone or landed branch (AppSidebar has it).
+const cleanUp = inject<(() => void) | null>('branchCleanup', null)
 // The sidebar's picked branches (local ones only; remote branches are not picked).
 const pick = props.prefix === undefined ? inject<ReturnType<typeof useMultiSelect<BranchRef>> | null>('branchPick', null) : null
 const picked = (ref: Leaf) => !!pick?.several.value && isBranch(ref) && pick.isPicked(ref)
@@ -102,9 +107,20 @@ function menu(ref: Leaf) {
     [
       { label: t('RefTree.copyName'), icon: 'i-lucide-copy', onSelect: () => navigator.clipboard?.writeText(name) },
       { label: t('RefTree.rename'), icon: 'i-lucide-pencil', onSelect: () => actions.renameBranch(name) },
-      ...ref.current ? [] : [{ label: t('RefTree.delete'), icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: () => actions.deleteBranch(name) }]
-    ]
+      ...ref.current ? [] : [{ label: t('RefTree.delete'), icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: () => actions.deleteBranch(name) }],
+      ...cleanUp && (ref.gone || inBase(ref)) ? [{ label: t('RefTree.cleanUp'), icon: 'i-lucide-eraser', onSelect: cleanUp }] : []
+    ],
+    // Far apart from its remote branch: keep a copy and take the remote's.
+    ...wentApart(ref) ? [[{ label: t('RefTree.matchUpstream', { upstream: ref.upstream! }), icon: 'i-lucide-copy', onSelect: () => actions.matchUpstream(ref) }]] : []
   ]
+}
+/** The remote branch's state, as one mark after the name: apart, gone, ahead and behind, in step, or none tracked. */
+function remoteState(ref: BranchRef): { icon?: string, text?: string, class: string, title: string } | null {
+  if (ref.gone) return { text: t('RefTree.gone'), class: 'text-warning', title: t('RefTree.goneHelp', { upstream: ref.upstream ?? '' }) }
+  if (!ref.upstream) return { icon: 'i-lucide-cloud-off', class: 'text-dimmed', title: t('RefTree.localOnly') }
+  if (wentApart(ref)) return { icon: 'i-lucide-triangle-alert', class: 'text-warning', title: t('RefTree.apart', { upstream: ref.upstream, ahead: ref.ahead, behind: ref.behind }) }
+  if (!ref.ahead && !ref.behind) return { icon: 'i-lucide-cloud', class: 'text-dimmed', title: t('RefTree.inStep', { upstream: ref.upstream }) }
+  return null
 }
 function switchTo(ref: Leaf): void {
   if (!isBranch(ref) || !ref.current) void actions.switchTo(full(ref))
@@ -152,7 +168,12 @@ function tip(ref: Leaf): string {
         <span class="min-w-0 flex-1 truncate" :class="isBranch(leaf.ref) && leaf.ref.current ? 'font-semibold text-highlighted' : ''">{{ leaf.label }}</span>
         <span v-if="drag.over.value === full(leaf.ref) && drag.hint(full(leaf.ref), isCurrent(leaf.ref))" class="shrink-0 text-label text-primary">{{ isCurrent(leaf.ref) ? t('RefTree.mergeHere') : t('RefTree.rebaseOnto') }}</span>
         <template v-if="isBranch(leaf.ref)">
-          <span v-if="leaf.ref.gone" class="text-label text-warning">{{ t('RefTree.gone') }}</span>
+          <UIcon v-if="inBase(leaf.ref)" name="i-lucide-check-check" class="size-3.5 shrink-0 text-success" :title="t('RefTree.inBase', { base: landed.base.value ?? 'main' })" />
+          <template v-for="state in [remoteState(leaf.ref)]" :key="state?.title ?? 'none'">
+            <button v-if="state?.text && cleanUp" type="button" class="shrink-0 text-label hover:underline" :class="state.class" :title="state.title" @click.stop.prevent="cleanUp()">{{ state.text }}</button>
+            <span v-else-if="state?.text" class="shrink-0 text-label" :class="state.class" :title="state.title">{{ state.text }}</span>
+            <UIcon v-else-if="state?.icon" :name="state.icon" class="size-3 shrink-0" :class="state.class" :title="state.title" />
+          </template>
           <span v-if="leaf.ref.ahead" class="font-mono text-label text-muted tabular-nums" :title="t('RefTree.toPush', { count: leaf.ref.ahead })">↑{{ leaf.ref.ahead }}</span>
           <span v-if="leaf.ref.behind" class="font-mono text-label text-muted tabular-nums" :title="t('RefTree.toPull', { count: leaf.ref.behind })">↓{{ leaf.ref.behind }}</span>
           <button

@@ -17,7 +17,10 @@ const props = defineProps<{ staged: number, amend?: boolean }>()
 const emit = defineEmits<{ done: [] }>()
 const { commitBox, commit, busy } = useLocalChanges()
 const { repo } = useRepositories()
-const { current } = useRefs()
+const { current, refs } = useRefs()
+// HEAD on a commit, not a branch: a commit made there belongs to no branch.
+const detached = computed(() => !!refs.value?.sha && !refs.value.branch)
+const refActions = useRefActions()
 const { index } = useCode()
 const failure = useFailure()
 const dialog = useDialog()
@@ -152,10 +155,17 @@ async function submit(andPush = false): Promise<void> {
       <UIcon name="i-lucide-shield-alert" class="mt-0.5 size-3.5 shrink-0" />{{ note }}
     </p>
     <UButton v-if="notes.length" :label="t('CommitBox.trust')" icon="i-lucide-shield-check" size="xs" color="neutral" variant="link" class="justify-self-start px-0" @click="failure.trustFirst()" />
+    <p v-if="detached" class="flex flex-wrap items-center gap-x-1.5 text-xs text-warning">
+      <UIcon name="i-lucide-triangle-alert" class="size-3.5 shrink-0" />{{ t('CommitBox.detached') }}
+      <UButton :label="t('CommitBox.branchFirst')" icon="i-lucide-git-branch-plus" size="xs" color="neutral" variant="link" class="px-0" @click="refActions.newBranch()" />
+    </p>
     <div class="flex flex-wrap items-center gap-4">
       <UCheckbox v-model="amend" :label="t('CommitBox.amend')" size="sm" :disabled="!commitBox?.lastMessage" />
       <UCheckbox v-model="signoff" :label="t('CommitBox.signOff')" size="sm" />
-      <span class="ml-auto text-label text-muted">Ctrl Enter</span>
+      <span class="ml-auto flex min-w-0 items-center gap-1 text-label text-muted">
+        <template v-if="current"><UIcon name="i-lucide-git-branch" class="size-3 shrink-0" /><span class="max-w-40 truncate" :title="t('CommitBox.onto', { branch: current.name })">{{ current.name }}</span> ·</template>
+        Ctrl Enter
+      </span>
       <UButton v-if="!amend" :label="t('CommitBox.commitAndPush')" icon="i-lucide-arrow-up-from-line" size="sm" color="neutral" variant="outline" :title="t('CommitBox.commitAndPushHelp')" :disabled="!ready || !!network.running.value" @click="submit(true)" />
       <UButton type="submit" :label="amend ? t('CommitBox.amendLast') : props.staged ? t('CommitBox.commitFiles', { count: props.staged }) : t('CommitBox.commit')" icon="i-lucide-git-commit-horizontal" size="sm" :disabled="!ready" :loading="busy" />
     </div>

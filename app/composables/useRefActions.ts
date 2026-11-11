@@ -11,7 +11,7 @@ const dropped = shallowRef<DroppedStash[]>([])
 
 export function useRefActions() {
   const { repo } = useRepositories()
-  const { localChanges } = useRefs()
+  const { localChanges, refs } = useRefs()
   const dialog = useDialog()
   const toast = useToast()
   const failure = useFailure()
@@ -70,6 +70,25 @@ export function useRefActions() {
       mode = chosen
     }
     await run(t('composables.useRefActions.notSwitched', { name }), where => haunt.switchBranch(where, name, mode))
+  }
+
+  /** A branch that went apart from its remote branch: keeps a copy of it (`main-before-2026-11-11`), then moves it to
+   * the remote branch, after asking. Nothing is lost: the copy has every commit only it had. */
+  async function matchUpstream(branch: { name: string, upstream: string | null, ahead: number }): Promise<void> {
+    if (!branch.upstream) return
+    const day = new Date().toISOString().slice(0, 10)
+    const taken = new Set(refs.value?.branches.map(one => one.name))
+    let backup = `${branch.name}-before-${day}`
+    for (let n = 2; taken.has(backup); n++) backup = `${branch.name}-before-${day}-${n}`
+    const ok = await dialog.confirm({
+      title: t('composables.useRefActions.matchTitle', { name: branch.name, upstream: branch.upstream }),
+      description: t('composables.useRefActions.matchHelp', { name: branch.name, upstream: branch.upstream, backup, count: branch.ahead }),
+      confirm: t('composables.useRefActions.match')
+    })
+    if (!ok) return
+    if (await run(t('composables.useRefActions.notMatched', { name: branch.name }), where => haunt.matchUpstream(where, branch.name, backup))) {
+      toast.add({ title: t('composables.useRefActions.matched', { name: branch.name, upstream: branch.upstream }), description: t('composables.useRefActions.copyKept', { backup }), icon: 'i-lucide-check', color: 'success' })
+    }
   }
 
   async function renameBranch(name: string): Promise<void> {
@@ -197,5 +216,5 @@ export function useRefActions() {
     }
   }
 
-  return { busy, dropped, loadDropped, newBranch, switchTo, renameBranch, deleteBranch, deleteBranches, deleteTags, stash, applyStash, dropStash, dropStashes, restoreStash, restoreStashes, newTag, deleteTag }
+  return { busy, dropped, loadDropped, newBranch, switchTo, matchUpstream, renameBranch, deleteBranch, deleteBranches, deleteTags, stash, applyStash, dropStash, dropStashes, restoreStash, restoreStashes, newTag, deleteTag }
 }
