@@ -48,8 +48,8 @@ On Arch and its derivatives (CachyOS, EndeavourOS, Manjaro), each release has a 
 unsigned package only from a file it has, so download it first:
 
 ```bash
-curl -LO https://github.com/RazerGhost/haunt/releases/download/v0.4.1/haunt-bin-0.4.1-1-x86_64.pkg.tar.zst
-sudo pacman -U haunt-bin-0.4.1-1-x86_64.pkg.tar.zst
+curl -LO https://github.com/RazerGhost/haunt/releases/download/v0.4.2/haunt-bin-0.4.2-1-x86_64.pkg.tar.zst
+sudo pacman -U haunt-bin-0.4.2-1-x86_64.pkg.tar.zst
 ```
 
 Or build the same package from this repository with `makepkg -si` in `packaging/aur/haunt-bin`. It is meant for the
