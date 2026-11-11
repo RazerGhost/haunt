@@ -1,0 +1,152 @@
+{
+  "affected": "roept een gewijzigde aan",
+  "around": "Rondom",
+  "aroundHelp": "Aanroepers links, wat het aanroept rechts",
+  "back": "Terug",
+  "bookmark": "Dit bestand bookmarken",
+  "breaksCount": {
+    "one": "{count} regelbreuk",
+    "other": "{count} regelbreuken"
+  },
+  "calledFrom": "aangeroepen vanuit {count}",
+  "callsCount": "roept {count} aan",
+  "changed": "gewijzigd",
+  "changedSince": "veranderd sindsdien",
+  "config": {
+    "after": ", alleen via die bestanden. Onderdelen waar geen regel bij past, staan erboven en worden niet gecontroleerd.",
+    "afterConfig": ": een onderdeel mag lagere lagen gebruiken, en onderdelen van de eigen laag die staan in",
+    "afterUses": "; met",
+    "before": "Regels uit"
+  },
+  "cycles": {
+    "one": "{count} kringloop bij runtime",
+    "other": "{count} kringlopen bij runtime"
+  },
+  "direction": {
+    "both": "Aanroepers en aangeroepen",
+    "callees": "Aangeroepen",
+    "callers": "Aanroepers"
+  },
+  "empty": "Hier is niets te tekenen.",
+  "entriesHelp": "Functies die niets aanroept en die zelf andere aanroepen: waar de code binnenkomt.",
+  "export": "Exporteren",
+  "exportTitle": "De graaf exporteren",
+  "exported": "Graaf geëxporteerd",
+  "familiarity": "Bekendheid",
+  "familiarityHelp": "Markeer functies naar of je ze kent: hol nog niet, groen begrepen, oranje veranderd sindsdien",
+  "familiarityLegend": "Wat de kleuren betekenen",
+  "gone": "Die functie staat niet meer in de scan. Kies links een andere.",
+  "hotspots": "Hotspots",
+  "hotspotsHelp": {
+    "one": "Kleur bestanden naar hoe vaak ze wijzigden in de laatste {count} dag",
+    "other": "Kleur bestanden naar hoe vaak ze wijzigden in de laatste {count} dagen"
+  },
+  "imports": "Imports",
+  "importsCount": {
+    "one": "{count} import tussen onderdelen",
+    "other": "{count} imports tussen onderdelen"
+  },
+  "importsHelp": "Teken ook de imports tussen de getoonde bestanden (blauw; rood en oranje als ze de regels van het project breken)",
+  "inCycle": "{name} wordt alleen aangeroepen vanuit een kringloop (functies die elkaar aanroepen), nooit vanuit een ingang; de directe aanroepers staan erbij.",
+  "includeTests": "Tests meetellen",
+  "includeTestsHelp": "Tests en de helpers die alleen tests aanroepen (test-helpers.ts en dergelijke) meetellen in de lijsten en grafen",
+  "isEntry": "{name} is een ingang: niets in de scan roept het aan.",
+  "itCalls": {
+    "one": "Roept {count} functie aan.",
+    "other": "Roept {count} functies aan."
+  },
+  "itCallsNothing": "Roept niets in de scan aan.",
+  "known": "{count} bekend (voorlopig geaccepteerd)",
+  "leftOut": {
+    "one": "Nog {count} bereikt bestand is weggelaten.",
+    "other": "Nog {count} bereikte bestanden zijn weggelaten."
+  },
+  "matching": "Gevonden functies",
+  "matchingFiles": "Bestanden",
+  "newBreaks": {
+    "one": "{count} nieuwe regelbreuk",
+    "other": "{count} nieuwe regelbreuken"
+  },
+  "none": {
+    "after": "toe om ze aan je eigen lagen te toetsen (zie de README van Haunt).",
+    "before": "Pijlen tonen imports tussen onderdelen. Voeg een"
+  },
+  "notExported": "De graaf kon niet worden geëxporteerd",
+  "notLearned": "niet geleerd",
+  "onlyBreaks": "Alleen regelbreuken",
+  "openFile": "Het bestand openen in de editor",
+  "overTime": "In de tijd",
+  "paths": "Paden",
+  "pathsHelp": "Hoe de code het bereikt, van boven naar beneden",
+  "png": "PNG-afbeelding",
+  "predict": "Voorspellen",
+  "predictAgain": "Opnieuw",
+  "predictClear": "Wissen",
+  "predictDone": "Elke plek is ingevuld: toon de paden, of klik op een plek om hem te wijzigen.",
+  "predictFill": "Kies de functie voor plek {number}: uit de lijst hieronder, of uit de lijst links (zoek naar elke functie).",
+  "predictHelp": "Verberg de functies tussen de ingangen en deze, en vul ze zelf in",
+  "predictNothing": "Hier valt niets te voorspellen: de ingangen roepen hem direct aan, of hij is zelf een ingang.",
+  "predictScore": "{right} van {count} goed",
+  "predictUnpick": "Deze keuze weghalen",
+  "project": "Project",
+  "reach": {
+    "both": {
+      "one": "{count} stap beide kanten op",
+      "other": "{count} stappen beide kanten op"
+    },
+    "callees": {
+      "one": "Aangeroepen, {count} stap",
+      "other": "Aangeroepen, {count} stappen"
+    },
+    "callers": {
+      "one": "Aanroepers, {count} stap",
+      "other": "Aanroepers, {count} stappen"
+    }
+  },
+  "reachBelow": {
+    "one": "{count} stap eronder",
+    "other": "{count} stappen eronder"
+  },
+  "reached": {
+    "one": "{name} wordt bereikt vanuit {count} ingang in {steps}.",
+    "other": "{name} wordt bereikt vanuit {count} ingangen in {steps}."
+  },
+  "reachedShortest": {
+    "one": "{name} wordt bereikt vanuit {count} ingang in {steps} (de 12 kortste paden staan erbij).",
+    "other": "{name} wordt bereikt vanuit {count} ingangen in {steps} (de 12 kortste paden staan erbij)."
+  },
+  "recentEmpty": "De functies die je in het midden zet, komen hier.",
+  "reveal": "Tonen",
+  "rules": "De regels en kringlopen bij runtime",
+  "rulesError": "De laagregels konden niet worden gelezen",
+  "runtimeCycles": "Kringlopen bij runtime",
+  "scanning": "Scannen",
+  "script": {
+    "after": "(het draait omdat de map vertrouwd is). Onderdelen die het niet noemt, staan erboven en worden niet gecontroleerd.",
+    "before": "Regels uit het architectuurscript dat genoemd wordt in"
+  },
+  "show": "Tonen",
+  "showMenu": "Tonen",
+  "shown": "{files} en {functions} getoond.",
+  "startFrom": "Begin bij",
+  "steps": {
+    "one": "{count} stap",
+    "other": "{count} stappen"
+  },
+  "stepsBelow": "Stappen eronder",
+  "stepsLabel": "Stappen",
+  "stepsRange": "{shortest} tot {longest} stappen",
+  "svg": "SVG-afbeelding",
+  "tab": {
+    "called": "Meest aangeroepen",
+    "entries": "Ingangen",
+    "recent": "Recent"
+  },
+  "trail": "Spoor",
+  "typeOnly": "Imports van alleen types (gestreept)",
+  "unbookmark": "De bookmark weghalen",
+  "understood": "begrepen",
+  "waiting": "Wachten op de aanroepgraaf.",
+  "whoKnows": "Wie kent het",
+  "working": "De aanroepgraaf wordt uitgezocht…"
+}

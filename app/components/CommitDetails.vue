@@ -315,7 +315,7 @@ async function copy(text: string): Promise<void> {
             </UFieldGroup>
           </div>
           <div v-if="mapAs === 'layers'" class="min-h-0 flex-1 overflow-auto px-4 pb-4">
-            <LayerStack :selected-part="null" :counts="counts" @select="part => router.push({ path: '/layers', query: { part } })" />
+            <LayerStack :selected-part="null" :counts="counts" @select="part => router.push({ path: '/graph', query: { part } })" />
           </div>
           <div v-else class="min-h-0 flex-1 border-t border-default">
             <CodeCanvas :changed="ids" :affected="affectedIds" :focus="touchedFiles" />
@@ -325,7 +325,7 @@ async function copy(text: string): Promise<void> {
         <!-- Calls -->
         <div v-else class="relative min-h-0 flex-1">
           <p v-if="!graph.length" class="absolute inset-0 grid place-items-center text-sm text-muted">{{ index?.callers.size ? t('CommitDetails.noneInCode') : t('CommitDetails.workingOut') }}</p>
-          <GraphView v-else :elements="graph" :stylesheet="graphStyle" :layout="layout" @node="id => select(id)" @open="id => router.push({ path: '/calls', query: { center: id, fn: id } })" />
+          <GraphView v-else :elements="graph" :stylesheet="graphStyle" :layout="layout" @node="id => select(id)" @open="id => router.push({ path: '/graph', query: { center: id, fn: id } })" />
           <p class="pointer-events-none absolute right-3 bottom-2 text-label text-muted">{{ t('CommitDetails.callsHint') }}</p>
         </div>
       </template>

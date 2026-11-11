@@ -179,20 +179,22 @@ Every commit, two commits compared, a pull request, a branch and the local chang
 
 ## The code views
 
-- **Layers**: the project's layers, top to bottom, with a tile per part; a part opens folder by folder down to its
-  functions. **Last changed** shows who changed each function last and when (a `git blame` of each file shown open).
-  Bookmark a file to keep it a click away in the Code sidebar and the palette, next to the pinned functions.
-- **Canvas**: the code as boxes in boxes, each sized by its lines: parts, folders, files and functions. Zoom in for
-  names and then code; hover a function to see its calls as lines.
-- **Export** the whole canvas or layer map, as shown (light or dark, test files or not), as a PNG or SVG image.
-- **Calls**: how the code reaches a function, from its entry points down, or its callers and callees around it.
-- **Imports**: the imports between parts, on the project's layers when it has rules, with breaks and runtime cycles;
-  a part opens to the imports between its folders.
+- **Graph**: files as cards with their functions as rows, and the calls between the rows as lines. It opens on the
+  project: the parts as cards in a column per layer, left to right, with the files that import across them as rows and
+  the imports judged by the project's rules (breaks in red, accepted ones in amber, runtime cycles listed). From there
+  it focuses on a part (its files, the files outside it grouped by part, **Who knows it** on request), a file (all its
+  functions; bookmark it to keep it a click away in the Code sidebar and the palette), or a function: its callers in
+  the columns to the left and what it calls to the right (Around), or how the code reaches it from its entry points
+  (Paths, where **Predict** hides the functions between for you to fill in). Only the rows on a line show; the rest
+  fold away, and with many lines the ones between the same two cards are drawn as one. **Imports** adds the imports
+  between the files shown, **Familiarity** marks what you learned, **Hotspots** tints busy files, and **Over time**
+  shows the rule breaks of the last commits.
+- **Export** the graph, as shown (light or dark, test files or not), as a PNG or SVG image.
 - **Unused**: functions nothing uses, exports nothing in the scan uses, and exports used only in their own file, each
   with "When?" for about when its last use went.
 - **Routes**: the HTTP routes found in the code (Hono and Express, with their prefixes across files, and WordPress's
   `register_rest_route`), each with its middleware, its handler and what the handler calls. Call path opens the handler
-  on the Calls page. **Try it** sends a request to your dev server on this machine and shows the answer beside the
+  on the Graph. **Try it** sends a request to your dev server on this machine and shows the answer beside the
   functions the route goes through; requests can be saved in the repository as `.http` files.
 
 Haunt watches the project's folders and `.git`, and rescans when something changes. The call graph is kept between

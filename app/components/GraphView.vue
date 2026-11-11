@@ -1,8 +1,3 @@
-<script lang="ts">
-/** Cytoscape's extensions are registered once for the app, not once per graph. */
-let registered = false
-</script>
-
 <script setup lang="ts">
 import type { Core, ElementDefinition, LayoutOptions, NodeCollection, StylesheetJson } from 'cytoscape'
 
@@ -98,13 +93,9 @@ function hideLabels(): void {
 // Left before Cytoscape loaded: the graph is not made at all (nothing would destroy it).
 let gone = false
 onMounted(async () => {
-  const [cytoscape, dagre] = await Promise.all([import('cytoscape').then(module => module.default), import('cytoscape-dagre').then(module => module.default)])
+  // With the layered layout (dagre) registered once for the app (app/utils/cardLayout.ts).
+  const cytoscape = await cytoscapeWithDagre()
   if (gone) return
-  // The layered layout (top to bottom, by import direction) for the import graphs; registered once.
-  if (!registered) {
-    cytoscape.use(dagre)
-    registered = true
-  }
   cy = cytoscape({ container: container.value, style: props.stylesheet(), minZoom: 0.05, maxZoom: 3 })
   cy.on('tap', 'node', event => emit('node', event.target.id()))
   cy.on('dbltap', 'node', event => emit('open', event.target.id()))

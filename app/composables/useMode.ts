@@ -1,15 +1,15 @@
 /*
  * Git or Code: the two halves of the window. Git is the history and the work on it (local changes, commits, conflicts,
  * a file's history, blame, rebase), with the branches, remotes, tags and stashes in the sidebar. Code is the views of
- * the code (layers, canvas, calls, imports, unused, routes), with the code's own sidebar, so the git lists do not crowd them. The
+ * the code (graph, unused, routes), with the code's own sidebar, so the git lists do not crowd them. The
  * mode follows the screen shown; switching goes back to the screen last open on the other side.
  */
 
-const CODE = ['/layers', '/canvas', '/calls', '/imports', '/unused', '/routes']
+const CODE = ['/graph', '/unused', '/routes']
 export type Mode = 'git' | 'code'
 
 /** The screen last shown on each side (path and query), for switching back to it. */
-const last = { git: '/commits', code: '/layers' } as Record<Mode, string>
+const last = { git: '/commits', code: '/graph' } as Record<Mode, string>
 
 function modeOf(path: string): Mode {
   return CODE.includes(path) ? 'code' : 'git'

@@ -1,13 +1,12 @@
-import { inside } from '~~/shared/folders'
 
 /*
  * Bookmarked files: the ones you come back to, kept per repository between launches, a click away in the Code sidebar
  * and the palette, next to the pinned functions (usePins). A bookmark is a file's path; one the scan no longer has
- * shows as gone until it is removed. Opening one shows it in its part, on the layer map, open and in view.
+ * shows as gone until it is removed. Opening one shows its graph.
  */
 export function useBookmarks() {
   const { repo } = useRepositories()
-  const { structure: scan, index } = useCode()
+  const { structure: scan } = useCode()
   const router = useRouter()
   const all = usePersisted<Record<string, string[]>>('bookmarks', {}, value => !!value && typeof value === 'object' && !Array.isArray(value))
   const paths = computed(() => (repo.value ? all.value[repo.value] ?? [] : []))
@@ -24,13 +23,10 @@ export function useBookmarks() {
   function remove(path: string): void {
     if (repo.value) all.value = { ...all.value, [repo.value]: paths.value.filter(other => other !== path) }
   }
-  /** Shows the file in its part on the layer map: its folder, the file open. */
+  /** Shows the file's graph: its functions, and the files they call and are called from. */
   function show(path: string): Promise<unknown> | undefined {
-    const file = byPath.value.get(path)
-    if (!file) return
-    const relative = inside(file.path, index.value?.parts.get(file.part)?.folder ?? '')
-    const folder = relative.includes('/') ? relative.slice(0, relative.lastIndexOf('/') + 1) : ''
-    return router.push({ path: '/layers', query: { part: file.part, folder: folder || undefined, file: file.path } })
+    if (!byPath.value.has(path)) return
+    return router.push({ path: '/graph', query: { file: path } })
   }
   return { bookmarks, isBookmarked, toggle, remove, show }
 }

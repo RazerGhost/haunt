@@ -1,0 +1,38 @@
+{
+  "affected": "roept gewijzigde aan",
+  "callCounts": "aangeroepen vanuit {callers}, roept {callees} aan",
+  "callback": "(callback)",
+  "changed": "gewijzigd",
+  "changedSince": "Veranderd sinds je het leerde",
+  "entry": "ingang",
+  "fewer": "Alleen die aan een lijn",
+  "fit": "Alles in beeld",
+  "focusFile": "Toon de graaf van {path}",
+  "focusPart": "Toon de graaf van het onderdeel {name}",
+  "idle": {
+    "one": "Niet aan een aanroep ({count} bestand)",
+    "other": "Niet aan een aanroep ({count} bestanden)"
+  },
+  "idleHelp": "Bestanden van dit onderdeel zonder aanroep van of naar de rest: klik er een om de functies te zien",
+  "innerCalls": {
+    "one": "{count} aanroep binnen dit bestand: wijs aan om die te zien",
+    "other": "{count} aanroepen binnen dit bestand: wijs aan om ze te zien"
+  },
+  "lines": "regels {from}–{to}",
+  "more": "Nog {count} · Tonen",
+  "moreFiles": {
+    "one": "Nog {count} bestand",
+    "other": "Nog {count} bestanden"
+  },
+  "notLearned": "Nog niet geleerd",
+  "partFiles": {
+    "one": "{count} bestand zonder imports tussen onderdelen · open het onderdeel",
+    "other": "{count} bestanden zonder imports tussen onderdelen · open het onderdeel"
+  },
+  "shut": "Alleen de naam tonen",
+  "test": "test",
+  "understood": "Begrepen",
+  "unshut": "De rijen tonen",
+  "zoomIn": "Inzoomen",
+  "zoomOut": "Uitzoomen"
+}
