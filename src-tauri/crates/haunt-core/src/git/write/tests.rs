@@ -640,3 +640,34 @@ mod patches {
         assert_eq!(other.sh(&["status", "--porcelain"]).trim(), "M a.txt");
     }
 }
+
+#[test]
+fn matching_a_branch_to_its_upstream_keeps_a_copy_first() {
+    let r = repo();
+    let writer = Writer::new(&r.root, true);
+    // `side` tracks main (a local upstream stands in for a remote one) and goes its own way.
+    r.sh(&["switch", "-q", "-c", "side"]);
+    r.sh(&["config", "branch.side.remote", "."]);
+    r.sh(&["config", "branch.side.merge", "refs/heads/main"]);
+    r.write("b.txt", "side\n");
+    r.sh(&["commit", "-q", "-am", "Side"]);
+    let own = r.sh(&["rev-parse", "HEAD"]).trim().to_owned();
+    let main = r.sh(&["rev-parse", "main"]).trim().to_owned();
+
+    // On it, with a local change elsewhere: the change stays.
+    r.write("a.txt", "changed\n");
+    writer.match_upstream("side", "side-before").unwrap();
+    assert_eq!(r.sh(&["rev-parse", "side"]).trim(), main);
+    assert_eq!(r.sh(&["rev-parse", "side-before"]).trim(), own);
+    assert_eq!(fs::read_to_string(r.path("a.txt")).unwrap(), "changed\n");
+
+    // Not on it: moved without a checkout. A copy that exists already is refused, and nothing moves.
+    r.sh(&["checkout", "-q", "--", "a.txt"]);
+    r.sh(&["switch", "-q", "main"]);
+    r.sh(&["branch", "-f", "side", &own]);
+    assert!(writer.match_upstream("side", "side-before").is_err());
+    assert_eq!(r.sh(&["rev-parse", "side"]).trim(), own);
+    writer.match_upstream("side", "side-before-2").unwrap();
+    assert_eq!(r.sh(&["rev-parse", "side"]).trim(), main);
+    assert!(writer.match_upstream("main", "main-before").is_err(), "main tracks nothing");
+}

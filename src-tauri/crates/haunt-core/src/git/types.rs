@@ -72,6 +72,9 @@ pub struct LogQuery {
     pub changed: Option<String>,
     /// Only merge commits, or none of them; all when null.
     pub merges: Option<MergeFilter>,
+    /// Branches and remote branches left out when listing everything, by full name (`refs/heads/feature`,
+    /// `refs/remotes/origin/feature`): those the main line already has.
+    pub hide: Option<Vec<String>>,
     /// Newest first by date, each branch's commits among the others', instead of each merged
     /// branch's commits together under its merge; more lanes stay open side by side.
     pub by_date: Option<bool>,
@@ -208,6 +211,10 @@ pub struct StashRef {
 pub struct Refs {
     pub branch: Option<String>,
     pub sha: Option<String>,
+    /// With HEAD detached: a tag or remote branch at HEAD's commit, or else what was last checked out (by the reflog).
+    pub detached_from: Option<String>,
+    /// With HEAD detached: the local branch it was on before (by the reflog), to go back to.
+    pub left_branch: Option<String>,
     pub branches: Vec<BranchRef>,
     pub remotes: Vec<Remote>,
     pub tags: Vec<TagRef>,

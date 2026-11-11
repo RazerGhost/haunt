@@ -73,8 +73,16 @@ pub fn refs(root: &str) -> Result<Option<Refs>, String> {
     let listed =
         git(root, &["for-each-ref", &format!("--format={format}"), "refs/heads", "refs/remotes", "refs/tags"])?;
     let stashes = git(root, &["stash", "list", "--format=%gd%x1f%ct%x1f%H%x1f%gs"]).unwrap_or_default();
-    let mut out =
-        Refs { branch: None, sha, branches: Vec::new(), remotes: Vec::new(), tags: Vec::new(), stashes: Vec::new() };
+    let mut out = Refs {
+        branch: None,
+        sha,
+        detached_from: None,
+        left_branch: None,
+        branches: Vec::new(),
+        remotes: Vec::new(),
+        tags: Vec::new(),
+        stashes: Vec::new(),
+    };
     for line in listed.lines().filter(|line| !line.is_empty()) {
         let parts: Vec<&str> = line.split(FIELD).collect();
         let field = |at: usize| parts.get(at).copied().unwrap_or_default();
@@ -117,6 +125,11 @@ pub fn refs(root: &str) -> Result<Option<Refs>, String> {
         // A new repository's branch has no commit, so the list does not have it yet.
         out.branch = head(root).0.filter(|_| out.sha.is_none());
     }
+    if out.branch.is_none() {
+        if let Some(sha) = out.sha.clone() {
+            detached(root, &sha, &mut out);
+        }
+    }
     out.remotes.sort_by(|a, b| a.name.cmp(&b.name));
     out.tags.sort_by(|a, b| b.time.cmp(&a.time).then_with(|| a.name.cmp(&b.name)));
     out.stashes = stashes
@@ -133,6 +146,36 @@ pub fn refs(root: &str) -> Result<Option<Refs>, String> {
         })
         .collect();
     Ok(Some(out))
+}
+
+/// HEAD detached at `sha`: what it was checked out from (a tag or remote branch there, else the reflog's last
+/// checkout) and the local branch it left, so the window can say where you are and offer the way back.
+fn detached(root: &str, sha: &str, out: &mut Refs) {
+    let tag = out.tags.iter().find(|tag| tag.sha == sha).map(|tag| tag.name.clone());
+    let remote = || {
+        out.remotes.iter().find_map(|remote| {
+            remote
+                .branches
+                .iter()
+                .find(|branch| branch.sha == sha)
+                .map(|branch| format!("{}/{}", remote.name, branch.name))
+        })
+    };
+    out.detached_from = tag.or_else(remote);
+    // "checkout: moving from main to v1.2" (or to a sha).
+    let last = git(root, &["log", "-g", "-1", "--grep-reflog=checkout: moving from ", "--format=%gs", "HEAD"])
+        .unwrap_or_default();
+    if let Some((from, to)) =
+        last.trim().strip_prefix("checkout: moving from ").and_then(|rest| rest.split_once(" to "))
+    {
+        let is_sha = to.len() >= 7 && to.chars().all(|c| c.is_ascii_hexdigit()) && sha.starts_with(to);
+        if out.detached_from.is_none() && !is_sha && !to.is_empty() {
+            out.detached_from = Some(to.to_owned());
+        }
+        if out.branches.iter().any(|branch| branch.name == from) {
+            out.left_branch = Some(from.to_owned());
+        }
+    }
 }
 
 /// Files with changes not yet committed (staged, unstaged or untracked), as `git status` counts them; None when

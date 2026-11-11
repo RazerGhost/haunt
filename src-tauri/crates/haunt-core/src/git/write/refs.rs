@@ -191,6 +191,40 @@ impl Writer<'_> {
         self.git(&["branch", "-m", "--end-of-options", from, to], None, &[], None).map(drop)
     }
 
+    /// Keeps a copy of a local branch as `backup`, then moves the branch to the remote branch it tracks: for a branch
+    /// that went apart from its remote one when the remote's is the one to keep. The branch you are on moves with
+    /// `reset --keep`, which keeps your local changes and stops rather than lose one (the copy is removed again then).
+    pub fn match_upstream(&self, name: &str, backup: &str) -> Result<(), String> {
+        let name = self.branch_name(name)?;
+        let backup = self.branch_name(backup)?;
+        let target = read(self.root, &["rev-parse", "--verify", "--quiet", &format!("{name}@{{upstream}}^{{commit}}")])
+            .map(|sha| sha.trim().to_owned())
+            .map_err(|_| said!("refs.noUpstream", "{name} tracks no remote branch.", name = name))?;
+        let current = read(self.root, &["symbolic-ref", "--short", "-q", "HEAD"]).unwrap_or_default().trim() == name;
+        if current {
+            self.refuse_checkout(Checkout::HardReset)?;
+            self.refuse_busy()?;
+        }
+        let queue = queue(self.root);
+        let _turn = queue.lock();
+        self.wait_for_lock()?;
+        self.git(
+            &["branch", "--no-track", "--end-of-options", backup, &format!("refs/heads/{name}")],
+            None,
+            &[],
+            None,
+        )?;
+        let moved = if current {
+            self.git(&["reset", "-q", "--keep", &target, "--"], None, &[], None).map(drop)
+        } else {
+            self.git(&["branch", "-f", "--end-of-options", name, &target], None, &[], None).map(drop)
+        };
+        if moved.is_err() {
+            let _ = self.git(&["branch", "-D", "--end-of-options", backup], None, &[], None);
+        }
+        moved
+    }
+
     /// The commits of a branch that no other branch, remote branch or tag has: what deleting it would lose.
     pub fn unmerged(&self, name: &str) -> Result<u32, String> {
         let name = self.branch_name(name)?;

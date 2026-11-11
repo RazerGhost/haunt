@@ -128,13 +128,16 @@ pub fn log(root: &str, query: &LogQuery) -> Result<LogPage, String> {
     let from: Vec<&str> = query.from.iter().flatten().map(String::as_str).filter(|name| !name.is_empty()).collect();
     // Names from the window after --end-of-options, so none can pass for an option; the "everything" flags before it.
     if from.is_empty() {
-        args.extend([
-            "--branches".into(),
-            "--remotes".into(),
-            "--tags".into(),
-            "--end-of-options".into(),
-            "HEAD".into(),
-        ]);
+        // --exclude applies to the --branches or --remotes after it, with names below refs/heads/ or refs/remotes/.
+        let hidden = query.hide.iter().flatten();
+        for name in hidden.clone().filter_map(|name| name.strip_prefix("refs/heads/")) {
+            args.push(format!("--exclude={name}"));
+        }
+        args.push("--branches".into());
+        for name in hidden.filter_map(|name| name.strip_prefix("refs/remotes/")) {
+            args.push(format!("--exclude={name}"));
+        }
+        args.extend(["--remotes".into(), "--tags".into(), "--end-of-options".into(), "HEAD".into()]);
     } else {
         args.push("--end-of-options".into());
         for name in from {
