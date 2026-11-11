@@ -27,5 +27,12 @@
   "deleteSeveral": {
     "one": "Delete {count} branch",
     "other": "Delete {count} branches"
-  }
+  },
+  "cleanUp": "Clean up branches…",
+  "matchUpstream": "Keep a copy, then match {upstream}…",
+  "goneHelp": "{upstream} is gone from the remote, often after a merge there. Click to clean up.",
+  "localOnly": "Only here: it tracks no remote branch",
+  "apart": "Far apart from {upstream}: {ahead} only here, {behind} only there",
+  "inStep": "The same as {upstream}",
+  "inBase": "Its changes are all in {base} already (squash-merged or rebased in): safe to clean up"
 }

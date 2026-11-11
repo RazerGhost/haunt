@@ -6,7 +6,7 @@
   "notDeleted": "Not deleted: {names}.",
   "reflog": "git keeps their commits for a while in its reflog.",
   "title": "Clean up branches",
-  "description": "Merged branches, and branches whose remote is gone.",
+  "description": "Merged branches, branches already in the main line, and branches whose remote is gone.",
   "nothing": "Nothing to clean up.",
   "merged": "merged",
   "goneOnly": {
@@ -17,5 +17,7 @@
   "delete": {
     "one": "Delete {count} branch",
     "other": "Delete {count} branches"
-  }
+  },
+  "landed": "in {base}",
+  "landedHelp": "Squash-merged or rebased in: its changes are all there, under other shas"
 }

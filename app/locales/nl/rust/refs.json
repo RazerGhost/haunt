@@ -21,5 +21,6 @@
   "unmerged": "{name} heeft commits die geen andere branch heeft. Verwijderen gooit ze weg; bevestig om door te gaan.",
   "nothingToStash": "Er zijn geen wijzigingen om te stashen.",
   "stashGone": "Die stash is er niet meer.",
-  "stashUnknown": "Die stash is onbekend."
+  "stashUnknown": "Die stash is onbekend.",
+  "noUpstream": "{name} volgt geen remote branch."
 }

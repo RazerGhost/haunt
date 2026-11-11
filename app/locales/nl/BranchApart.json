@@ -1,0 +1,13 @@
+{
+  "title": "{name} en {upstream} zijn uit elkaar gegroeid",
+  "counts": "{ahead} commits staan alleen hier en {behind} alleen op {upstream}.",
+  "rewritten": "{count} van de {ahead} staan al op {upstream} onder andere sha's, dus de geschiedenis daar is waarschijnlijk herschreven (gerebased of gesquasht).",
+  "pullWould": "Een pull zou ze allemaal mergen of rebasen op {upstream}.",
+  "onlyHere": {
+    "one": "Toon de {count} commit die alleen hier staat",
+    "other": "Toon de {count} commits die alleen hier staan"
+  },
+  "match": "Kopie bewaren, dan gelijkzetten met {upstream}…",
+  "matchHelp": "{name} wordt eerst onder een andere naam bewaard, dus er gaat niets verloren.",
+  "rebase": "Rebasen op {upstream}…"
+}

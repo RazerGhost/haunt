@@ -81,5 +81,14 @@
   "deleteTagsTitle": {
     "one": "Delete {count} tag?",
     "other": "Delete {count} tags?"
-  }
+  },
+  "matchTitle": "Match {name} to {upstream}?",
+  "matchHelp": {
+    "one": "{name} is kept as {backup}, with the {count} commit only it has. Then {name} is moved to {upstream}. Your local changes stay.",
+    "other": "{name} is kept as {backup}, with the {count} commits only it has. Then {name} is moved to {upstream}. Your local changes stay."
+  },
+  "match": "Keep a copy and match",
+  "notMatched": "{name} was not moved",
+  "matched": "{name} now matches {upstream}",
+  "copyKept": "The old branch is kept as {backup}."
 }

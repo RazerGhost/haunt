@@ -87,6 +87,8 @@ export const commands = {
 	commit: (repo: string, sha: string) => __TAURI_INVOKE<CommitDetail>("commit", { repo, sha }),
 	files: (repo: string, from: string | null, to: string) => __TAURI_INVOKE<ChangedPath[]>("files", { repo, from, to }),
 	diff: (repo: string, from: string | null, to: string, path: string, old: string | null, context: number, ignoreSpace: boolean) => __TAURI_INVOKE<FileDiffView>("diff", { repo, from, to, path, old, context, ignoreSpace }),
+	/**  The commits of other branches whose changes the main line already has (cherry-picked, rebased or squash-merged). */
+	landed: (repo: string) => __TAURI_INVOKE<Landed>("landed", { repo }),
 	/**  The local branches whose commits are all on the current branch, but the current one. */
 	mergedBranches: (repo: string) => __TAURI_INVOKE<string[]>("merged_branches", { repo }),
 	/**  A function's history, carried on past the commits that moved it here from another file. */
@@ -204,6 +206,8 @@ export const commands = {
 	pruneWorktrees: (repo: string) => __TAURI_INVOKE<null>("prune_worktrees", { repo }),
 	repairWorktrees: (repo: string, paths: string[]) => __TAURI_INVOKE<null>("repair_worktrees", { repo, paths }),
 	renameBranch: (repo: string, from: string, to: string) => __TAURI_INVOKE<null>("rename_branch", { repo, from, to }),
+	/**  Keeps a copy of a branch as `backup`, then moves the branch to the remote branch it tracks. */
+	matchUpstream: (repo: string, name: string, backup: string) => __TAURI_INVOKE<null>("match_upstream", { repo, name, backup }),
 	/**  How many commits only this branch has: what deleting it would lose. */
 	unmerged: (repo: string, name: string) => __TAURI_INVOKE<number>("unmerged", { repo, name }),
 	/**  Deletes a branch; one with commits no other ref has only with `unmerged` (after asking). */
@@ -938,6 +942,29 @@ export type Knowers = {
 	you: string | null,
 };
 
+export type Landed = {
+	/**  The main line compared with (`origin/main`, else `main` or `master`); null when there is none. */
+	base: string | null,
+	/**  Branch commits whose changes the main line has, each with the commit there that has them. */
+	commits: LandedCommit[],
+	/**  The branches and remote branches with commits the main line has (git counts none of them as merged). */
+	branches: LandedBranch[],
+};
+
+export type LandedBranch = {
+	/**  Its full name: `refs/heads/feature` or `refs/remotes/origin/feature`. */
+	reference: string,
+	/**  Its commits since it left the main line (at most 500 counted). */
+	own: number,
+	/**  How many of them the main line has: all of them when it was squash-merged. */
+	landed: number,
+};
+
+export type LandedCommit = {
+	sha: string,
+	landedAs: string,
+};
+
 /**  The last write that can be undone, and what Undo does. */
 export type LastAction = {
 	title: string,
@@ -1043,6 +1070,11 @@ export type LogQuery = {
 	changed?: string | null,
 	/**  Only merge commits, or none of them; all when null. */
 	merges?: MergeFilter | null,
+	/**
+	 *  Branches and remote branches left out when listing everything, by full name (`refs/heads/feature`,
+	 *  `refs/remotes/origin/feature`): those the main line already has.
+	 */
+	hide?: string[] | null,
 	/**
 	 *  Newest first by date, each branch's commits among the others', instead of each merged
 	 *  branch's commits together under its merge; more lanes stay open side by side.
@@ -1301,6 +1333,10 @@ export type ReflogEntry = {
 export type Refs = {
 	branch: string | null,
 	sha: string | null,
+	/**  With HEAD detached: a tag or remote branch at HEAD's commit, or else what was last checked out (by the reflog). */
+	detachedFrom: string | null,
+	/**  With HEAD detached: the local branch it was on before (by the reflog), to go back to. */
+	leftBranch: string | null,
 	branches: BranchRef[],
 	remotes: Remote[],
 	tags: TagRef[],

@@ -4,8 +4,6 @@
   "mergesOnly": "Alleen merges",
   "allBranches": "Alle branches",
   "branch": "Branch",
-  "message": "Bericht",
-  "byMessage": "Filter op bericht",
   "author": "Auteur",
   "byAuthor": "Filter op auteur",
   "path": "Bestand of map",
@@ -19,5 +17,13 @@
   "hint": "Ctrl-klik op een tweede commit om te vergelijken · ↑ ↓ om te bewegen",
   "resize": "Sleep om de details groter of kleiner te maken",
   "pick": "Kies een commit om te zien wat die wijzigde.",
-  "moreFilters": "Meer filters"
+  "moreFilters": "Meer filters",
+  "local": "Lokaal",
+  "remote": "Remote",
+  "findBranch": "Zoek een branch",
+  "notOn": "niet op {name}",
+  "allOf": "Toon heel {name}",
+  "clearMessage": "Wis de zoekopdracht",
+  "hideLanded": "Verberg branches die al in {base} zitten",
+  "hideLandedHelp": "Gesquashte of gerebasede branches, waarvan alle wijzigingen er al in zitten."
 }

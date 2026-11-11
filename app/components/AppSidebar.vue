@@ -61,11 +61,18 @@ const tools = computed(() => [[
   { label: t('AppSidebar.health'), icon: 'i-lucide-heart-pulse', to: '/health' }
 ]])
 function toggle(section: string): void {
-  shut.value = { ...shut.value, [section]: !shut.value[section] }
+  const now = section === 'tags' ? tagsShut.value : !!shut.value[section]
+  shut.value = { ...shut.value, [section]: !now }
 }
 
 const { mode } = useMode()
 const cleaning = ref(false)
+provide('branchCleanup', () => { cleaning.value = true })
+// The branches Branch cleanup would offer beyond the merged ones: gone from the remote, or already in the main line.
+const landed = useLanded()
+const toClean = computed(() => (refs.value?.branches ?? []).filter(branch => !branch.current && (branch.gone || landed.whole.value.some(one => one.reference === `refs/heads/${branch.name}`))).length)
+// Many tags start folded, until you open them.
+const tagsShut = computed(() => shut.value.tags ?? (refs.value?.tags.length ?? 0) > 15)
 const remoteBranches = computed(() => shown.value?.remotes.reduce((sum, remote) => sum + remote.branches.length, 0) ?? 0)
 
 // The filter above the lists: branches, remote branches, tags and stashes whose name has the text (any case). It shows
@@ -97,13 +104,16 @@ function remoteMenu(name: string) {
 
 const shown = computed(() => {
   const all = refs.value
+  if (!all) return all
   const text = filter.value.trim().toLowerCase()
-  if (!all || !text) return all
-  const has = (name: string) => name.toLowerCase().includes(text)
+  const has = (name: string) => !text || name.toLowerCase().includes(text)
+  // A remote branch a local branch tracks shows on that branch (RefTree): Remotes lists only the others.
+  const tracked = new Set(all.branches.flatMap(branch => (branch.upstream && !branch.gone ? [branch.upstream] : [])))
+  const remoteOnly = (remote: string, name: string) => !tracked.has(`${remote}/${name}`) && has(`${remote}/${name}`)
   return {
     ...all,
     branches: all.branches.filter(item => has(item.name)),
-    remotes: all.remotes.map(remote => ({ ...remote, branches: remote.branches.filter(item => has(`${remote.name}/${item.name}`)) })).filter(remote => remote.branches.length),
+    remotes: all.remotes.map(remote => ({ ...remote, branches: remote.branches.filter(item => remoteOnly(remote.name, item.name)) })).filter(remote => !text || remote.branches.length),
     tags: all.tags.filter(item => has(item.name)),
     stashes: all.stashes.filter(item => has(item.message))
   }
@@ -172,6 +182,7 @@ const active = (path: string) => route.path === path ? 'bg-elevated font-medium 
         <button type="button" class="flex items-center gap-1 px-2 text-label font-semibold tracking-wider text-muted uppercase hover:text-default" :aria-expanded="!shut.branches" @click="toggle('branches')">
           <UIcon name="i-lucide-chevron-right" class="size-3 transition" :class="{ 'rotate-90': !shut.branches }" />
           {{ t('AppSidebar.branches') }} <span class="ml-auto font-normal tabular-nums">{{ shown.branches.length }}</span>
+          <span v-if="toClean" role="button" tabindex="0" class="rounded px-1 font-normal tracking-normal text-warning normal-case hover:bg-elevated" :title="t('AppSidebar.toCleanHelp')" @click.stop="cleaning = true" @keydown.enter.stop="cleaning = true">{{ t('AppSidebar.toClean', { count: toClean }) }}</span>
           <UTooltip :text="t('AppSidebar.cleanUpHelp')">
             <span role="button" tabindex="0" class="-mr-1 grid size-5 place-items-center rounded normal-case hover:bg-elevated hover:text-highlighted" :aria-label="t('AppSidebar.cleanUp')" @click.stop="cleaning = true" @keydown.enter.stop="cleaning = true">
               <UIcon name="i-lucide-eraser" class="size-3.5" />
@@ -190,7 +201,7 @@ const active = (path: string) => route.path === path ? 'bg-elevated font-medium 
       <SubmoduleList :shut="!!shut.submodules" @toggle="toggle('submodules')" />
 
       <section class="grid grid-cols-[minmax(0,1fr)] gap-0.5">
-        <button type="button" class="flex items-center gap-1 px-2 text-label font-semibold tracking-wider text-muted uppercase hover:text-default" :aria-expanded="!shut.remotes" @click="toggle('remotes')">
+        <button type="button" class="flex items-center gap-1 px-2 text-label font-semibold tracking-wider text-muted uppercase hover:text-default" :aria-expanded="!shut.remotes" :title="t('AppSidebar.remotesHelp')" @click="toggle('remotes')">
           <UIcon name="i-lucide-chevron-right" class="size-3 transition" :class="{ 'rotate-90': !shut.remotes }" />
           {{ t('AppSidebar.remotes') }} <span class="ml-auto font-normal tabular-nums">{{ remoteBranches }}</span>
           <UTooltip :text="t('AppSidebar.newRemoteHelp')">
@@ -212,23 +223,23 @@ const active = (path: string) => route.path === path ? 'bg-elevated font-medium 
       </section>
 
       <section v-if="shown.tags.length" class="grid grid-cols-[minmax(0,1fr)] gap-0.5">
-        <button type="button" class="flex items-center gap-1 px-2 text-label font-semibold tracking-wider text-muted uppercase hover:text-default" :aria-expanded="!shut.tags" @click="toggle('tags')">
-          <UIcon name="i-lucide-chevron-right" class="size-3 transition" :class="{ 'rotate-90': !shut.tags }" />
+        <button type="button" class="flex items-center gap-1 px-2 text-label font-semibold tracking-wider text-muted uppercase hover:text-default" :aria-expanded="!!filter || !tagsShut" @click="toggle('tags')">
+          <UIcon name="i-lucide-chevron-right" class="size-3 transition" :class="{ 'rotate-90': !!filter || !tagsShut }" />
           {{ t('AppSidebar.tags') }} <span class="ml-auto font-normal tabular-nums">{{ shown.tags.length }}</span>
         </button>
-        <div v-if="!shut.tags && tagPick.several.value" class="flex items-center gap-1 pr-2 pl-5 text-label text-muted">
+        <div v-if="(!!filter || !tagsShut) && tagPick.several.value" class="flex items-center gap-1 pr-2 pl-5 text-label text-muted">
           <span class="flex-1">{{ t('AppSidebar.picked', { count: tagPick.chosen.value.length }) }}</span>
           <UButton :label="t('AppSidebar.deleteTags', { count: tagPick.chosen.value.length })" size="xs" color="error" variant="ghost" @click="actions.deleteTags(tagPick.chosen.value.map(tag => tag.name))" />
           <UButton icon="i-lucide-x" size="xs" color="neutral" variant="ghost" :aria-label="t('AppSidebar.unpick')" :title="t('AppSidebar.unpick')" @click="tagPick.clear()" />
         </div>
-        <ul v-if="!shut.tags" data-select-all="tags" class="grid grid-cols-[minmax(0,1fr)] select-none">
+        <ul v-if="!!filter || !tagsShut" data-select-all="tags" class="grid grid-cols-[minmax(0,1fr)] select-none">
           <li v-for="tag in shown.tags" :key="tag.name">
             <UContextMenu :items="tagMenu(tag)">
             <NuxtLink
               :to="{ path: '/commits', query: { from: tag.name } }"
               class="flex items-center gap-1.5 rounded py-1 pr-2 pl-5 text-ui hover:bg-elevated"
               :class="{ 'bg-elevated text-highlighted': tagPick.several.value ? tagPick.isPicked(tag) : route.path === '/commits' && route.query.from === tag.name }"
-              :title="`${tag.sha.slice(0, 7)} · ${new Date(tag.time * 1000).toLocaleDateString(locale())}`"
+              :title="`${tag.name} · ${tag.sha.slice(0, 7)} · ${new Date(tag.time * 1000).toLocaleDateString(locale())}`"
               :aria-selected="tagPick.several.value ? tagPick.isPicked(tag) : undefined"
               @click="clickTag(tag, $event)"
             >

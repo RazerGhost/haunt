@@ -4,8 +4,6 @@
   "mergesOnly": "Merges only",
   "allBranches": "All branches",
   "branch": "Branch",
-  "message": "Message",
-  "byMessage": "Filter by message",
   "author": "Author",
   "byAuthor": "Filter by author",
   "path": "File or folder",
@@ -19,5 +17,13 @@
   "hint": "Ctrl-click a second commit to compare · ↑ ↓ to move",
   "resize": "Drag to resize the details",
   "pick": "Pick a commit to see what it changed.",
-  "moreFilters": "More filters"
+  "moreFilters": "More filters",
+  "local": "Local",
+  "remote": "Remote",
+  "findBranch": "Find a branch",
+  "notOn": "not on {name}",
+  "allOf": "Show all of {name}",
+  "clearMessage": "Clear the search",
+  "hideLanded": "Hide branches already in {base}",
+  "hideLandedHelp": "Squash-merged or rebased branches, whose changes are all in it."
 }

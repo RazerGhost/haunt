@@ -33,5 +33,8 @@
   "commit": "Commit",
   "trust": "Trust this folder…",
   "commitAndPush": "Commit and push",
-  "commitAndPushHelp": "Commits, then pushes the branch (Ctrl Shift Enter)"
+  "commitAndPushHelp": "Commits, then pushes the branch (Ctrl Shift Enter)",
+  "detached": "You are not on a branch: this commit will belong to no branch.",
+  "branchFirst": "Make a branch first",
+  "onto": "Commits go to {branch}"
 }

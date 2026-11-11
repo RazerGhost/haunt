@@ -4,10 +4,7 @@
   "lens": {
     "files": "Bestanden",
     "functions": "Functies",
-    "impact": "Wat kan breken",
-    "map": "Kaart",
-    "calls": "Aanroepen",
-    "architecture": "Architectuur"
+    "impact": "Wat kan breken"
   },
   "lenses": "Lenzen",
   "comparing": "Vergelijking",
@@ -34,13 +31,6 @@
   },
   "stepsBefore": "Aanroepers tot",
   "stepsAfter": "stappen ver",
-  "mapLayersHelp": "Per onderdeel: gewijzigde functies (Δ) en hun aanroepers, op de lagenkaart.",
-  "mapCanvasHelp": "Gewijzigde functies in amber, hun aanroepers omlijnd.",
-  "layers": "Lagen",
-  "canvas": "Canvas",
-  "noneInCode": "Geen van de gewijzigde functies staat nu in de code.",
-  "workingOut": "Bezig met de aanroepgraaf…",
-  "callsHint": "Gewijzigd in het midden, aanroepers links, aangeroepen functies rechts · dubbelklik om te openen in Aanroepen",
   "signature": {
     "good": "Ondertekend",
     "unknown": "Ondertekend, sleutel niet vertrouwd",

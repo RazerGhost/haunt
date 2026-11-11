@@ -577,3 +577,26 @@ fn drafts_a_pull_request_from_a_branchs_commits() {
     assert!(crate::git::pull_draft(&r.root, "fix/login-redirect", Some("nope")).is_err());
     assert!(crate::git::pull_draft(&r.root, "--all", None).is_err());
 }
+
+#[test]
+fn a_detached_head_says_what_it_was_checked_out_from_and_the_branch_it_left() {
+    let r = Repo::new();
+    r.write("a.txt", "a\n");
+    r.sh(&["add", "."]);
+    r.sh(&["commit", "-q", "-m", "First"]);
+    r.sh(&["tag", "v1"]);
+    r.sh(&["commit", "-q", "--allow-empty", "-m", "Second"]);
+    let on_branch = refs(&r.root).unwrap().unwrap();
+    assert_eq!((on_branch.detached_from, on_branch.left_branch), (None, None));
+
+    r.sh(&["checkout", "-q", "v1"]);
+    let at_tag = refs(&r.root).unwrap().unwrap();
+    assert_eq!(at_tag.branch, None);
+    assert_eq!(at_tag.detached_from.as_deref(), Some("v1"));
+    assert_eq!(at_tag.left_branch.as_deref(), Some("main"));
+
+    // A commit made there: no ref is at it any more, so the reflog says what was checked out.
+    r.sh(&["commit", "-q", "--allow-empty", "-m", "Loose"]);
+    let moved = refs(&r.root).unwrap().unwrap();
+    assert_eq!(moved.detached_from.as_deref(), Some("v1"));
+}

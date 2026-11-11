@@ -10,15 +10,58 @@ const refActions = useRefActions()
 const network = useNetwork()
 const { mode, switchTo } = useMode()
 
-const branch = computed(() => refs.value ? (refs.value.branch ?? refs.value.sha?.slice(0, 7) ?? t('AppToolbar.noCommits')) : null)
+/** HEAD on a commit rather than a branch: said plainly, with the ways back to a branch. */
+const detached = computed(() => !!refs.value?.sha && !refs.value.branch)
+const branch = computed(() => {
+  const all = refs.value
+  if (!all) return null
+  if (detached.value) {
+    const commit = all.sha!.slice(0, 7)
+    return all.detachedFrom ? t('AppToolbar.detachedFrom', { commit, from: all.detachedFrom }) : t('AppToolbar.detached', { commit })
+  }
+  return all.branch ?? t('AppToolbar.noCommits')
+})
+const apart = computed(() => !!current.value && wentApart(current.value))
 const branchTip = computed(() => {
   const at = current.value
   if (!refs.value) return ''
-  if (!at) return refs.value.sha ? t('AppToolbar.detached', { commit: refs.value.sha.slice(0, 7) }) : t('AppToolbar.noCommitsYet')
+  if (!at) return refs.value.sha ? t('AppToolbar.detachedTip', { commit: refs.value.sha.slice(0, 7) }) : t('AppToolbar.noCommitsYet')
   if (!at.upstream) return t('AppToolbar.tracksNothing', { name: at.name })
   if (at.gone) return t('AppToolbar.upstreamGone', { name: at.name, upstream: at.upstream })
-  return t('AppToolbar.tracking', { name: at.name, ahead: at.ahead, behind: at.behind, upstream: at.upstream })
+  const tracking = t('AppToolbar.tracking', { name: at.name, ahead: at.ahead, behind: at.behind, upstream: at.upstream })
+  return apart.value ? `${tracking} ${t('AppToolbar.apartTip', { upstream: at.upstream })}` : tracking
 })
+const detachedMenu = computed(() => {
+  const all = refs.value
+  if (!all) return []
+  const back = all.leftBranch
+  const recent = [...all.branches].sort((a, b) => b.time - a.time).filter(one => one.name !== back).slice(0, 6)
+  return [
+    back ? [{ label: t('AppToolbar.backTo', { name: back }), icon: 'i-lucide-undo-2', onSelect: () => refActions.switchTo(back) }] : [],
+    [{ label: t('AppToolbar.branchHere'), icon: 'i-lucide-git-branch-plus', onSelect: () => refActions.newBranch() }],
+    recent.map(one => ({ label: t('AppToolbar.switchTo', { name: one.name }), icon: 'i-lucide-git-branch', onSelect: () => refActions.switchTo(one.name) })),
+    [{ label: t('AppToolbar.seeLocal'), icon: 'i-lucide-pencil-line', to: '/local' }]
+  ].filter(group => group.length)
+})
+
+// On the Git side the search finds commits by their message: it fills All commits' message filter (?message).
+const route = useRoute()
+const commitSearch = ref(typeof route.query.message === 'string' ? route.query.message : '')
+watch(() => [route.path, route.query.message], ([path, message]) => {
+  if (path === '/commits' && commitSearch.value.trim() !== (message ?? '')) commitSearch.value = typeof message === 'string' ? message : ''
+})
+let searchTimer: ReturnType<typeof setTimeout> | undefined
+watch(commitSearch, (now) => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    const text = now.trim()
+    const onCommits = route.path === '/commits'
+    if (onCommits ? (route.query.message ?? '') === text : !text) return
+    const query = { ...(onCommits ? route.query : {}), message: text || undefined }
+    void navigateTo({ path: '/commits', query }, { replace: onCommits })
+  }, 350)
+})
+onBeforeUnmount(() => clearTimeout(searchTimer))
 
 const actions = computed(() => {
   const at = current.value
@@ -64,7 +107,7 @@ const openIn = useOpenIn()
 const { info } = useRepositories()
 
 const searchInput = useTemplateRef<{ inputRef: HTMLInputElement | null }>('searchInput')
-// Ctrl+K opens the command palette (AppPalette); Ctrl+F finds a function in the code views.
+// Ctrl+K opens the command palette (AppPalette); Ctrl+F finds a function in Code, a commit in Git.
 const router = useRouter()
 defineShortcuts({
   // In a diff, code or a message (where you clicked last), Ctrl F finds in that text (TextFind); elsewhere, a function.
@@ -136,8 +179,13 @@ defineShortcuts({
 
     <USeparator orientation="vertical" class="mx-1 h-5" />
 
-    <UTooltip v-if="branch" :text="branchTip">
-      <UButton to="/local" color="neutral" variant="ghost" size="sm" icon="i-lucide-git-branch" class="max-w-56 min-w-0 font-mono text-xs" :label="branch" :ui="{ label: 'truncate' }" />
+    <UDropdownMenu v-if="branch && detached" :items="detachedMenu" :content="{ align: 'start' }">
+      <UTooltip :text="branchTip">
+        <UButton color="warning" variant="soft" size="sm" icon="i-lucide-git-commit-horizontal" trailing-icon="i-lucide-chevron-down" class="max-w-72 min-w-0 text-xs" :label="branch" :ui="{ label: 'truncate' }" />
+      </UTooltip>
+    </UDropdownMenu>
+    <UTooltip v-else-if="branch" :text="branchTip">
+      <UButton to="/local" :color="apart ? 'warning' : 'neutral'" :variant="apart ? 'soft' : 'ghost'" size="sm" :icon="apart ? 'i-lucide-triangle-alert' : 'i-lucide-git-branch'" class="max-w-56 min-w-0 font-mono text-xs" :label="branch" :ui="{ label: 'truncate' }" />
     </UTooltip>
 
     <UTooltip v-if="info?.root" :text="openIn.label.value" :kbds="['meta', 'shift', 'A']">
@@ -147,7 +195,25 @@ defineShortcuts({
     <div class="min-w-2 flex-1" />
 
     <UInput
-      v-if="scan"
+      v-if="mode === 'git'"
+      ref="searchInput"
+      v-model="commitSearch"
+      icon="i-lucide-search"
+      :placeholder="t('AppToolbar.findCommit')"
+      size="sm"
+      class="w-48 lg:w-64"
+      :ui="{ trailing: 'pe-1.5' }"
+      :aria-label="t('AppToolbar.findCommit')"
+    >
+      <template #trailing>
+        <UKbd v-if="!commitSearch" :value="mac ? '⌘F' : 'Ctrl F'" size="sm" />
+        <UTooltip v-else :text="t('AppToolbar.clearSearch')">
+          <UButton icon="i-lucide-x" size="xs" color="neutral" variant="link" :aria-label="t('AppToolbar.clearSearch')" @click="commitSearch = ''" />
+        </UTooltip>
+      </template>
+    </UInput>
+    <UInput
+      v-else-if="scan"
       ref="searchInput"
       v-model="search"
       icon="i-lucide-search"

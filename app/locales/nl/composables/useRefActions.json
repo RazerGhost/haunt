@@ -81,5 +81,14 @@
   "deleteTagsTitle": {
     "one": "{count} tag verwijderen?",
     "other": "{count} tags verwijderen?"
-  }
+  },
+  "matchTitle": "{name} gelijkzetten met {upstream}?",
+  "matchHelp": {
+    "one": "{name} wordt bewaard als {backup}, met de {count} commit die alleen hij heeft. Daarna wordt {name} verplaatst naar {upstream}. Je lokale wijzigingen blijven.",
+    "other": "{name} wordt bewaard als {backup}, met de {count} commits die alleen hij heeft. Daarna wordt {name} verplaatst naar {upstream}. Je lokale wijzigingen blijven."
+  },
+  "match": "Kopie bewaren en gelijkzetten",
+  "notMatched": "{name} is niet verplaatst",
+  "matched": "{name} is nu gelijk aan {upstream}",
+  "copyKept": "De oude branch is bewaard als {backup}."
 }

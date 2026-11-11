@@ -4,10 +4,7 @@
   "lens": {
     "files": "Files",
     "functions": "Functions",
-    "impact": "What could break",
-    "map": "Map",
-    "calls": "Calls",
-    "architecture": "Architecture"
+    "impact": "What could break"
   },
   "lenses": "Lenses",
   "comparing": "Comparing",
@@ -34,13 +31,6 @@
   },
   "stepsBefore": "Callers",
   "stepsAfter": "steps out",
-  "mapLayersHelp": "Per part: functions changed (Δ) and their callers, on the layer map.",
-  "mapCanvasHelp": "Changed functions in amber, their callers outlined.",
-  "layers": "Layers",
-  "canvas": "Canvas",
-  "noneInCode": "None of the changed functions is in the code now.",
-  "workingOut": "Working out the call graph…",
-  "callsHint": "Changed in the middle, callers left, callees right · double-click to open in Calls",
   "signature": {
     "good": "Signed",
     "unknown": "Signed, key not trusted",

@@ -1,15 +1,17 @@
 <script setup lang="ts">
 /*
- * Cleaning up branches: the local branches that are merged into the current one (deleting them loses nothing) and the
- * ones whose remote branch is gone (often merged on the remote and deleted there). The merged ones are ticked; a gone
+ * Cleaning up branches: the local branches that are merged into the current one (deleting them loses nothing), the
+ * ones the main line already has in full under other shas (squash-merged or rebased in: useLanded), and the ones whose
+ * remote branch is gone (often merged on the remote and deleted there). The merged and landed ones are ticked; a gone
  * one says how many commits only it has, and is deleted only when ticked.
  */
 const open = defineModel<boolean>('open', { default: false })
 const { repo } = useRepositories()
 const { refs } = useRefs()
 const toast = useToast()
+const landed = useLanded()
 
-interface Candidate { name: string, reason: 'merged' | 'gone', only: number }
+interface Candidate { name: string, reason: 'merged' | 'landed' | 'gone', only: number }
 const candidates = ref<Candidate[]>([])
 const ticked = ref(new Set<string>())
 const loading = ref(false)
@@ -21,13 +23,16 @@ watch(open, async (now) => {
   try {
     const at = repo.value
     const merged = await haunt.mergedBranches(at)
-    const gone = (refs.value?.branches ?? []).filter(branch => branch.gone && !branch.current && !merged.includes(branch.name)).map(branch => branch.name)
-    const only = await Promise.all(gone.map(name => haunt.unmerged(at, name).catch(() => 0)))
+    const local = (refs.value?.branches ?? []).filter(branch => !branch.current && !merged.includes(branch.name))
+    const inBase = local.filter(branch => landed.whole.value.some(one => one.reference === `refs/heads/${branch.name}`)).map(branch => branch.name)
+    const gone = local.filter(branch => branch.gone && !inBase.includes(branch.name)).map(branch => branch.name)
+    const only = await Promise.all([...inBase, ...gone].map(name => haunt.unmerged(at, name).catch(() => 0)))
     candidates.value = [
       ...merged.map(name => ({ name, reason: 'merged' as const, only: 0 })),
-      ...gone.map((name, index) => ({ name, reason: 'gone' as const, only: only[index] ?? 0 }))
+      ...inBase.map((name, index) => ({ name, reason: 'landed' as const, only: only[index] ?? 0 })),
+      ...gone.map((name, index) => ({ name, reason: 'gone' as const, only: only[inBase.length + index] ?? 0 }))
     ]
-    ticked.value = new Set(merged)
+    ticked.value = new Set([...merged, ...inBase])
   } finally {
     loading.value = false
   }
@@ -74,6 +79,7 @@ async function remove(): Promise<void> {
             <UCheckbox :model-value="ticked.has(candidate.name)" @update:model-value="toggle(candidate.name)" />
             <span class="min-w-0 flex-1 truncate font-mono text-ui">{{ candidate.name }}</span>
             <UBadge v-if="candidate.reason === 'merged'" :label="t('BranchCleanup.merged')" color="success" variant="subtle" size="sm" />
+            <UBadge v-else-if="candidate.reason === 'landed'" :label="t('BranchCleanup.landed', { base: landed.base.value ?? 'main' })" :title="t('BranchCleanup.landedHelp')" color="success" variant="subtle" size="sm" />
             <UBadge v-else :label="candidate.only ? t('BranchCleanup.goneOnly', { count: candidate.only }) : t('BranchCleanup.gone')" :color="candidate.only ? 'warning' : 'neutral'" variant="subtle" size="sm" />
           </label>
         </li>

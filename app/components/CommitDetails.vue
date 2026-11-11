@@ -1,23 +1,19 @@
 <script setup lang="ts">
-import type { ElementDefinition } from 'cytoscape'
 import type { ChangedFile, ChangedPath, CommitDetail, RangeChanges } from '~~/shared/types'
 import type { Signature } from '~/bindings'
 
 /*
  * The change picked in the commit list: one commit (against its first parent) or two compared (older to newer), with
- * six lenses. Files: the diff. Functions: changes by function, both versions read from git. What could break, Map and
- * Calls: through the call graph of the code as it is now, so a function that no longer exists has no callers here.
- * Architecture: the imports the change adds and removes, judged by the project's rules (ArchitectureChanges).
+ * three lenses. Files: the diff. Functions: changes by function, both versions read from git. What could break:
+ * through the call graph of the code as it is now, so a function that no longer exists has no callers here.
  */
 /** `alone`: shown outside the commit list (a pull request), so its hints about picking commits there are left out. */
 const props = defineProps<{ sha: string, compare: string | null, alone?: boolean }>()
 const emit = defineEmits<{ select: [sha: string] }>()
-const { scan, index, select } = useCode()
+const { scan, index } = useCode()
 const { repo } = useRepositories()
 // A file's menu: open it in the editor, show it in its folder, copy its path.
 const openIn = useOpenIn()
-const colorMode = useColorMode()
-const router = useRouter()
 
 const detail = shallowRef<CommitDetail | null>(null)
 /* Its signature, checked after the rest is shown (checking runs gpg or ssh-keygen, which can take a moment). */
@@ -78,10 +74,7 @@ const span = computed(() => {
 const LENSES = [
   { value: 'files', icon: 'i-lucide-file-diff' },
   { value: 'functions', icon: 'i-lucide-braces' },
-  { value: 'impact', icon: 'i-lucide-triangle-alert' },
-  { value: 'map', icon: 'i-lucide-layers' },
-  { value: 'calls', icon: 'i-lucide-git-fork' },
-  { value: 'architecture', icon: 'i-lucide-network' }
+  { value: 'impact', icon: 'i-lucide-triangle-alert' }
 ] as const
 type Lens = (typeof LENSES)[number]['value']
 // The lens is kept per repository (each tab comes back to its own).
@@ -134,53 +127,12 @@ const codeFiles = computed<ChangedFile[]>(() => (changes.value && changes.value.
 const depth = ref(2)
 const ids = computed(() => changedIds(codeFiles.value))
 const affected = computed(() => namedOnly(index.value, blastRadius(index.value, ids.value, depth.value)))
-const counts = computed(() => countsByPart(index.value, codeFiles.value, affected.value))
-/* The Map lens as the layer map or the canvas; the canvas zooms to the files the change touched. */
-const mapAs = usePersisted<'layers' | 'canvas'>('map-as', 'layers', value => value === 'layers' || value === 'canvas')
-const affectedIds = computed(() => new Set(affected.value.keys()))
-const touchedFiles = computed(() => codeFiles.value.filter(item => item.functions.some(fn => fn.id)).map(item => item.path))
 const missing = computed(() => codeFiles.value.reduce((sum, item) => sum + item.functions.filter(fn => !fn.id && fn.status !== 'removed').length, 0))
 
 function showFile(changed: ChangedFile): void {
   file.value = span.value?.files.find(item => item.path === changed.path) ?? null
   lens.value = 'files'
 }
-
-/* Calls: the changed functions in the middle, their callers to the left and what they call to the right. */
-const PER_COLUMN = 30
-const graph = computed(() => {
-  void colorMode.value
-  const at = index.value
-  if (!at || lens.value !== 'calls') return [] as ElementDefinition[]
-  const middle = [...ids.value].filter(id => at.functions.has(id)).slice(0, PER_COLUMN)
-  const shown = new Set(middle)
-  const side = (next: (id: string) => string[]) => {
-    const found = new Map<string, number>()
-    for (const id of middle) for (const other of next(id)) if (!shown.has(other) && at.functions.has(other)) found.set(other, (found.get(other) ?? 0) + 1)
-    const ranked = [...found].sort((a, b) => b[1] - a[1]).slice(0, PER_COLUMN).map(([id]) => id)
-    ranked.forEach(id => shown.add(id))
-    return ranked
-  }
-  const callers = side(id => (at.callers.get(id) ?? []).map(edge => edge.from))
-  const callees = side(id => (at.callees.get(id) ?? []).map(edge => edge.to))
-  const elements: ElementDefinition[] = []
-  for (const [x, column, classes] of [[-1, callers, 'affected'], [0, middle, 'changed'], [1, callees, '']] as const) {
-    column.forEach((id, row) => {
-      const located = at.functions.get(id)!
-      const label = `${located.fn.name}\n${tailOf(located.file.path)}`
-      const layer = at.parts.get(located.file.part)?.layer ?? 'unmapped'
-      elements.push({ group: 'nodes', data: { id, label, color: resolvedColor(layerVar(layer)), ...nodeSize(label) }, position: { x: x * 300, y: (row - (column.length - 1) / 2) * 58 }, classes })
-    })
-  }
-  const line = resolvedColor('--ui-text-dimmed')
-  for (const id of shown) {
-    for (const edge of at.callees.get(id) ?? []) {
-      if (shown.has(edge.to)) elements.push({ group: 'edges', data: { id: `${edge.from}->${edge.to}`, source: edge.from, target: edge.to, width: Math.min(6, 1 + Math.log2(edge.count)), color: line }, classes: edge.guessed ? 'dashed' : '' })
-    }
-  }
-  return elements
-})
-const layout = { name: 'preset' as const, fit: true, padding: 40 }
 
 async function copy(text: string): Promise<void> {
   try {
@@ -270,11 +222,6 @@ async function copy(text: string): Promise<void> {
         <p v-else class="p-4 text-sm text-muted">{{ t('CommitDetails.noFiles') }}</p>
       </div>
 
-      <!-- Architecture: the imports the change adds and removes, judged by the rules (it needs no changes by function) -->
-      <div v-else-if="lens === 'architecture'" class="min-h-0 flex-1 overflow-auto p-4">
-        <ArchitectureChanges :from="span.from" :to="span.to" />
-      </div>
-
       <template v-else>
         <UAlert v-if="changesProblem" class="m-3" color="error" variant="subtle" icon="i-lucide-circle-alert" :description="changesProblem" />
         <div v-else-if="!changes || changes.to !== span.to" class="grid flex-1 place-items-center gap-2 text-muted">
@@ -301,32 +248,6 @@ async function copy(text: string): Promise<void> {
           <AffectedList :affected="affected" />
           <TestsReached :changed="ids" class="mt-6" />
           <SuggestedReviewers :base="span.from" :files="codeFiles" :exclude="[detail?.author, other?.author].filter((name): name is string => !!name)" class="mt-6" />
-        </div>
-
-        <!-- Map: the layer map, or the canvas -->
-        <div v-else-if="lens === 'map'" class="flex min-h-0 flex-1 flex-col">
-          <div class="flex items-center gap-3 px-4 pt-3 pb-2">
-            <p class="min-w-0 flex-1 text-xs text-muted">
-              {{ mapAs === 'layers' ? t('CommitDetails.mapLayersHelp') : t('CommitDetails.mapCanvasHelp') }}
-            </p>
-            <UFieldGroup size="xs">
-              <UButton :label="t('CommitDetails.layers')" icon="i-lucide-layers" :color="mapAs === 'layers' ? 'primary' : 'neutral'" :variant="mapAs === 'layers' ? 'solid' : 'outline'" @click="mapAs = 'layers'" />
-              <UButton :label="t('CommitDetails.canvas')" icon="i-lucide-boxes" :color="mapAs === 'canvas' ? 'primary' : 'neutral'" :variant="mapAs === 'canvas' ? 'solid' : 'outline'" @click="mapAs = 'canvas'" />
-            </UFieldGroup>
-          </div>
-          <div v-if="mapAs === 'layers'" class="min-h-0 flex-1 overflow-auto px-4 pb-4">
-            <LayerStack :selected-part="null" :counts="counts" @select="part => router.push({ path: '/graph', query: { part } })" />
-          </div>
-          <div v-else class="min-h-0 flex-1 border-t border-default">
-            <CodeCanvas :changed="ids" :affected="affectedIds" :focus="touchedFiles" />
-          </div>
-        </div>
-
-        <!-- Calls -->
-        <div v-else class="relative min-h-0 flex-1">
-          <p v-if="!graph.length" class="absolute inset-0 grid place-items-center text-sm text-muted">{{ index?.callers.size ? t('CommitDetails.noneInCode') : t('CommitDetails.workingOut') }}</p>
-          <GraphView v-else :elements="graph" :stylesheet="graphStyle" :layout="layout" @node="id => select(id)" @open="id => router.push({ path: '/graph', query: { center: id, fn: id } })" />
-          <p class="pointer-events-none absolute right-3 bottom-2 text-label text-muted">{{ t('CommitDetails.callsHint') }}</p>
         </div>
       </template>
     </template>
