@@ -28,24 +28,23 @@ export function themeColors(): SvgColors {
   }
 }
 
-/** An SVG drawn on a canvas at twice its size (less when that is more than a canvas holds), as a PNG. */
+/**
+ * An SVG drawn on a canvas at twice its size (less when that is more than a canvas holds), as a PNG. The SVG is loaded
+ * as a data URL, not a blob: URL: the window's content security policy (tauri.conf.json) lets images come only from
+ * the app and `data:`, so a blob: image fails to decode in the app, though it works in a browser.
+ */
 async function rasterise(svg: string): Promise<Blob> {
-  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))
-  try {
-    const image = new Image()
-    image.src = url
-    await image.decode()
-    const scale = Math.min(2, 16384 / image.naturalWidth, 16384 / image.naturalHeight)
-    const canvas = document.createElement('canvas')
-    canvas.width = Math.round(image.naturalWidth * scale)
-    canvas.height = Math.round(image.naturalHeight * scale)
-    const context = canvas.getContext('2d')
-    if (!context) throw new Error(t('utils.exportImage.noCanvas'))
-    context.drawImage(image, 0, 0, canvas.width, canvas.height)
-    return await new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => (blob ? resolve(blob) : reject(new Error(t('utils.exportImage.tooBig')))), 'image/png'))
-  } finally {
-    URL.revokeObjectURL(url)
-  }
+  const image = new Image()
+  image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+  await image.decode()
+  const scale = Math.min(2, 16384 / image.naturalWidth, 16384 / image.naturalHeight)
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round(image.naturalWidth * scale)
+  canvas.height = Math.round(image.naturalHeight * scale)
+  const context = canvas.getContext('2d')
+  if (!context) throw new Error(t('utils.exportImage.noCanvas'))
+  context.drawImage(image, 0, 0, canvas.width, canvas.height)
+  return await new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => (blob ? resolve(blob) : reject(new Error(t('utils.exportImage.tooBig')))), 'image/png'))
 }
 
 /** A blob as base64, without the data URL's prefix. */
