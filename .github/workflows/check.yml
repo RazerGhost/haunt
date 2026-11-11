@@ -23,7 +23,7 @@ jobs:
       # compared as text.
       - run: git config --global core.autocrlf false
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Linux libraries
         if: runner.os == 'Linux'
@@ -32,8 +32,8 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       # pnpm's version from package.json (`packageManager`); Node 22's latest, which is 22.18 or later.
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
