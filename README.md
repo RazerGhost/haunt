@@ -12,6 +12,8 @@ which functions it touches, what could break, which tests reach it and who knows
 Everything runs on your machine. Haunt sends nothing anywhere unless you ask it to, and it runs none of a project's own
 code until you trust its folder.
 
+<!-- TODO: add a screenshot here once one exists, e.g. ![Haunt showing a commit's changes by function](docs/screenshot.png) -->
+
 ## What it does
 
 - **Git, all of it.** A commit list with its graph, local changes with line staging, branches, stashes, tags, fetch,
@@ -39,7 +41,7 @@ and their calls are matched by name. No configuration is needed; a `haunt.config
 
 ## Install
 
-Download the installer for your system from the [releases](https://github.com/razerghost/haunt/releases): `.msi` or
+Download the installer for your system from the [releases](https://github.com/rg-digital-dev/haunt/releases): `.msi` or
 `.exe` for Windows, `.dmg` for macOS, `.deb`, `.rpm` or `.AppImage` for Linux. The builds are not signed yet, so
 Windows and macOS warn the first time you open Haunt.
 
@@ -48,7 +50,7 @@ On Arch and its derivatives (CachyOS, EndeavourOS, Manjaro), each release has a 
 unsigned package only from a file it has, so download it first:
 
 ```bash
-curl -LO https://github.com/RazerGhost/haunt/releases/download/v0.4.2/haunt-bin-0.4.2-1-x86_64.pkg.tar.zst
+curl -LO https://github.com/rg-digital-dev/haunt/releases/download/v0.4.2/haunt-bin-0.4.2-1-x86_64.pkg.tar.zst
 sudo pacman -U haunt-bin-0.4.2-1-x86_64.pkg.tar.zst
 ```
 
@@ -84,6 +86,17 @@ pnpm app
 `pnpm app` starts Haunt with hot reload; `pnpm app:build` builds an installer. You need Node 22.18 or later, pnpm and
 Rust, and on Windows the Visual Studio C++ Build Tools. How Haunt is put together, and the checks to run before a
 change, are in [docs/development.md](docs/development.md).
+
+## Stack
+
+- **App:** Tauri 2, with the git work, the scan and the reading of most languages in Rust (tree-sitter).
+- **Window:** Nuxt 4 with Nuxt UI, graphs drawn with Cytoscape, code coloured with Shiki.
+- **TypeScript and JavaScript:** read with the TypeScript compiler, run on your own Node, Bun or Deno.
+
+## How it's built
+
+Haunt is written with [Claude Code](https://claude.com/claude-code), and I review every change before it goes in. The
+checks in [docs/development.md](docs/development.md) run on Linux, Windows and macOS for every pull request.
 
 ## License
 
