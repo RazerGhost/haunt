@@ -14,8 +14,6 @@ which functions it touches, what could break, which tests reach it and who knows
 Everything runs on your machine. Haunt sends nothing anywhere unless you ask it to, and it runs none of a project's own
 code until you trust its folder.
 
-<!-- TODO: add a screenshot here once one exists, e.g. ![Haunt showing a commit's changes by function](docs/screenshot.png) -->
-
 ## What it does
 
 - **Git, all of it.** A commit list with its graph, local changes with line staging, branches, stashes, tags, fetch,
