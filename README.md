@@ -4,6 +4,8 @@
 
 <p align="center">A git client that also maps your code.</p>
 
+<p align="center"><img src="docs/screenshot.png" width="800" alt="Haunt showing a change function by function: the three changed functions, the callers that could break, and one changed function with what it calls and what calls it."></p>
+
 Haunt is a desktop git client for Windows, macOS and Linux. Next to the usual work (staging, committing, branches,
 merging, rebasing, pull requests) it reads your project by function: where each function is written, what it calls,
 what calls it, and how the project's parts import each other. So a change is not just a list of files. Haunt shows
